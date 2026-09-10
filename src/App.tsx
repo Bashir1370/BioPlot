@@ -2,48 +2,46 @@ import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 
+function Dashboard({ session }: { session: Session | null }) {
+  return (
+    <main className="splash">
+      <h1>BioPlot</h1>
+      <p>Scientific visualization workspace</p>
+      <button>Create new project</button>
+      <p>{session ? 'Signed in' : 'Guest workspace'}</p>
+    </main>
+  )
+}
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    let active = true
-    const timer = window.setTimeout(() => {
-      if (active) {
-        setLoading(false)
-        setError('Authentication initialization timed out. Please check Supabase settings.')
-      }
-    }, 5000)
+    let mounted = true
 
-    async function init() {
-      try {
-        const { data, error } = await supabase.auth.getSession()
-        if (error) throw error
-        if (active) setSession(data.session)
-      } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : 'Auth error')
-      } finally {
-        window.clearTimeout(timer)
-        if (active) setLoading(false)
-      }
-    }
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        if (mounted) setSession(data.session)
+      })
+      .catch(() => {
+        if (mounted) setSession(null)
+      })
+      .finally(() => {
+        if (mounted) setReady(true)
+      })
 
-    void init()
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
-      if (active) setSession(next)
+      if (mounted) setSession(next)
     })
 
     return () => {
-      active = false
-      window.clearTimeout(timer)
+      mounted = false
       data.subscription.unsubscribe()
     }
   }, [])
 
-  if (loading) return <div className="splash">Preparing BioPlot workspace…</div>
+  if (!ready) return <div className="splash">Loading BioPlot...</div>
 
-  if (error) return <div className="splash"><h2>BioPlot setup issue</h2><p>{error}</p></div>
-
-  return <div className="splash"><h1>BioPlot</h1><p>{session ? 'Dashboard loading...' : 'Authentication ready'}</p></div>
+  return <Dashboard session={session} />
 }
