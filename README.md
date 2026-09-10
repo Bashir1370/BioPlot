@@ -22,6 +22,12 @@ The current prototype now includes a substantially more capable editor interacti
 - SVG export and high-resolution PNG export
 - Grid, zoom, undo/redo, and bilingual Persian/English UI
 
+## Deployment
+
+Production preview: `https://bioplot.pages.dev`
+
+Cloudflare Pages is connected to the `main` branch for automatic deployments.
+
 ## Product direction
 
 BioPlot is designed as a broader scientific visualization workspace rather than only a figure illustrator.
@@ -58,9 +64,8 @@ Then open `http://localhost:8000`.
 
 ## Next milestones
 
-1. Deploy a stable preview (Cloudflare Pages)
-2. Migrate editor state into a component-based frontend
-3. Add Supabase authentication and project persistence
-4. Build the scientific asset/admin pipeline
-5. Add real data import and editable scientific plots
-6. Add pathways, networks, collaboration, and AI features
+1. Migrate editor state into a component-based frontend
+2. Add Supabase authentication and project persistence
+3. Build the scientific asset/admin pipeline
+4. Add real data import and editable scientific plots
+5. Add pathways, networks, collaboration, and AI features
