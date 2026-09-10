@@ -44,7 +44,25 @@ function restore(html){
   rebindGlobals();state.selected.clear();bindAllObjects();bindSelectionBox();renderSelection();renderLayers();renderContext();
 }
 function rebindGlobals(){window.selectionBox=$('selectionBox');window.guideV=$('guideV');window.guideH=$('guideH')}
-function markSaved(){saveState.textContent=state.lang==='fa'?'در حال ذخیره…':'Saving…';clearTimeout(window._save);window._save=setTimeout(()=>saveState.textContent=state.lang==='fa'?'ذخیره شد':'Saved locally',350)}
+function markSaved(){
+  saveState.textContent=
+    state.lang==='fa'
+      ?'در حال ذخیره…'
+      :'Saving…';
+
+  window.dispatchEvent(
+    new CustomEvent('bioplot:document-changed')
+  );
+
+  clearTimeout(window._save);
+
+  window._save=setTimeout(()=>{
+    saveState.textContent=
+      state.lang==='fa'
+        ?'ذخیره محلی شد'
+        :'Saved locally';
+  },350);
+}
 function updateHistoryButtons(){$('undoBtn').disabled=!state.history.length;$('redoBtn').disabled=!state.redo.length}
 
 function assetPanel(){return `<h2 class="panel-title" data-en="Scientific library" data-fa="کتابخانه علمی">Scientific library</h2><div class="search-box"><input id="assetSearch" placeholder="Search cells, proteins, organs…"></div><div class="chip-row"><button class="chip active" data-cat="All">All</button><button class="chip" data-cat="Cell biology">Cell</button><button class="chip" data-cat="Neuroscience">Neuro</button><button class="chip" data-cat="Molecular biology">Molecular</button></div><div class="section-label"><span>Recommended</span><span style="color:var(--muted);font-weight:500">${assets.length} assets</span></div><div id="assetGrid" class="asset-grid">${assets.map((a,i)=>`<button class="asset-card" data-asset="${i}" data-cat-name="${a.cat}">${a.svg}<small>${a.name}</small></button>`).join('')}</div>`}
