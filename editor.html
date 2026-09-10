@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b7a75" />
+  <title>BioPlot Editor — Scientific Visualization Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand-mark">B</div>
+      <div class="brand">BioPlot</div>
+      <span class="version-pill">v2</span>
+    </div>
+    <div class="document-meta">
+      <a class="icon-btn back-link" href="index.html" title="Back to dashboard">←</a>
+      <div class="document-copy">
+        <input id="docTitle" class="doc-title" value="Untitled scientific figure" aria-label="Document title" />
+        <div id="saveState" class="save-state">Saved locally</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="undoBtn" class="icon-btn" title="Undo">↶</button>
+      <button id="redoBtn" class="icon-btn" title="Redo">↷</button>
+      <span class="divider"></span>
+      <button id="langBtn" class="ghost-btn">FA</button>
+      <button class="ghost-btn" data-en="Share" data-fa="اشتراک">Share</button>
+      <div class="export-wrap">
+        <button id="exportBtn" class="primary-btn" data-en="Export" data-fa="خروجی">Export</button>
+        <div id="exportMenu" class="export-menu hidden">
+          <button data-export="png"><b>PNG</b><span>Publication image</span></button>
+          <button data-export="svg"><b>SVG</b><span>Editable vector</span></button>
+        </div>
+      </div>
+      <div class="avatar">BP</div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <nav class="tool-rail" aria-label="Editor tools">
+      <button class="rail-item active" data-panel="assets"><span>◫</span><small data-en="Assets" data-fa="المان‌ها">Assets</small></button>
+      <button class="rail-item" data-panel="templates"><span>▦</span><small data-en="Templates" data-fa="قالب‌ها">Templates</small></button>
+      <button class="rail-item" data-panel="design"><span>✦</span><small data-en="Design" data-fa="طراحی">Design</small></button>
+      <button class="rail-item" data-panel="plots"><span>⌁</span><small data-en="Plots" data-fa="نمودارها">Plots</small></button>
+      <button class="rail-item" data-panel="upload"><span>⇧</span><small data-en="Upload" data-fa="آپلود">Upload</small></button>
+      <div class="rail-spacer"></div>
+      <button class="rail-item"><span>?</span><small data-en="Help" data-fa="راهنما">Help</small></button>
+    </nav>
+
+    <aside class="library-panel"><div id="panelContent"></div></aside>
+
+    <section id="canvasViewport" class="canvas-viewport">
+      <div id="contextBar" class="context-bar"></div>
+      <div id="artboardShell" class="artboard-shell">
+        <div id="artboard" class="artboard">
+          <div class="figure-heading">
+            <span class="eyebrow">BIOPLOT FIGURE</span>
+            <h1>Mechanism of oxaliplatin-induced peripheral neuropathy</h1>
+            <p>Build a publication-ready scientific figure by arranging biological assets, annotations and data.</p>
+          </div>
+
+          <div class="canvas-object" data-id="obj-neuron" data-label="Neuron" data-type="asset" style="left:130px;top:245px;width:170px;height:115px;--rot:0deg">
+            <svg viewBox="0 0 190 125" width="100%" height="100%" aria-hidden="true">
+              <g fill="none" stroke="#3d8b86" stroke-width="5" stroke-linecap="round"><path d="M60 63 C35 42,26 20,13 12"/><path d="M60 63 C35 70,18 90,8 108"/><path d="M60 63 C38 57,20 56,6 57"/><path d="M95 63 C125 62,145 54,177 34"/><path d="M95 63 C130 70,148 86,182 102"/></g>
+              <ellipse cx="76" cy="63" rx="30" ry="26" fill="#dff2ef" stroke="#3d8b86" stroke-width="4"/><circle cx="77" cy="63" r="10" fill="#77bdb7"/>
+            </svg>
+          </div>
+
+          <div class="canvas-object" data-id="obj-mito" data-label="Mitochondrion" data-type="asset" style="left:415px;top:270px;width:140px;height:80px;--rot:0deg">
+            <svg viewBox="0 0 160 90" width="100%" height="100%" aria-hidden="true"><path d="M16 45C18 14 47 8 74 15c22 6 37-6 56 3 24 11 21 51-4 60-20 8-35-5-57 0-30 8-55-5-53-33Z" fill="#fee8cf" stroke="#d48d4c" stroke-width="4"/><path d="M39 31c16 17 24-12 39 8s23-8 42 8" fill="none" stroke="#d48d4c" stroke-width="4"/></svg>
+          </div>
+
+          <div class="canvas-object text-object" data-id="obj-trpv1" data-label="TRPV1 activation" data-type="text" style="left:650px;top:285px;width:160px;height:42px;--rot:0deg">TRPV1 activation</div>
+          <div class="canvas-object arrow-object" data-id="obj-arr1" data-label="Arrow" data-type="arrow" style="left:305px;top:290px;width:100px;height:44px;--rot:0deg">→</div>
+          <div class="canvas-object arrow-object" data-id="obj-arr2" data-label="Arrow" data-type="arrow" style="left:555px;top:290px;width:90px;height:44px;--rot:0deg">→</div>
+          <div class="canvas-object label-object" data-id="obj-ros" data-label="ROS" data-type="text" style="left:438px;top:370px;width:95px;height:34px;--rot:0deg">↑ ROS</div>
+          <div class="canvas-footer">BioPlot • Scientific Visualization Platform</div>
+
+          <div id="guideV" class="snap-guide vertical hidden"></div><div id="guideH" class="snap-guide horizontal hidden"></div>
+          <div id="selectionBox" class="selection-box hidden"><div class="rotate-stem"></div><button class="rotate-handle" data-rotate title="Rotate"></button><button class="resize-handle nw" data-resize="nw"></button><button class="resize-handle n" data-resize="n"></button><button class="resize-handle ne" data-resize="ne"></button><button class="resize-handle e" data-resize="e"></button><button class="resize-handle se" data-resize="se"></button><button class="resize-handle s" data-resize="s"></button><button class="resize-handle sw" data-resize="sw"></button><button class="resize-handle w" data-resize="w"></button></div>
+        </div>
+      </div>
+
+      <div class="canvas-controls"><button id="gridBtn" class="mini-btn"># <span data-en="Grid" data-fa="شبکه">Grid</span></button><button id="zoomOut" class="mini-btn">−</button><span id="zoomValue" class="zoom-value">80%</span><button id="zoomIn" class="mini-btn">+</button><button id="fitBtn" class="mini-btn" data-en="Fit" data-fa="جاگذاری">Fit</button></div>
+    </section>
+
+    <aside class="properties-panel">
+      <div class="panel-heading-row"><div><span class="eyebrow" data-en="SELECTION" data-fa="انتخاب">SELECTION</span><h2 id="selectionName">No selection</h2></div><button id="deleteBtn" class="icon-btn danger" title="Delete">⌫</button></div>
+      <div class="property-section"><div class="property-title" data-en="Position & size" data-fa="موقعیت و اندازه">Position & size</div><div class="field-grid"><label>X<input id="propX" type="number" /></label><label>Y<input id="propY" type="number" /></label><label>W<input id="propW" type="number" min="8" /></label><label>H<input id="propH" type="number" min="8" /></label></div><label class="full-field"><span data-en="Rotation" data-fa="چرخش">Rotation</span><input id="propRotation" type="number" value="0" /><em>°</em></label></div>
+      <div class="property-section"><div class="property-title" data-en="Appearance" data-fa="ظاهر">Appearance</div><label class="range-row"><span data-en="Opacity" data-fa="شفافیت">Opacity</span><input id="opacityRange" type="range" min="10" max="100" value="100"><b id="opacityValue">100%</b></label><div class="color-row"><button class="swatch" style="--swatch:#0b7a75" data-color="#0b7a75"></button><button class="swatch" style="--swatch:#316f9d" data-color="#316f9d"></button><button class="swatch" style="--swatch:#c97842" data-color="#c97842"></button><button class="swatch" style="--swatch:#6c5aa8" data-color="#6c5aa8"></button><button class="swatch" style="--swatch:#273847" data-color="#273847"></button></div></div>
+      <div class="property-section"><div class="property-title-row"><span class="property-title" data-en="Layers" data-fa="لایه‌ها">Layers</span><span class="layer-hint">drag order</span></div><div id="layersList" class="layers-list"></div></div>
+      <div class="shortcut-card"><b>⌘/Ctrl</b> C/V copy • <b>Shift</b> multi-select • <b>Enter</b> edit text</div>
+    </aside>
+  </main>
+</div>
+<input id="svgInput" type="file" accept=".svg,image/svg+xml" hidden />
+<script src="app.js"></script>
+</body>
+</html>
