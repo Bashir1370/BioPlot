@@ -1,86 +1,134 @@
-import { isSupabaseConfigured, supabase } from './lib/supabase'
+import { supabase } from './lib/supabase'
 
 type ProjectRow = {
   id: string
   title: string
   content: Record<string, unknown> | null
-  updated_at: string
-}
-
-type RecoverySnapshot = {
-  title: string
-  canvas_html: string
-  saved_at: string
 }
 
 const artboard = document.getElementById('artboard') as HTMLElement | null
 const titleInput = document.getElementById('docTitle') as HTMLInputElement | null
 const saveState = document.getElementById('saveState') as HTMLElement | null
 
+const SAVE_DEBOUNCE_MS = 700
+const RETRY_INITIAL_MS = 2_000
+const RETRY_MAX_MS = 30_000
+const DOCUMENT_CHANGED_EVENT = 'bioplot:document-changed'
+
 function setSaveLabel(text: string) {
   if (saveState) saveState.textContent = text
 }
 
 function isPersian() {
-  return document.documentElement.dir === 'rtl' || document.documentElement.lang === 'fa'
+  return (
+    document.documentElement.dir === 'rtl' ||
+    document.documentElement.lang === 'fa'
+  )
 }
 
-function applyStoredLanguage() {
-  const lang = localStorage.getItem('bioplot-lang') === 'fa' ? 'fa' : 'en'
-  document.documentElement.lang = lang
-  document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr'
-  document.body.classList.toggle('rtl', lang === 'fa')
+function labels() {
+  return isPersian()
+    ? {
+        connecting: 'در حال اتصال به فضای ابری…',
+        enabled: 'ذخیره‌سازی ابری فعال است',
+        dirty: 'تغییرات ذخیره‌نشده',
+        saving: 'در حال ذخیره ابری…',
+        saved: 'در فضای ابری ذخیره شد',
+        failed: 'ذخیره ابری ناموفق بود؛ دوباره تلاش می‌شود',
+        offline: 'آفلاین — تغییرات هنوز در فضای ابری ذخیره نشده‌اند',
+        openFailed: 'باز کردن پروژه ممکن نشد',
+      }
+    : {
+        connecting: 'Connecting to BioPlot Cloud…',
+        enabled: 'Cloud autosave enabled',
+        dirty: 'Unsaved changes',
+        saving: 'Saving to cloud…',
+        saved: 'Saved to cloud',
+        failed: 'Cloud save failed — retrying',
+        offline: 'Offline — changes are not yet saved to cloud',
+        openFailed: 'Could not open project',
+      }
 }
 
 function snapshotCanvas() {
   if (!artboard) return ''
+
   const clone = artboard.cloneNode(true) as HTMLElement
-  clone.querySelectorAll('.is-selected').forEach((node) => node.classList.remove('is-selected'))
-  clone.querySelectorAll('[contenteditable]').forEach((node) => node.removeAttribute('contenteditable'))
+
+  clone
+    .querySelectorAll('.is-selected')
+    .forEach((node) => node.classList.remove('is-selected'))
+
+  clone
+    .querySelectorAll('[contenteditable]')
+    .forEach((node) => node.removeAttribute('contenteditable'))
+
   clone.querySelector('#selectionBox')?.classList.add('hidden')
   clone.querySelector('#guideV')?.classList.add('hidden')
   clone.querySelector('#guideH')?.classList.add('hidden')
+
   return clone.innerHTML
 }
 
-function sanitizeCanvasHtml(html: string) {
-  const template = document.createElement('template')
-  template.innerHTML = html
+let legacyEditorPromise: Promise<void> | null = null
 
-  template.content
-    .querySelectorAll('script,iframe,object,embed,foreignObject')
-    .forEach((node) => node.remove())
+function loadLegacyEditor() {
+  if (legacyEditorPromise) return legacyEditorPromise
 
-  template.content.querySelectorAll('*').forEach((node) => {
-    for (const attribute of Array.from(node.attributes)) {
-      const name = attribute.name.toLowerCase()
-      const value = attribute.value.trim().toLowerCase()
-      if (
-        name.startsWith('on') ||
-        name === 'srcdoc' ||
-        ((name === 'href' || name.endsWith(':href')) && value.startsWith('javascript:'))
-      ) {
-        node.removeAttribute(attribute.name)
+  legacyEditorPromise = new Promise<void>((resolve, reject) => {
+    const existing =
+      document.querySelector<HTMLScriptElement>(
+        'script[data-bioplot-legacy-editor]',
+      )
+
+    if (existing) {
+      if (existing.dataset.loaded === 'true') {
+        resolve()
+        return
       }
+
+      existing.addEventListener('load', () => resolve(), {
+        once: true,
+      })
+
+      existing.addEventListener(
+        'error',
+        () =>
+          reject(
+            new Error('Could not load the BioPlot editor engine.'),
+          ),
+        { once: true },
+      )
+
+      return
     }
-  })
 
-  return template.innerHTML
-}
-
-async function loadLegacyEditor() {
-  await new Promise<void>((resolve, reject) => {
     const script = document.createElement('script')
+
     script.src = '/app.js'
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Could not load the BioPlot editor engine.'))
+    script.dataset.bioplotLegacyEditor = 'true'
+    script.async = false
+
+    script.onload = () => {
+      script.dataset.loaded = 'true'
+      resolve()
+    }
+
+    script.onerror = () =>
+      reject(
+        new Error('Could not load the BioPlot editor engine.'),
+      )
+
     document.body.appendChild(script)
   })
+
+  return legacyEditorPromise
 }
 
-async function ensureProject(userId: string) {
+async function ensureProject(userId: string): Promise<string> {
   const params = new URLSearchParams(window.location.search)
-  let projectId = params.get('project')
+  const projectId = params.get('project')
+
   if (projectId) return projectId
 
   const { data, error } = await supabase
@@ -89,62 +137,51 @@ async function ensureProject(userId: string) {
       owner_id: userId,
       title: 'Untitled scientific figure',
       project_type: 'figure',
-      content: { version: 1, editor: 'v2' },
+      content: {
+        version: 1,
+        editor: 'v2',
+      },
     })
     .select('id')
     .single()
 
   if (error) throw error
-  projectId = data.id
+
+  const createdProjectId = data.id as string
 
   const url = new URL(window.location.href)
-  url.searchParams.set('project', projectId)
+  url.searchParams.set('project', createdProjectId)
+
   window.history.replaceState({}, '', url)
-  return projectId
+
+  return createdProjectId
 }
 
 async function getProject(projectId: string) {
   const { data, error } = await supabase
     .from('projects')
-    .select('id,title,content,updated_at')
+    .select('id,title,content')
     .eq('id', projectId)
     .single()
 
   if (error) throw error
+
   return data as ProjectRow
 }
 
-function readRecovery(key: string): RecoverySnapshot | null {
-  try {
-    const raw = localStorage.getItem(key)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as Partial<RecoverySnapshot>
-    if (typeof parsed.canvas_html !== 'string' || typeof parsed.saved_at !== 'string') return null
-    return {
-      title: typeof parsed.title === 'string' ? parsed.title : 'Untitled scientific figure',
-      canvas_html: parsed.canvas_html,
-      saved_at: parsed.saved_at,
-    }
-  } catch {
-    return null
-  }
-}
-
 async function start() {
-  applyStoredLanguage()
-
-  if (!isSupabaseConfigured) {
-    setSaveLabel(isPersian() ? 'تنظیمات Supabase ناقص است' : 'Supabase is not configured')
-    return
-  }
-
   try {
-    setSaveLabel(isPersian() ? 'در حال اتصال به BioPlot Cloud…' : 'Connecting to BioPlot Cloud…')
+    setSaveLabel(labels().connecting)
 
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    const {
+      data: sessionData,
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
     if (sessionError) throw sessionError
 
     const session = sessionData.session
+
     if (!session) {
       window.location.replace('/')
       return
@@ -152,115 +189,227 @@ async function start() {
 
     const projectId = await ensureProject(session.user.id)
     const project = await getProject(projectId)
-    const recoveryKey = `bioplot:recovery:${projectId}`
-    const recovery = readRecovery(recoveryKey)
 
-    const cloudHtml = project.content && typeof project.content.canvas_html === 'string'
-      ? project.content.canvas_html
-      : null
+    let projectContent: Record<string, unknown> = {
+      ...(project.content ?? {}),
+    }
 
-    const recoveryIsNewer = recovery
-      ? Date.parse(recovery.saved_at) > Date.parse(project.updated_at)
-      : false
+    if (titleInput) {
+      titleInput.value = project.title
+    }
 
-    if (titleInput) titleInput.value = recoveryIsNewer && recovery ? recovery.title : project.title
+    const canvasHtml =
+      typeof projectContent.canvas_html === 'string'
+        ? projectContent.canvas_html
+        : null
 
-    const initialHtml = recoveryIsNewer && recovery ? recovery.canvas_html : cloudHtml
-    if (initialHtml && artboard) artboard.innerHTML = sanitizeCanvasHtml(initialHtml)
+    if (canvasHtml && artboard) {
+      artboard.innerHTML = canvasHtml
+    }
 
     await loadLegacyEditor()
 
-    let timer: number | undefined
+    let requestedRevision = 0
+    let savedRevision = 0
     let saving = false
-    let dirty = recoveryIsNewer
-    let stopped = false
 
-    const writeRecovery = () => {
-      try {
-        const snapshot: RecoverySnapshot = {
-          title: titleInput?.value.trim() || 'Untitled scientific figure',
-          canvas_html: snapshotCanvas(),
-          saved_at: new Date().toISOString(),
-        }
-        localStorage.setItem(recoveryKey, JSON.stringify(snapshot))
-      } catch (error) {
-        console.warn('Could not write BioPlot recovery snapshot', error)
-      }
+    let debounceTimer: number | undefined
+    let retryTimer: number | undefined
+
+    let retryDelay = RETRY_INITIAL_MS
+
+    const hasPendingChanges = () =>
+      saving || savedRevision < requestedRevision
+
+    const clearDebounce = () => {
+      window.clearTimeout(debounceTimer)
+      debounceTimer = undefined
     }
 
-    const saveProject = async () => {
-      if (saving || !dirty || stopped) return
+    const clearRetry = () => {
+      window.clearTimeout(retryTimer)
+      retryTimer = undefined
+    }
+
+    const scheduleRetry = () => {
+      if (!navigator.onLine) return
+      if (retryTimer !== undefined) return
+
+      const delay = retryDelay
+
+      retryDelay = Math.min(
+        retryDelay * 2,
+        RETRY_MAX_MS,
+      )
+
+      retryTimer = window.setTimeout(() => {
+        retryTimer = undefined
+        void flushSaveQueue()
+      }, delay)
+    }
+
+    const saveRevision = async (revision: number) => {
+      projectContent = {
+        ...projectContent,
+        version: 1,
+        editor: 'v2',
+        canvas_html: snapshotCanvas(),
+      }
+
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          title:
+            titleInput?.value.trim() ||
+            'Untitled scientific figure',
+
+          content: projectContent,
+        })
+        .eq('id', projectId)
+        .select('id')
+        .single()
+
+      if (error) throw error
+
+      savedRevision = revision
+    }
+
+    async function flushSaveQueue() {
+      clearDebounce()
+
+      if (saving) return
+      if (savedRevision >= requestedRevision) return
+
+      if (!navigator.onLine) {
+        setSaveLabel(labels().offline)
+        return
+      }
+
       saving = true
+      clearRetry()
 
-      while (dirty && !stopped) {
-        dirty = false
-        setSaveLabel(isPersian() ? 'در حال ذخیره ابری…' : 'Saving to cloud…')
+      try {
+        /*
+         * Important:
+         *
+         * If another edit occurs while the current request
+         * is being saved, requestedRevision increases.
+         *
+         * The loop therefore immediately performs another
+         * save instead of silently losing the newer edit.
+         */
+        while (savedRevision < requestedRevision) {
+          const revisionToSave = requestedRevision
 
-        const payload = {
-          title: titleInput?.value.trim() || 'Untitled scientific figure',
-          content: {
-            version: 1,
-            editor: 'v2',
-            canvas_html: snapshotCanvas(),
-          },
+          setSaveLabel(labels().saving)
+
+          await saveRevision(revisionToSave)
         }
 
-        const { error } = await supabase
-          .from('projects')
-          .update(payload)
-          .eq('id', projectId)
+        retryDelay = RETRY_INITIAL_MS
 
-        if (error) {
-          console.error(error)
-          dirty = true
-          writeRecovery()
-          setSaveLabel(isPersian() ? 'ذخیره ابری ناموفق؛ نسخه محلی امن است' : 'Cloud save failed; local recovery is safe')
-          break
-        }
+        setSaveLabel(labels().saved)
+      } catch (error) {
+        console.error(
+          'BioPlot cloud save failed:',
+          error,
+        )
 
-        localStorage.removeItem(recoveryKey)
-        setSaveLabel(isPersian() ? 'ذخیره شد در فضای ابری' : 'Saved to cloud')
+        setSaveLabel(labels().failed)
+
+        scheduleRetry()
+      } finally {
+        saving = false
       }
-
-      saving = false
     }
 
-    const scheduleSave = () => {
-      if (stopped) return
-      dirty = true
-      writeRecovery()
-      window.clearTimeout(timer)
-      timer = window.setTimeout(() => void saveProject(), 700)
+    const scheduleSave = (
+      delay = SAVE_DEBOUNCE_MS,
+    ) => {
+      clearDebounce()
+
+      debounceTimer = window.setTimeout(
+        () => void flushSaveQueue(),
+        delay,
+      )
     }
 
-    window.addEventListener('bioplot:document-change', scheduleSave)
+    const markDocumentChanged = () => {
+      requestedRevision += 1
 
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden' && dirty) {
-        window.clearTimeout(timer)
-        void saveProject()
-      }
-    })
+      setSaveLabel(
+        navigator.onLine
+          ? labels().dirty
+          : labels().offline,
+      )
 
-    window.addEventListener('pagehide', () => {
-      if (dirty) writeRecovery()
-    })
-
-    window.addEventListener('beforeunload', () => {
-      window.clearTimeout(timer)
-      if (dirty) writeRecovery()
-      stopped = true
-    })
-
-    if (recoveryIsNewer) {
-      setSaveLabel(isPersian() ? 'نسخه محلی بازیابی شد؛ در حال همگام‌سازی…' : 'Recovered local changes; syncing…')
       scheduleSave()
-    } else {
-      setSaveLabel(isPersian() ? 'ذخیره ابری فعال است' : 'Cloud autosave enabled')
     }
+
+    /*
+     * The legacy editor explicitly tells the cloud layer
+     * whenever document content changes.
+     *
+     * We no longer inspect UI text with MutationObserver.
+     */
+    window.addEventListener(
+      DOCUMENT_CHANGED_EVENT,
+      markDocumentChanged,
+    )
+
+    window.addEventListener('online', () => {
+      if (savedRevision < requestedRevision) {
+        scheduleSave(0)
+        return
+      }
+
+      setSaveLabel(labels().enabled)
+    })
+
+    window.addEventListener('offline', () => {
+      if (hasPendingChanges()) {
+        setSaveLabel(labels().offline)
+      }
+    })
+
+    /*
+     * Browsers may suspend a background tab.
+     * Try to flush pending edits when the page becomes hidden.
+     */
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        if (
+          document.visibilityState === 'hidden' &&
+          savedRevision < requestedRevision
+        ) {
+          void flushSaveQueue()
+        }
+      },
+    )
+
+    /*
+     * Never silently allow the user to leave while
+     * there are unsaved changes.
+     */
+    window.addEventListener(
+      'beforeunload',
+      (event) => {
+        if (!hasPendingChanges()) return
+
+        event.preventDefault()
+        event.returnValue = ''
+      },
+    )
+
+    setSaveLabel(labels().enabled)
   } catch (error) {
-    console.error(error)
-    setSaveLabel(isPersian() ? 'خطا در اتصال به پروژه' : 'Could not open project')
+    console.error(
+      'BioPlot project bootstrap failed:',
+      error,
+    )
+
+    setSaveLabel(labels().openFailed)
   }
 }
 
