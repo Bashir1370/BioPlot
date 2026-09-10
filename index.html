@@ -1,79 +1,17 @@
 <!doctype html>
-<html lang="en" dir="ltr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#0b7a75" />
-  <title>BioPlot — Scientific Visualization Platform</title>
-  <meta name="description" content="BioPlot is a bilingual scientific visualization workspace for figures, plots, pathways and publication-ready visuals." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="dashboard.css" />
-</head>
-<body>
-<div class="dashboard-shell">
-  <aside class="sidebar">
-    <a class="brand" href="index.html" aria-label="BioPlot home">
-      <span class="brand-mark"><i></i><i></i><i></i><b>B</b></span>
-      <span>BioPlot</span>
-    </a>
-
-    <nav class="side-nav">
-      <a class="nav-item active" href="index.html"><span>⌂</span><em data-en="Home" data-fa="خانه">Home</em></a>
-      <a class="nav-item" href="#projects"><span>▣</span><em data-en="Projects" data-fa="پروژه‌ها">Projects</em></a>
-      <a class="nav-item" href="#templates"><span>▦</span><em data-en="Templates" data-fa="قالب‌ها">Templates</em></a>
-      <a class="nav-item" href="editor.html"><span>✦</span><em data-en="Editor" data-fa="ویرایشگر">Editor</em></a>
-      <a class="nav-item" href="#library"><span>◫</span><em data-en="Library" data-fa="کتابخانه">Library</em></a>
-    </nav>
-
-    <div class="sidebar-bottom">
-      <div class="plan-card"><span class="plan-kicker">BIOPLOT BETA</span><b data-en="Built for scientific thinking" data-fa="ساخته‌شده برای تفکر علمی">Built for scientific thinking</b><p data-en="Figures today. Plots, pathways and networks next." data-fa="امروز شکل‌های علمی؛ سپس نمودار، مسیر و شبکه.">Figures today. Plots, pathways and networks next.</p></div>
-      <a class="nav-item" href="#"><span>?</span><em data-en="Help & feedback" data-fa="راهنما و بازخورد">Help & feedback</em></a>
-    </div>
-  </aside>
-
-  <main class="main-content">
-    <header class="dashboard-topbar">
-      <div class="search-global"><span>⌕</span><input type="search" data-ph-en="Search projects, templates, scientific assets..." data-ph-fa="جست‌وجوی پروژه، قالب و المان علمی..." placeholder="Search projects, templates, scientific assets..." /></div>
-      <div class="top-actions"><button id="langBtn" class="text-btn">FA</button><button class="icon-action" title="Notifications">○</button><div class="user-chip"><span class="avatar">BP</span><div><b>BioPlot User</b><small data-en="Research workspace" data-fa="فضای پژوهشی">Research workspace</small></div><span>⌄</span></div></div>
-    </header>
-
-    <section class="welcome-row">
-      <div><span class="eyebrow" data-en="SCIENTIFIC VISUALIZATION WORKSPACE" data-fa="فضای مصورسازی علمی">SCIENTIFIC VISUALIZATION WORKSPACE</span><h1 data-en="What will you create today?" data-fa="امروز چه چیزی می‌سازی؟">What will you create today?</h1><p data-en="Turn biological ideas, data and mechanisms into clear, publication-ready visuals." data-fa="ایده‌های زیستی، داده‌ها و مکانیسم‌ها را به تصاویر واضح و آماده انتشار تبدیل کن.">Turn biological ideas, data and mechanisms into clear, publication-ready visuals.</p></div>
-      <a class="primary-cta" href="editor.html"><span>＋</span><span data-en="New project" data-fa="پروژه جدید">New project</span></a>
-    </section>
-
-    <section class="create-grid" aria-label="Create a new project">
-      <a class="create-card featured" href="editor.html"><div class="card-icon figure-icon"><span>◉</span><i></i><b></b></div><div class="card-copy"><span class="status available" data-en="Available" data-fa="فعال">Available</span><h3 data-en="Scientific Figure" data-fa="شکل علمی">Scientific Figure</h3><p data-en="Build mechanisms, workflows and biological illustrations." data-fa="مکانیسم‌ها، فرایندها و تصاویر زیستی را طراحی کن.">Build mechanisms, workflows and biological illustrations.</p></div><span class="card-arrow">→</span></a>
-      <a class="create-card" href="editor.html"><div class="card-icon plot-icon"><i></i><i></i><i></i><i></i></div><div class="card-copy"><span class="status preview" data-en="Preview" data-fa="پیش‌نمایش">Preview</span><h3 data-en="Plot & Chart" data-fa="نمودار و چارت">Plot & Chart</h3><p data-en="Create publication-style plots inside the same workspace." data-fa="نمودارهای علمی را در همان فضای کاری بساز.">Create publication-style plots inside the same workspace.</p></div><span class="card-arrow">→</span></a>
-      <a class="create-card" href="editor.html"><div class="card-icon abstract-icon"><span>A</span><i></i><b></b></div><div class="card-copy"><span class="status available" data-en="Available" data-fa="فعال">Available</span><h3 data-en="Graphical Abstract" data-fa="چکیده گرافیکی">Graphical Abstract</h3><p data-en="Summarize a study visually for manuscripts and presentations." data-fa="مطالعه را برای مقاله و ارائه به‌صورت بصری خلاصه کن.">Summarize a study visually for manuscripts and presentations.</p></div><span class="card-arrow">→</span></a>
-      <a class="create-card" href="editor.html"><div class="card-icon pathway-icon"><span>●</span><i></i><b>●</b></div><div class="card-copy"><span class="status soon" data-en="Coming soon" data-fa="به‌زودی">Coming soon</span><h3 data-en="Pathway" data-fa="مسیر زیستی">Pathway</h3><p data-en="Map signaling and molecular pathways with structured nodes." data-fa="مسیرهای پیام‌رسانی و مولکولی را با نودهای ساختاریافته رسم کن.">Map signaling and molecular pathways with structured nodes.</p></div><span class="card-arrow muted">→</span></a>
-      <a class="create-card" href="editor.html"><div class="card-icon network-icon"><span></span><i></i><b></b><em></em></div><div class="card-copy"><span class="status soon" data-en="Coming soon" data-fa="به‌زودی">Coming soon</span><h3 data-en="Network" data-fa="شبکه">Network</h3><p data-en="Visualize gene, protein and systems-biology networks." data-fa="شبکه‌های ژن، پروتئین و سیستم‌بیولوژی را مصور کن.">Visualize gene, protein and systems-biology networks.</p></div><span class="card-arrow muted">→</span></a>
-    </section>
-
-    <section id="projects" class="content-section">
-      <div class="section-head"><div><span class="eyebrow" data-en="YOUR WORK" data-fa="کارهای شما">YOUR WORK</span><h2 data-en="Recent projects" data-fa="پروژه‌های اخیر">Recent projects</h2></div><button class="link-button" data-en="View all" data-fa="مشاهده همه">View all <span>→</span></button></div>
-      <div class="project-grid">
-        <a class="project-card" href="editor.html"><div class="project-preview mechanism"><div class="mini-title"></div><div class="mini-neuron"></div><div class="mini-arrow">→</div><div class="mini-organelle"></div><div class="mini-label"></div></div><div class="project-meta"><div><b>OIPN mechanism</b><small data-en="Scientific figure · Edited today" data-fa="شکل علمی · امروز ویرایش شده">Scientific figure · Edited today</small></div><button>⋯</button></div></a>
-        <a class="project-card" href="editor.html"><div class="project-preview volcano"><div class="axis x"></div><div class="axis y"></div><span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span><span class="dot d4"></span><span class="dot d5"></span><span class="dot d6"></span><span class="dot d7"></span><span class="dot d8"></span><div class="threshold"></div></div><div class="project-meta"><div><b>RNA-seq volcano plot</b><small data-en="Plot · Edited yesterday" data-fa="نمودار · دیروز ویرایش شده">Plot · Edited yesterday</small></div><button>⋯</button></div></a>
-        <a class="project-card" href="editor.html"><div class="project-preview abstract"><div class="paper-head"></div><div class="block b1"></div><div class="block b2"></div><div class="block b3"></div><span>→</span><span>→</span></div><div class="project-meta"><div><b>TRPV1 graphical abstract</b><small data-en="Graphical abstract · 3 days ago" data-fa="چکیده گرافیکی · ۳ روز قبل">Graphical abstract · 3 days ago</small></div><button>⋯</button></div></a>
-        <a class="new-project-card" href="editor.html"><span>＋</span><b data-en="Create new project" data-fa="ساخت پروژه جدید">Create new project</b><small data-en="Start from a blank canvas" data-fa="از یک بوم خالی شروع کن">Start from a blank canvas</small></a>
-      </div>
-    </section>
-
-    <section id="templates" class="content-section template-section">
-      <div class="section-head"><div><span class="eyebrow" data-en="START FASTER" data-fa="شروع سریع‌تر">START FASTER</span><h2 data-en="Recommended templates" data-fa="قالب‌های پیشنهادی">Recommended templates</h2></div><button class="link-button" data-en="Browse templates" data-fa="مرور قالب‌ها">Browse templates <span>→</span></button></div>
-      <div class="template-grid">
-        <a class="template-card" href="editor.html"><div class="template-art t1"><span class="cell-dot"></span><span class="arr">→</span><span class="mito-dot"></span><span class="arr a2">→</span><span class="receptor"></span></div><div><b data-en="Mechanism figure" data-fa="شکل مکانیسمی">Mechanism figure</b><small data-en="Pathway & mechanism" data-fa="مسیر و مکانیسم">Pathway & mechanism</small></div></a>
-        <a class="template-card" href="editor.html"><div class="template-art t2"><span class="step s1">1</span><span class="line l1"></span><span class="step s2">2</span><span class="line l2"></span><span class="step s3">3</span></div><div><b data-en="Experimental workflow" data-fa="فرایند آزمایش">Experimental workflow</b><small data-en="Methods & study design" data-fa="روش‌ها و طراحی مطالعه">Methods & study design</small></div></a>
-        <a class="template-card" href="editor.html"><div class="template-art t3"><span class="heat h1"></span><span class="heat h2"></span><span class="heat h3"></span><span class="heat h4"></span><span class="heat h5"></span><span class="heat h6"></span></div><div><b data-en="Multi-panel figure" data-fa="شکل چندپنلی">Multi-panel figure</b><small data-en="Manuscript figure" data-fa="شکل مقاله">Manuscript figure</small></div></a>
-      </div>
-    </section>
-
-    <footer><span>BioPlot</span><small data-en="Scientific visualization, built for researchers." data-fa="مصورسازی علمی، ساخته‌شده برای پژوهشگران.">Scientific visualization, built for researchers.</small></footer>
-  </main>
-</div>
-<script src="dashboard.js"></script>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b7a75" />
+    <meta name="description" content="BioPlot is a bilingual scientific visualization workspace for figures, plots, pathways and publication-ready visuals." />
+    <title>BioPlot — Scientific Visualization Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
