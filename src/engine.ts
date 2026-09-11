@@ -269,6 +269,20 @@ export class HistoryManager {
   get canRedo() { return this.redoStack.length > 0; }
 }
 
+// Keep undo/redo attached to the page where the edit was made, even after navigation.
+class PageScopedCommand implements Command {
+  constructor(private command:Command,private pageId:string){}
+  get label(){return this.command.label;}
+  private apply(document:BioPlotDocument,method:'execute'|'undo'){
+    if(!document.pages.some(page=>page.id===this.pageId))return document;
+    const next=cloneDocument(document);
+    next.activePageId=this.pageId;
+    return this.command[method](next);
+  }
+  execute(document:BioPlotDocument){return this.apply(document,'execute');}
+  undo(document:BioPlotDocument){return this.apply(document,'undo');}
+}
+
 export class BioPlotStore {
   private document: BioPlotDocument;
   readonly history = new HistoryManager();
@@ -277,7 +291,7 @@ export class BioPlotStore {
   get snapshot() { return this.document; }
   subscribe(listener: (document: BioPlotDocument) => void) { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; }
   replace(document: BioPlotDocument) { this.document = document; this.emit(); }
-  dispatch(command: Command) { this.document = this.history.execute(this.document, command); this.emit(); }
+  dispatch(command: Command) { this.document = this.history.execute(this.document, new PageScopedCommand(command,this.document.activePageId)); this.emit(); }
   undo() { this.document = this.history.undo(this.document); this.emit(); }
   redo() { this.document = this.history.redo(this.document); this.emit(); }
   preview(objects: BioPlotObject[]) {
@@ -291,7 +305,7 @@ export class BioPlotStore {
   commitObjectState(before: BioPlotObject[], after: BioPlotObject[], label: string) {
     const command = new ObjectStateCommand(label, before, after);
     this.document = command.execute(this.document);
-    this.history.record(command);
+    this.history.record(new PageScopedCommand(command,this.document.activePageId));
     this.emit();
   }
   private emit() { this.listeners.forEach(listener => listener(this.document)); }

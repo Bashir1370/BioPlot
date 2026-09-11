@@ -2,6 +2,12 @@ import type { CSSProperties } from 'react';
 
 // Interface geometry shares one stroke, grid and optical size.
 const paths = {
+  plus:'M12 5v14 M5 12h14',
+  fit:'M3 9V3h6 M15 3h6v6 M21 15v6h-6 M9 21H3v-6 M8 8h8v8H8z',
+  grid:'M3 3h18v18H3z M9 3v18 M15 3v18 M3 9h18 M3 15h18',
+  canvas:'M3 4h18v16H3z M6 7h3 M6 7v3 M18 17h-3 M18 17v-3',
+  paint:'M6 3l13 13 M5 8l7-7 M3 12l8-8 9 9-8 8-9-9z M3 12h17',
+  chevron:'M9 5l7 7-7 7',
   assets: 'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z',
   elements: 'M4 4h8v8H4z M15 15h6v6h-6z M18 3v7 M14.5 6.5h7 M7 16v5 M4.5 18.5h5',
   upload: 'M12 16V3 M7 8l5-5 5 5 M4 15v5h16v-5',
