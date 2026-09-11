@@ -1,0 +1,417 @@
+/* BioPlot Figure Studio UX v2
+   Canvas-first professional editing surface inspired by modern design tools.
+   This layer intentionally overrides legacy editor layout without changing the editor engine. */
+
+.studio-shell{
+  --studio-bg:#f3f6f7;
+  --studio-panel:rgba(255,255,255,.96);
+  --studio-border:#dfe7ea;
+  --studio-border-strong:#cad7dc;
+  --studio-ink:#18313e;
+  --studio-muted:#748690;
+  --studio-brand:#087b76;
+  --studio-brand-soft:#e9f7f5;
+  --studio-hover:#f3f8f8;
+  --studio-shadow-sm:0 4px 14px rgba(31,58,69,.07);
+  --studio-shadow-md:0 14px 38px rgba(31,58,69,.12);
+  --studio-shadow-lg:0 24px 64px rgba(31,58,69,.16);
+  grid-template-rows:58px minmax(0,1fr);
+  background:var(--studio-bg);
+}
+
+/* ---------- App bar ---------- */
+.studio-topbar{
+  height:58px;
+  padding:0 12px;
+  gap:10px;
+  background:rgba(255,255,255,.96);
+  border-bottom:1px solid var(--studio-border);
+  box-shadow:0 1px 0 rgba(255,255,255,.7);
+  backdrop-filter:blur(18px);
+}
+.studio-brand>span{
+  width:32px;height:32px;border-radius:9px;
+  box-shadow:0 7px 18px rgba(8,123,118,.18);
+}
+.studio-brand strong{font-size:14px;letter-spacing:-.02em}
+.studio-brand em{font-size:7px;color:#8a9aa2}
+.studio-document input{
+  height:32px;
+  min-width:220px;
+  font-size:12px;
+  border-radius:8px;
+}
+.studio-document small{font-size:7px;color:#84959d}
+.studio-history button,.studio-top-actions button,.studio-icon-btn{
+  height:32px;
+  border-color:var(--studio-border);
+  border-radius:8px;
+  background:#fff;
+  transition:background .14s ease,border-color .14s ease,transform .14s ease,box-shadow .14s ease;
+}
+.studio-history button:hover,.studio-top-actions button:hover,.studio-icon-btn:hover{
+  background:var(--studio-hover);
+  border-color:#c7d8dc;
+  box-shadow:var(--studio-shadow-sm);
+}
+.studio-top-actions .studio-export{
+  background:var(--studio-brand);
+  border-color:var(--studio-brand);
+  box-shadow:0 7px 18px rgba(8,123,118,.18);
+}
+.studio-top-actions .studio-export:hover{background:#066c68;border-color:#066c68}
+
+/* ---------- Workspace hierarchy ---------- */
+.studio-workspace{
+  background:var(--studio-bg);
+  isolation:isolate;
+}
+.studio-rail{
+  padding:8px 5px;
+  background:rgba(255,255,255,.98);
+  border-inline-end:1px solid var(--studio-border);
+}
+.studio-rail button{
+  min-height:50px;
+  border-radius:10px;
+  gap:3px;
+  transition:background .14s ease,color .14s ease,transform .14s ease;
+}
+.studio-rail button span{font-size:17px}
+.studio-rail button small{font-size:7px;letter-spacing:.01em}
+.studio-rail button:hover{transform:translateY(-1px)}
+.studio-rail button.active{
+  background:var(--studio-brand-soft);
+  color:var(--studio-brand);
+  box-shadow:inset 0 0 0 1px rgba(8,123,118,.08);
+}
+
+/* ---------- Library: denser, calmer, easier to scan ---------- */
+.studio-library{
+  padding:12px;
+  border-inline-end:1px solid var(--studio-border);
+  background:rgba(255,255,255,.98);
+  scrollbar-width:thin;
+  scrollbar-color:#c7d3d7 transparent;
+}
+.studio-panel-heading{margin-bottom:10px;align-items:center}
+.studio-panel-heading small{font-size:7px;letter-spacing:.11em}
+.studio-panel-heading h2{font-size:15px;margin-top:3px;letter-spacing:-.01em}
+.studio-panel-heading>button{width:26px;height:26px;border-radius:7px}
+.studio-search{
+  height:35px;
+  border-color:var(--studio-border);
+  background:#fbfcfd;
+  border-radius:9px;
+  transition:border-color .14s ease,box-shadow .14s ease,background .14s ease;
+}
+.studio-search:focus-within{
+  background:#fff;
+  border-color:#9fcfc9;
+  box-shadow:0 0 0 3px rgba(8,123,118,.08);
+}
+.asset-mode-tabs{gap:5px;margin:8px 0!important}
+.asset-mode-tabs button{padding:6px 8px!important;border-radius:8px!important;font-size:8px!important}
+.asset-category-select{height:33px!important;margin-bottom:8px!important;font-size:9px}
+.studio-assets{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+  margin-top:8px;
+}
+.studio-assets button{
+  height:104px;
+  border-color:var(--studio-border);
+  border-radius:11px;
+  grid-template-rows:57px auto auto;
+  padding:6px;
+  box-shadow:0 1px 0 rgba(31,58,69,.02);
+}
+.studio-assets button:hover{
+  transform:translateY(-2px);
+  background:#fff;
+  border-color:#a7d4cf;
+  box-shadow:0 10px 24px rgba(31,58,69,.09);
+}
+.studio-assets button>span{width:56px;height:56px}
+.studio-assets svg{max-width:54px;max-height:52px}
+.studio-assets b{font-size:8px}
+.studio-assets small{font-size:6.5px}
+.asset-favorite{width:22px!important;height:22px!important;top:4px!important;right:4px!important}
+
+/* ---------- Canvas: the hero of the screen ---------- */
+.studio-workspace>.studio-canvas-zone{
+  z-index:1;
+  background:var(--studio-bg);
+  grid-template-rows:minmax(0,1fr) 36px!important;
+}
+.studio-canvas-scroll{
+  grid-row:1!important;
+  padding:78px 86px 88px;
+  place-items:center;
+  background-color:#f3f6f7;
+  background-image:
+    radial-gradient(circle at 1px 1px,rgba(104,123,132,.13) 1px,transparent 0);
+  background-size:20px 20px;
+  scrollbar-width:thin;
+  scrollbar-color:#bbc8cd transparent;
+  overscroll-behavior:contain;
+}
+.studio-artboard{
+  border-radius:2px;
+  box-shadow:0 1px 2px rgba(31,58,69,.06),0 24px 64px rgba(31,58,69,.17);
+}
+
+/* ---------- Context bar: floating and contextual ---------- */
+.studio-selection-toolbar{
+  position:absolute;
+  top:12px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:42;
+  width:max-content;
+  max-width:min(880px,calc(100% - 32px));
+  min-height:38px;
+  padding:4px;
+  gap:3px;
+  border:1px solid rgba(202,215,220,.95);
+  border-radius:11px;
+  background:rgba(255,255,255,.94);
+  box-shadow:0 10px 30px rgba(31,58,69,.12);
+  backdrop-filter:blur(18px);
+  overflow-x:auto;
+}
+.studio-selection-toolbar>span{padding:0 9px;font-size:8px}
+.studio-selection-toolbar button{
+  height:29px;
+  border-color:transparent;
+  background:transparent;
+  border-radius:7px;
+  padding:0 8px;
+  font-size:8px;
+  transition:background .12s ease,color .12s ease;
+}
+.studio-selection-toolbar button:hover{
+  background:var(--studio-brand-soft);
+  border-color:transparent;
+  color:var(--studio-brand);
+}
+.toolbar-group{
+  margin:0;
+  padding-inline-end:4px;
+  border-inline-end:1px solid #e4eaec;
+}
+.align-group button{min-width:29px;padding:0 5px}
+
+/* ---------- Smart Inspector Drawer ---------- */
+.studio-workspace>.studio-inspector{
+  position:absolute!important;
+  grid-column:auto!important;
+  grid-row:auto!important;
+  top:62px!important;
+  inset-inline-end:16px!important;
+  inset-inline-start:auto!important;
+  left:auto!important;
+  right:auto!important;
+  width:min(380px,calc(100% - 32px))!important;
+  height:min(560px,calc(100% - 118px))!important;
+  z-index:48!important;
+  display:grid!important;
+  grid-template-rows:46px minmax(0,1fr)!important;
+  border:1px solid rgba(205,217,221,.96)!important;
+  border-radius:15px!important;
+  background:rgba(255,255,255,.97)!important;
+  box-shadow:0 22px 60px rgba(31,58,69,.18)!important;
+  backdrop-filter:blur(20px)!important;
+  overflow:hidden!important;
+}
+.studio-workspace>.studio-inspector.collapsed{visibility:hidden!important;pointer-events:none!important}
+.studio-workspace>.studio-inspector .inspector-tabs{
+  height:46px!important;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) 30px!important;
+  align-items:stretch!important;
+  padding:0 8px!important;
+  background:#fbfcfd!important;
+  border-bottom:1px solid var(--studio-border)!important;
+}
+.studio-workspace>.studio-inspector .inspector-tabs>button{
+  height:46px!important;
+  font-size:8px!important;
+  border-radius:0!important;
+}
+.studio-workspace>.studio-inspector .inspector-tabs>button.active{
+  color:var(--studio-brand)!important;
+  border-bottom:2px solid var(--studio-brand)!important;
+}
+
+/* Reset the previous horizontal-ribbon layout back to a focused vertical drawer. */
+.studio-workspace>.studio-inspector .studio-properties{
+  height:auto!important;
+  display:block!important;
+  padding:13px!important;
+  overflow:auto!important;
+}
+.studio-workspace>.studio-inspector .property-selection{
+  min-width:0!important;
+  padding:0!important;
+}
+.studio-workspace>.studio-inspector .property-selection h2{font-size:14px!important}
+.studio-workspace>.studio-inspector .studio-properties>section{
+  min-width:0!important;
+  max-width:none!important;
+  height:auto!important;
+  overflow:visible!important;
+  border-inline-start:0!important;
+  border-top:1px solid var(--studio-border)!important;
+  margin-top:12px!important;
+  padding:11px 0 0!important;
+}
+.studio-workspace>.studio-inspector .studio-properties>section:has(.symbol-grid){min-width:0!important;max-width:none!important}
+.studio-workspace>.studio-inspector .property-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.studio-workspace>.studio-inspector .symbol-grid{grid-template-columns:repeat(8,1fr)!important;margin:7px 0!important}
+.studio-workspace>.studio-inspector .property-stack textarea{min-height:62px!important;max-height:none!important}
+
+.studio-workspace>.studio-inspector .layers-panel-v2{
+  height:auto!important;
+  display:block!important;
+  padding:10px!important;
+  overflow:auto!important;
+}
+.studio-workspace>.studio-inspector .layers-panel-v2 .studio-search{height:34px!important;margin-bottom:8px!important}
+.studio-workspace>.studio-inspector .studio-layers{
+  display:grid!important;
+  gap:3px!important;
+  overflow:visible!important;
+  padding:0!important;
+}
+.studio-workspace>.studio-inspector .layer-group{min-width:0!important;max-height:none!important;overflow:visible!important}
+
+.studio-workspace>.studio-inspector .quality-panel{
+  height:auto!important;
+  padding:12px!important;
+  display:block!important;
+  overflow:auto!important;
+}
+.studio-workspace>.studio-inspector .quality-score{height:auto!important}
+.studio-workspace>.studio-inspector .quality-list{display:grid!important;gap:7px!important;overflow:visible!important}
+.studio-workspace>.studio-inspector .quality-issue{min-width:0!important;max-width:none!important;height:auto!important;overflow:visible!important}
+
+.studio-workspace>.studio-inspector .export-panel-v2{
+  height:auto!important;
+  padding:12px!important;
+  display:block!important;
+  overflow:auto!important;
+}
+.studio-workspace>.studio-inspector .export-card{min-width:0!important}
+.studio-workspace>.studio-inspector .export-panel-v2>section,
+.studio-workspace>.studio-inspector .export-selection{
+  min-width:0!important;
+  border-inline-start:0!important;
+  border-top:1px solid var(--studio-border)!important;
+  margin-top:12px!important;
+  padding:11px 0 0!important;
+}
+
+/* Closed state: subtle floating re-open pill. */
+.studio-workspace>.studio-open-inspector{
+  position:absolute!important;
+  grid-column:auto!important;
+  grid-row:auto!important;
+  top:12px!important;
+  inset-inline-end:14px!important;
+  inset-inline-start:auto!important;
+  left:auto!important;
+  right:auto!important;
+  z-index:43!important;
+  height:34px!important;
+  padding:0 11px!important;
+  border:1px solid var(--studio-border)!important;
+  border-radius:9px!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--studio-shadow-sm)!important;
+  backdrop-filter:blur(14px);
+}
+
+/* ---------- Selection affordances ---------- */
+.studio-object.is-selected{outline-color:rgba(28,136,161,.48);outline-offset:2px}
+.studio-selection{border:1px solid #2c8da8;box-shadow:0 0 0 1px rgba(255,255,255,.75)}
+.studio-handle,.studio-rotate{
+  width:9px;height:9px;
+  border:1.5px solid #2c8da8;
+  border-radius:3px;
+  box-shadow:0 1px 3px rgba(31,58,69,.12);
+}
+.studio-rotate{border-radius:50%}
+.studio-guide{background:#d9468f;box-shadow:0 0 0 .5px rgba(255,255,255,.8)}
+.studio-marquee{border-color:#3b91ac;background:rgba(59,145,172,.07)}
+
+/* ---------- Status / viewport controls ---------- */
+.studio-statusbar{
+  grid-row:2!important;
+  height:36px;
+  padding:0 10px;
+  border-top:1px solid var(--studio-border);
+  background:rgba(255,255,255,.96);
+  font-size:7px;
+  backdrop-filter:blur(16px);
+}
+.studio-statusbar button{
+  height:25px;
+  min-width:27px;
+  border-color:var(--studio-border);
+  background:#fff;
+  border-radius:7px;
+}
+.studio-statusbar button:hover{background:var(--studio-hover);color:var(--studio-brand)}
+.studio-statusbar div span{font-size:8px;min-width:42px}
+
+/* ---------- Context menu ---------- */
+.studio-context-menu{
+  width:196px;
+  padding:6px;
+  border-color:var(--studio-border);
+  border-radius:12px;
+  box-shadow:0 20px 54px rgba(31,58,69,.2);
+  backdrop-filter:blur(18px);
+}
+.studio-context-menu button{height:32px;border-radius:7px;font-size:8px}
+
+/* ---------- Micro polish ---------- */
+.studio-library,.studio-inspector,.studio-selection-toolbar,.studio-context-menu{
+  -webkit-font-smoothing:antialiased;
+}
+.studio-shell button:focus-visible,.studio-shell input:focus-visible,.studio-shell select:focus-visible,.studio-shell textarea:focus-visible{
+  outline:2px solid rgba(8,123,118,.32);
+  outline-offset:1px;
+}
+.studio-shell button{transition:background .12s ease,border-color .12s ease,color .12s ease,box-shadow .12s ease,transform .12s ease}
+.studio-shell ::-webkit-scrollbar{width:9px;height:9px}
+.studio-shell ::-webkit-scrollbar-track{background:transparent}
+.studio-shell ::-webkit-scrollbar-thumb{background:#c5d0d4;border:2px solid transparent;background-clip:padding-box;border-radius:99px}
+.studio-shell ::-webkit-scrollbar-thumb:hover{background:#aebdc2;border:2px solid transparent;background-clip:padding-box}
+
+/* Keep UI Persian modern; B Nazanin remains the scientific Persian figure font via typography resolver. */
+html[lang="fa"] .studio-shell,html[dir="rtl"] .studio-shell{
+  font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;
+}
+
+@media(max-width:1280px){
+  .studio-workspace>.studio-inspector{width:min(350px,calc(100% - 28px))!important;inset-inline-end:14px!important}
+  .studio-canvas-scroll{padding:70px 54px 80px}
+}
+@media(max-width:980px){
+  .studio-brand em{display:none}
+  .studio-document input{min-width:150px;max-width:32vw}
+  .studio-top-actions button:not(.studio-export){padding:0 8px}
+  .studio-selection-toolbar{max-width:calc(100% - 20px)}
+  .studio-canvas-scroll{padding:64px 30px 76px}
+  .studio-workspace>.studio-inspector{top:58px!important;width:min(340px,calc(100% - 20px))!important;inset-inline-end:10px!important}
+}
+@media(max-width:720px){
+  .studio-topbar{grid-template-columns:auto 1fr auto!important}
+  .studio-brand strong,.studio-history{display:none}
+  .studio-top-actions button:not(.studio-export){display:none}
+  .studio-document input{min-width:110px;max-width:45vw}
+  .studio-selection-toolbar{top:8px}
+  .studio-workspace>.studio-inspector{top:54px!important;width:calc(100% - 16px)!important;inset-inline-end:8px!important;height:min(520px,calc(100% - 92px))!important}
+}

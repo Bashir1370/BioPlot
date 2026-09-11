@@ -6,6 +6,7 @@ import { isEditorPath } from './routing';
 import './styles-v3.css';
 import './home-top-nav.css';
 import './editor-pro.css';
+import './figure-studio-v2.css';
 import './template-previews-pro.css';
 
 const root = document.getElementById('root');
