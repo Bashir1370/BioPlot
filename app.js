@@ -47,21 +47,14 @@ function rebindGlobals(){window.selectionBox=$('selectionBox');window.guideV=$('
 function markSaved(){
   saveState.textContent=
     state.lang==='fa'
-      ?'در حال ذخیره…'
-      :'Saving…';
+      ?'تغییرات ذخیره‌نشده'
+      :'Unsaved changes';
 
   window.dispatchEvent(
-    new CustomEvent('bioplot:document-changed')
+    new CustomEvent(
+      'bioplot:document-changed'
+    )
   );
-
-  clearTimeout(window._save);
-
-  window._save=setTimeout(()=>{
-    saveState.textContent=
-      state.lang==='fa'
-        ?'ذخیره محلی شد'
-        :'Saved locally';
-  },350);
 }
 function updateHistoryButtons(){$('undoBtn').disabled=!state.history.length;$('redoBtn').disabled=!state.redo.length}
 
