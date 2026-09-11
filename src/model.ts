@@ -1,8 +1,9 @@
-export const DOCUMENT_SCHEMA_VERSION = 4 as const;
+export const DOCUMENT_SCHEMA_VERSION = 5 as const;
 
 export type ObjectId = string;
 export type BioPlotObjectType = 'text' | 'label' | 'shape' | 'arrow' | 'connector' | 'asset' | 'image' | 'plot' | 'container';
 export type LineStyle = 'solid' | 'dashed' | 'dotted';
+export type ConnectorPort = 'auto' | 'top' | 'right' | 'bottom' | 'left' | 'center';
 
 export interface Transform {
   x: number;
@@ -30,7 +31,12 @@ export interface TextObject extends BaseObject {
   fontSize: number;
   fontWeight: number;
   fontStyle?: 'normal' | 'italic';
+  fontFamily?: string;
+  lineHeight?: number;
+  letterSpacing?: number;
+  textDecoration?: 'none' | 'underline';
   align: 'left' | 'center' | 'right';
+  verticalAlign?: 'top' | 'middle' | 'bottom';
 }
 
 export interface LabelObject extends BaseObject {
@@ -42,6 +48,7 @@ export interface LabelObject extends BaseObject {
   borderColor: string;
   fontSize: number;
   fontWeight: number;
+  fontFamily?: string;
   align: 'left' | 'center' | 'right';
 }
 
@@ -72,6 +79,9 @@ export interface ConnectorObject extends BaseObject {
   arrowHead: 'end' | 'both' | 'none' | 'inhibition';
   fromObjectId?: string;
   toObjectId?: string;
+  fromPort?: ConnectorPort;
+  toPort?: ConnectorPort;
+  autoRoute?: boolean;
   label?: string;
 }
 
@@ -93,6 +103,8 @@ export interface ImageObject extends BaseObject {
   src: string;
   alt?: string;
   fit: 'contain' | 'cover';
+  naturalWidth?: number;
+  naturalHeight?: number;
 }
 
 export interface ContainerObject extends BaseObject {
@@ -152,6 +164,8 @@ export interface BioPlotDocument {
     locale: 'en' | 'fa';
     journalPreset?: string;
     tags: string[];
+    lastExportDpi?: number;
+    lastExportWidthMm?: number;
   };
 }
 
@@ -212,12 +226,17 @@ export function createBlankDocument(title = 'Untitled scientific figure'): BioPl
             fontSize: 24,
             fontWeight: 700,
             fontStyle: 'normal',
-            align: 'left'
+            fontFamily: 'Inter',
+            lineHeight: 1.2,
+            letterSpacing: 0,
+            textDecoration: 'none',
+            align: 'left',
+            verticalAlign: 'middle'
           }
         ]
       }
     ],
-    metadata: { locale: 'en', tags: [] }
+    metadata: { locale: 'en', tags: [], lastExportDpi: 300, lastExportWidthMm: 160 }
   };
 }
 
@@ -237,10 +256,28 @@ function migrateObject(input: Record<string, unknown>): BioPlotObject | null {
     opacity: typeof input.opacity === 'number' ? input.opacity : 1,
     name: typeof input.name === 'string' ? input.name : input.type
   } as Record<string, unknown>;
-  if (input.type === 'text') return { ...base, fontStyle: input.fontStyle === 'italic' ? 'italic' : 'normal' } as unknown as TextObject;
+  if (input.type === 'text') return {
+    ...base,
+    fontStyle: input.fontStyle === 'italic' ? 'italic' : 'normal',
+    fontFamily: typeof input.fontFamily === 'string' ? input.fontFamily : 'Inter',
+    lineHeight: typeof input.lineHeight === 'number' ? input.lineHeight : 1.2,
+    letterSpacing: typeof input.letterSpacing === 'number' ? input.letterSpacing : 0,
+    textDecoration: input.textDecoration === 'underline' ? 'underline' : 'none',
+    verticalAlign: input.verticalAlign === 'top' || input.verticalAlign === 'bottom' ? input.verticalAlign : 'middle'
+  } as unknown as TextObject;
+  if (input.type === 'label') return {
+    ...base,
+    fontFamily: typeof input.fontFamily === 'string' ? input.fontFamily : 'Inter'
+  } as unknown as LabelObject;
   if (input.type === 'shape') return { ...base, lineStyle: input.lineStyle ?? 'solid' } as unknown as ShapeObject;
   if (input.type === 'arrow') return { ...base, lineStyle: input.lineStyle ?? 'solid' } as unknown as ArrowObject;
-  if (['label','connector','asset','image','plot','container'].includes(input.type)) return base as unknown as BioPlotObject;
+  if (input.type === 'connector') return {
+    ...base,
+    fromPort: typeof input.fromPort === 'string' ? input.fromPort : 'auto',
+    toPort: typeof input.toPort === 'string' ? input.toPort : 'auto',
+    autoRoute: input.autoRoute !== false
+  } as unknown as ConnectorObject;
+  if (['asset','image','plot','container'].includes(input.type)) return base as unknown as BioPlotObject;
   return null;
 }
 
@@ -281,7 +318,9 @@ export function migrateDocument(input: unknown): BioPlotDocument {
     metadata: {
       locale: metadata.locale === 'fa' ? 'fa' : 'en',
       journalPreset: typeof metadata.journalPreset === 'string' ? metadata.journalPreset : undefined,
-      tags: Array.isArray(metadata.tags) ? metadata.tags.filter((tag): tag is string => typeof tag === 'string') : []
+      tags: Array.isArray(metadata.tags) ? metadata.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+      lastExportDpi: typeof metadata.lastExportDpi === 'number' ? metadata.lastExportDpi : 300,
+      lastExportWidthMm: typeof metadata.lastExportWidthMm === 'number' ? metadata.lastExportWidthMm : 160
     }
   };
 }
