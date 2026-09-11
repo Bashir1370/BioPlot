@@ -106,23 +106,28 @@ export function buildSnapTargets(document: BioPlotDocument, excludedIds: Set<str
 export function snapDelta(bounds: Bounds, dx: number, dy: number, targets: SnapTarget[], threshold = 6) {
   const xs = [bounds.x + dx, bounds.cx + dx, bounds.right + dx];
   const ys = [bounds.y + dy, bounds.cy + dy, bounds.bottom + dy];
-  let bestX: { distance: number; value: number } | null = null;
-  let bestY: { distance: number; value: number } | null = null;
+  let bestXDistance = Number.POSITIVE_INFINITY;
+  let bestYDistance = Number.POSITIVE_INFINITY;
+  let bestXValue: number | undefined;
+  let bestYValue: number | undefined;
   targets.forEach(target => {
     const candidates = target.axis === 'x' ? xs : ys;
     candidates.forEach(candidate => {
       const distance = target.value - candidate;
       if (Math.abs(distance) > threshold) return;
-      if (target.axis === 'x' && (!bestX || Math.abs(distance) < Math.abs(bestX.distance))) bestX = { distance, value: target.value };
-      if (target.axis === 'y' && (!bestY || Math.abs(distance) < Math.abs(bestY.distance))) bestY = { distance, value: target.value };
+      if (target.axis === 'x' && Math.abs(distance) < Math.abs(bestXDistance)) {
+        bestXDistance = distance;
+        bestXValue = target.value;
+      }
+      if (target.axis === 'y' && Math.abs(distance) < Math.abs(bestYDistance)) {
+        bestYDistance = distance;
+        bestYValue = target.value;
+      }
     });
   });
-  return {
-    dx: dx + (bestX?.distance ?? 0),
-    dy: dy + (bestY?.distance ?? 0),
-    guideX: bestX?.value,
-    guideY: bestY?.value
-  };
+  const resolvedX = Number.isFinite(bestXDistance) ? bestXDistance : 0;
+  const resolvedY = Number.isFinite(bestYDistance) ? bestYDistance : 0;
+  return { dx: dx + resolvedX, dy: dy + resolvedY, guideX: bestXValue, guideY: bestYValue };
 }
 
 export interface Command {
