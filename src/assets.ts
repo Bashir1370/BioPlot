@@ -1,4 +1,5 @@
 import { AssetObject, makeId } from './model';
+import { scientificStarterAssets } from './scientificAssetPack';
 
 export interface ScientificAsset {
   id: string;
@@ -21,10 +22,13 @@ export const seedAssets: ScientificAsset[] = [
   { id: 'neuron', name: 'Neuron', category: 'Neuroscience', synonyms: { en: ['nerve', 'neuron', 'axon'], fa: ['نورون', 'عصب', 'آکسون'] }, svg: neuronSvg, colorSlots: [{ key: 'primary', label: 'Neuron', defaultValue: '#3d8b86' }], reviewStatus: 'reviewed', premium: false, version: 1 },
   { id: 'mitochondrion', name: 'Mitochondrion', category: 'Cell biology', synonyms: { en: ['mitochondria', 'mitochondrion'], fa: ['میتوکندری', 'میتوکندریوم'] }, svg: mitoSvg, colorSlots: [{ key: 'primary', label: 'Membrane', defaultValue: '#d48d4c' }], reviewStatus: 'reviewed', premium: false, version: 1 },
   { id: 'dna', name: 'DNA', category: 'Molecular biology', synonyms: { en: ['dna', 'genome', 'helix'], fa: ['دی ان ای', 'ژنوم', 'مارپیچ'] }, svg: dnaSvg, colorSlots: [{ key: 'primary', label: 'DNA', defaultValue: '#6c5aa8' }], reviewStatus: 'reviewed', premium: false, version: 1 },
-  { id: 'cell', name: 'Cell', category: 'Cell biology', synonyms: { en: ['cell', 'nucleus'], fa: ['سلول', 'هسته'] }, svg: cellSvg, colorSlots: [{ key: 'primary', label: 'Cell', defaultValue: '#5d9f80' }], reviewStatus: 'reviewed', premium: false, version: 1 }
+  { id: 'cell', name: 'Cell', category: 'Cell biology', synonyms: { en: ['cell', 'nucleus'], fa: ['سلول', 'هسته'] }, svg: cellSvg, colorSlots: [{ key: 'primary', label: 'Cell', defaultValue: '#5d9f80' }], reviewStatus: 'reviewed', premium: false, version: 1 },
+  ...scientificStarterAssets
 ];
 
 const CUSTOM_ASSET_KEY = 'bioplot_v3_custom_assets';
+const FAVORITES_KEY='bioplot_asset_favorites_v1';
+const RECENTS_KEY='bioplot_asset_recents_v1';
 
 export function sanitizeSvg(source: string): string {
   const parsed = new DOMParser().parseFromString(source, 'image/svg+xml');
@@ -44,48 +48,35 @@ export function sanitizeSvg(source: string): string {
 }
 
 export function loadCustomAssets(): ScientificAsset[] {
-  try {
-    const raw = localStorage.getItem(CUSTOM_ASSET_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  try { const raw = localStorage.getItem(CUSTOM_ASSET_KEY); const parsed = raw ? JSON.parse(raw) : []; return Array.isArray(parsed) ? parsed : []; }
+  catch { return []; }
 }
-
 export function saveCustomAsset(input: Omit<ScientificAsset, 'id' | 'version'>): ScientificAsset {
   const existing = loadCustomAssets();
   const asset: ScientificAsset = { ...input, id: makeId('asset'), svg: sanitizeSvg(input.svg), version: 1 };
   localStorage.setItem(CUSTOM_ASSET_KEY, JSON.stringify([asset, ...existing]));
   return asset;
 }
-
-export function getAssetCatalog() {
-  return [...seedAssets, ...loadCustomAssets()];
-}
-
-export function searchAssets(query: string, locale: 'en' | 'fa' = 'en') {
+export function getAssetCatalog() { return [...seedAssets, ...loadCustomAssets()]; }
+export function getAssetCategories(){return [...new Set(getAssetCatalog().map(asset=>asset.category))].sort();}
+export function searchAssets(query: string, locale: 'en' | 'fa' = 'en', category?:string) {
   const normalized = query.trim().toLowerCase();
-  if (!normalized) return getAssetCatalog();
   return getAssetCatalog().filter(asset => {
+    if(category&&asset.category!==category)return false;
+    if(!normalized)return true;
     const haystack = [asset.name, asset.category, ...asset.synonyms.en, ...asset.synonyms.fa].join(' ').toLowerCase();
     return haystack.includes(normalized) || asset.synonyms[locale].some(item => item.toLowerCase().includes(normalized));
   });
 }
+function readIds(key:string){try{const parsed=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(parsed)?parsed.filter((id):id is string=>typeof id==='string'):[];}catch{return[];}}
+export function favoriteAssetIds(){return readIds(FAVORITES_KEY);}
+export function toggleFavoriteAsset(id:string){const ids=new Set(favoriteAssetIds());ids.has(id)?ids.delete(id):ids.add(id);localStorage.setItem(FAVORITES_KEY,JSON.stringify([...ids]));return [...ids];}
+export function recentAssetIds(){return readIds(RECENTS_KEY);}
+export function markAssetUsed(id:string){const ids=[id,...recentAssetIds().filter(item=>item!==id)].slice(0,16);localStorage.setItem(RECENTS_KEY,JSON.stringify(ids));}
+export function recentAssets(){const ids=recentAssetIds(),catalog=getAssetCatalog();return ids.map(id=>catalog.find(asset=>asset.id===id)).filter((asset):asset is ScientificAsset=>Boolean(asset));}
+export function favoriteAssets(){const ids=new Set(favoriteAssetIds());return getAssetCatalog().filter(asset=>ids.has(asset.id));}
 
 export function assetToObject(asset: ScientificAsset, x = 360, y = 260): AssetObject {
-  return {
-    id: makeId(),
-    type: 'asset',
-    name: asset.name,
-    assetId: asset.id,
-    svg: asset.svg,
-    colors: asset.colorSlots.map(slot => ({ key: slot.key, label: slot.label, value: slot.defaultValue })),
-    x,
-    y,
-    width: 150,
-    height: 110,
-    rotation: 0,
-    opacity: 1
-  };
+  markAssetUsed(asset.id);
+  return { id: makeId(), type: 'asset', name: asset.name, assetId: asset.id, svg: asset.svg, colors: asset.colorSlots.map(slot => ({ key: slot.key, label: slot.label, value: slot.defaultValue })), x, y, width: 150, height: 110, rotation: 0, opacity: 1 };
 }
