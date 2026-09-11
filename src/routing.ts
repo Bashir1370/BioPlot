@@ -1,4 +1,11 @@
+function normalizedPath(pathname:string){return pathname.replace(/\/+$/,'')||'/';}
+
 export function isEditorPath(pathname: string) {
-  const normalized = pathname.replace(/\/+$/, '') || '/';
+  const normalized = normalizedPath(pathname);
   return normalized === '/editor' || normalized === '/editor.html' || normalized.endsWith('/editor') || normalized.endsWith('/editor.html');
+}
+
+export function isAdminLibraryPath(pathname:string){
+  const normalized=normalizedPath(pathname);
+  return normalized==='/admin/library'||normalized.endsWith('/admin/library');
 }
