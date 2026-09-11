@@ -103,6 +103,49 @@ export class SupabaseProjectRepository implements ProjectRepository {
   }
 }
 
+export class ResilientProjectRepository implements ProjectRepository {
+  constructor(private local: ProjectRepository, private cloud: ProjectRepository | null) {}
+  async list() {
+    const local = await this.local.list();
+    if (!this.cloud) return local;
+    try {
+      const cloud = await this.cloud.list();
+      const merged = new Map<string, ProjectSummary>();
+      [...local, ...cloud].forEach(item => {
+        const current = merged.get(item.id);
+        if (!current || item.updatedAt > current.updatedAt) merged.set(item.id, item);
+      });
+      return [...merged.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    } catch {
+      return local;
+    }
+  }
+  async load(id: string) {
+    if (this.cloud) {
+      try {
+        const cloudDocument = await this.cloud.load(id);
+        if (cloudDocument) {
+          await this.local.save(cloudDocument);
+          return cloudDocument;
+        }
+      } catch {}
+    }
+    return this.local.load(id);
+  }
+  async save(document: BioPlotDocument) {
+    await this.local.save(document);
+    if (this.cloud) {
+      try { await this.cloud.save(document); } catch {}
+    }
+  }
+  async remove(id: string) {
+    await this.local.remove(id);
+    if (this.cloud) {
+      try { await this.cloud.remove(id); } catch {}
+    }
+  }
+}
+
 export const localProjects = new LocalProjectRepository();
 
 export function createCloudRepository(): SupabaseProjectRepository | null {
@@ -111,3 +154,5 @@ export function createCloudRepository(): SupabaseProjectRepository | null {
   if (!url || !anon) return null;
   return new SupabaseProjectRepository(createClient(url, anon));
 }
+
+export const projects = new ResilientProjectRepository(localProjects, createCloudRepository());
