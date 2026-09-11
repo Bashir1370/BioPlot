@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DashboardApp } from './DashboardApp';
-import { EditorApp } from './EditorApp';
+import { EditorStudio } from './EditorStudio';
 import './styles-v3.css';
 import './home-top-nav.css';
 
@@ -11,6 +11,6 @@ const isEditor = window.location.pathname.endsWith('/editor.html') || window.loc
 
 createRoot(root).render(
   <StrictMode>
-    {isEditor ? <EditorApp /> : <DashboardApp />}
+    {isEditor ? <EditorStudio /> : <DashboardApp />}
   </StrictMode>
 );
