@@ -1,7 +1,8 @@
-export const DOCUMENT_SCHEMA_VERSION = 3 as const;
+export const DOCUMENT_SCHEMA_VERSION = 4 as const;
 
 export type ObjectId = string;
-export type BioPlotObjectType = 'text' | 'shape' | 'arrow' | 'asset' | 'plot';
+export type BioPlotObjectType = 'text' | 'label' | 'shape' | 'arrow' | 'connector' | 'asset' | 'image' | 'plot' | 'container';
+export type LineStyle = 'solid' | 'dashed' | 'dotted';
 
 export interface Transform {
   x: number;
@@ -17,6 +18,7 @@ export interface BaseObject extends Transform {
   type: BioPlotObjectType;
   name: string;
   groupId?: string;
+  parentId?: string;
   locked?: boolean;
   hidden?: boolean;
 }
@@ -25,6 +27,19 @@ export interface TextObject extends BaseObject {
   type: 'text';
   text: string;
   color: string;
+  fontSize: number;
+  fontWeight: number;
+  fontStyle?: 'normal' | 'italic';
+  align: 'left' | 'center' | 'right';
+}
+
+export interface LabelObject extends BaseObject {
+  type: 'label';
+  text: string;
+  variant: 'panel' | 'tag' | 'note';
+  color: string;
+  background: string;
+  borderColor: string;
   fontSize: number;
   fontWeight: number;
   align: 'left' | 'center' | 'right';
@@ -36,6 +51,7 @@ export interface ShapeObject extends BaseObject {
   fill: string;
   stroke: string;
   strokeWidth: number;
+  lineStyle?: LineStyle;
   radius: number;
 }
 
@@ -43,7 +59,20 @@ export interface ArrowObject extends BaseObject {
   type: 'arrow';
   stroke: string;
   strokeWidth: number;
+  lineStyle?: LineStyle;
   arrowHead: 'end' | 'both' | 'none';
+}
+
+export interface ConnectorObject extends BaseObject {
+  type: 'connector';
+  stroke: string;
+  strokeWidth: number;
+  lineStyle: LineStyle;
+  route: 'straight' | 'elbow' | 'curved';
+  arrowHead: 'end' | 'both' | 'none' | 'inhibition';
+  fromObjectId?: string;
+  toObjectId?: string;
+  label?: string;
 }
 
 export interface AssetColorSlot {
@@ -57,6 +86,22 @@ export interface AssetObject extends BaseObject {
   assetId: string;
   svg: string;
   colors: AssetColorSlot[];
+}
+
+export interface ImageObject extends BaseObject {
+  type: 'image';
+  src: string;
+  alt?: string;
+  fit: 'contain' | 'cover';
+}
+
+export interface ContainerObject extends BaseObject {
+  type: 'container';
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+  radius: number;
+  padding: number;
 }
 
 export type PlotKind = 'bar' | 'scatter';
@@ -83,7 +128,7 @@ export interface PlotObject extends BaseObject {
   spec: PlotSpec;
 }
 
-export type BioPlotObject = TextObject | ShapeObject | ArrowObject | AssetObject | PlotObject;
+export type BioPlotObject = TextObject | LabelObject | ShapeObject | ArrowObject | ConnectorObject | AssetObject | ImageObject | PlotObject | ContainerObject;
 
 export interface BioPlotPage {
   id: string;
@@ -166,6 +211,7 @@ export function createBlankDocument(title = 'Untitled scientific figure'): BioPl
             color: '#17303f',
             fontSize: 24,
             fontWeight: 700,
+            fontStyle: 'normal',
             align: 'left'
           }
         ]
@@ -183,12 +229,59 @@ export function activePage(document: BioPlotDocument): BioPlotPage {
   return document.pages.find(page => page.id === document.activePageId) ?? document.pages[0];
 }
 
+function migrateObject(input: Record<string, unknown>): BioPlotObject | null {
+  if (typeof input.id !== 'string' || typeof input.type !== 'string') return null;
+  const base = {
+    ...input,
+    rotation: typeof input.rotation === 'number' ? input.rotation : 0,
+    opacity: typeof input.opacity === 'number' ? input.opacity : 1,
+    name: typeof input.name === 'string' ? input.name : input.type
+  } as Record<string, unknown>;
+  if (input.type === 'text') return { ...base, fontStyle: input.fontStyle === 'italic' ? 'italic' : 'normal' } as unknown as TextObject;
+  if (input.type === 'shape') return { ...base, lineStyle: input.lineStyle ?? 'solid' } as unknown as ShapeObject;
+  if (input.type === 'arrow') return { ...base, lineStyle: input.lineStyle ?? 'solid' } as unknown as ArrowObject;
+  if (['label','connector','asset','image','plot','container'].includes(input.type)) return base as unknown as BioPlotObject;
+  return null;
+}
+
 export function migrateDocument(input: unknown): BioPlotDocument {
   if (!input || typeof input !== 'object') return createBlankDocument();
-  const candidate = input as Partial<BioPlotDocument>;
-  if (candidate.schemaVersion === DOCUMENT_SCHEMA_VERSION && Array.isArray(candidate.pages)) {
-    return candidate as BioPlotDocument;
-  }
-  const fresh = createBlankDocument(typeof candidate.title === 'string' ? candidate.title : undefined);
-  return fresh;
+  const candidate = input as Record<string, unknown>;
+  const pages = Array.isArray(candidate.pages) ? candidate.pages : null;
+  if (!pages) return createBlankDocument(typeof candidate.title === 'string' ? candidate.title : undefined);
+
+  if (candidate.schemaVersion === DOCUMENT_SCHEMA_VERSION) return candidate as unknown as BioPlotDocument;
+
+  const migratedPages: BioPlotPage[] = pages.map((page, index) => {
+    const source = page && typeof page === 'object' ? page as Record<string, unknown> : {};
+    const objects = Array.isArray(source.objects)
+      ? source.objects.map(item => item && typeof item === 'object' ? migrateObject(item as Record<string, unknown>) : null).filter((item): item is BioPlotObject => Boolean(item))
+      : [];
+    return {
+      id: typeof source.id === 'string' ? source.id : makeId('page'),
+      name: typeof source.name === 'string' ? source.name : `Figure ${index + 1}`,
+      width: typeof source.width === 'number' ? source.width : 960,
+      height: typeof source.height === 'number' ? source.height : 620,
+      background: typeof source.background === 'string' ? source.background : '#ffffff',
+      objects
+    };
+  });
+  const now = new Date().toISOString();
+  const firstPage = migratedPages[0] ?? createBlankDocument().pages[0];
+  const metadata = candidate.metadata && typeof candidate.metadata === 'object' ? candidate.metadata as Record<string, unknown> : {};
+  return {
+    schemaVersion: DOCUMENT_SCHEMA_VERSION,
+    id: typeof candidate.id === 'string' ? candidate.id : makeId('doc'),
+    title: typeof candidate.title === 'string' ? candidate.title : 'Untitled scientific figure',
+    createdAt: typeof candidate.createdAt === 'string' ? candidate.createdAt : now,
+    updatedAt: typeof candidate.updatedAt === 'string' ? candidate.updatedAt : now,
+    ownerId: typeof candidate.ownerId === 'string' ? candidate.ownerId : undefined,
+    activePageId: typeof candidate.activePageId === 'string' && migratedPages.some(page => page.id === candidate.activePageId) ? candidate.activePageId : firstPage.id,
+    pages: migratedPages.length ? migratedPages : [firstPage],
+    metadata: {
+      locale: metadata.locale === 'fa' ? 'fa' : 'en',
+      journalPreset: typeof metadata.journalPreset === 'string' ? metadata.journalPreset : undefined,
+      tags: Array.isArray(metadata.tags) ? metadata.tags.filter((tag): tag is string => typeof tag === 'string') : []
+    }
+  };
 }
