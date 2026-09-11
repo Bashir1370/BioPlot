@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DashboardApp } from './DashboardApp';
-import { EditorStudio } from './EditorStudio';
+import { EditorRoute } from './EditorRoute';
 import { AdminLibraryPage } from './AdminLibraryPage';
 import { isAdminLibraryPath, isEditorPath } from './routing';
 import './styles-v3.css';
@@ -22,6 +22,6 @@ const isEditor = isEditorPath(window.location.pathname);
 
 createRoot(root).render(
   <StrictMode>
-    {isAdminLibrary ? <AdminLibraryPage /> : isEditor ? <EditorStudio /> : <DashboardApp />}
+    {isAdminLibrary ? <AdminLibraryPage /> : isEditor ? <EditorRoute /> : <DashboardApp />}
   </StrictMode>
 );
