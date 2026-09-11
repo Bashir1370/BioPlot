@@ -1,75 +1,80 @@
+import { useMemo, useState } from 'react';
 import { Bounds, selectionBounds } from './engine';
-import { BioPlotObject } from './model';
+import { downloadPng, downloadSvg, EXPORT_DPI_PRESETS, JOURNAL_WIDTH_PRESETS } from './export';
+import { BioPlotDocument, BioPlotObject, ConnectorPort } from './model';
+import { checkPublicationQuality, qualityScore } from './publication';
+import { SCIENTIFIC_FONTS, SCIENTIFIC_SYMBOLS } from './typography';
 
-type Tab = 'properties'|'layers';
+type Tab = 'properties'|'layers'|'quality'|'export';
 
-export function EditorInspector({ fa, tab, setTab, bounds, selectedObjects, objects, selected, onBounds, onCommit, onLock, onHide, onSelect, onLayerStep, onToggleObjectLock, onToggleObjectHidden, onCollapse }:{
-  fa:boolean;
-  tab:Tab;
-  setTab:(tab:Tab)=>void;
-  bounds:Bounds|null;
-  selectedObjects:BioPlotObject[];
-  objects:BioPlotObject[];
-  selected:Set<string>;
-  onBounds:(field:'x'|'y'|'width'|'height',value:number)=>void;
-  onCommit:(label:string,transform:(object:BioPlotObject)=>BioPlotObject)=>void;
-  onLock:(locked:boolean)=>void;
-  onHide:()=>void;
-  onSelect:(object:BioPlotObject)=>void;
-  onLayerStep:(id:string,action:'forward'|'backward')=>void;
-  onToggleObjectLock:(object:BioPlotObject)=>void;
-  onToggleObjectHidden:(object:BioPlotObject)=>void;
-  onCollapse:()=>void;
+export function EditorInspector({ fa, tab, setTab, documentState, bounds, selectedObjects, objects, selected, onBounds, onCommit, onLock, onHide, onSelect, onLayerStep, onLayerReorder, onToggleObjectLock, onToggleObjectHidden, onCollapse }:{
+  fa:boolean; tab:Tab; setTab:(tab:Tab)=>void; documentState:BioPlotDocument; bounds:Bounds|null; selectedObjects:BioPlotObject[]; objects:BioPlotObject[]; selected:Set<string>;
+  onBounds:(field:'x'|'y'|'width'|'height',value:number)=>void; onCommit:(label:string,transform:(object:BioPlotObject)=>BioPlotObject)=>void; onLock:(locked:boolean)=>void; onHide:()=>void; onSelect:(object:BioPlotObject)=>void;
+  onLayerStep:(id:string,action:'forward'|'backward')=>void; onLayerReorder:(draggedId:string,targetId:string)=>void; onToggleObjectLock:(object:BioPlotObject)=>void; onToggleObjectHidden:(object:BioPlotObject)=>void; onCollapse:()=>void;
 }) {
   return <aside className="studio-inspector">
-    <div className="inspector-tabs"><button className={tab==='properties'?'active':''} onClick={()=>setTab('properties')}>{fa?'ویژگی‌ها':'Properties'}</button><button className={tab==='layers'?'active':''} onClick={()=>setTab('layers')}>{fa?'لایه‌ها':'Layers'}</button><button className="collapse-inspector" onClick={onCollapse}>×</button></div>
-    {tab==='properties'
-      ? <Properties fa={fa} bounds={bounds} selectedObjects={selectedObjects} onBounds={onBounds} onCommit={onCommit} onLock={onLock} onHide={onHide}/>
-      : <div className="studio-layers">{objects.slice().reverse().map(object=><div key={object.id} className={`${selected.has(object.id)?'active':''} ${object.hidden?'hidden-layer':''}`}><button className="layer-main" onClick={()=>onSelect(object)}><i>{object.type.slice(0,1).toUpperCase()}</i><span><b>{object.name}</b><small>{object.type}{object.groupId?' · group':''}</small></span></button><div className="layer-actions"><button title="Show/hide" onClick={()=>onToggleObjectHidden(object)}>{object.hidden?'○':'●'}</button><button title="Lock/unlock" onClick={()=>onToggleObjectLock(object)}>{object.locked?'⌑':'◇'}</button><button title="Move up" onClick={()=>onLayerStep(object.id,'forward')}>↑</button><button title="Move down" onClick={()=>onLayerStep(object.id,'backward')}>↓</button></div></div>)}</div>}
+    <div className="inspector-tabs">
+      <button className={tab==='properties'?'active':''} onClick={()=>setTab('properties')}>{fa?'ویژگی‌ها':'Properties'}</button>
+      <button className={tab==='layers'?'active':''} onClick={()=>setTab('layers')}>{fa?'لایه‌ها':'Layers'}</button>
+      <button className={tab==='quality'?'active':''} onClick={()=>setTab('quality')}>{fa?'کیفیت':'Quality'}</button>
+      <button className={tab==='export'?'active':''} onClick={()=>setTab('export')}>{fa?'خروجی':'Export'}</button>
+      <button className="collapse-inspector" onClick={onCollapse}>×</button>
+    </div>
+    {tab==='properties'&&<Properties fa={fa} bounds={bounds} selectedObjects={selectedObjects} objects={objects} onBounds={onBounds} onCommit={onCommit} onLock={onLock} onHide={onHide}/>} 
+    {tab==='layers'&&<Layers fa={fa} objects={objects} selected={selected} onSelect={onSelect} onLayerStep={onLayerStep} onLayerReorder={onLayerReorder} onToggleObjectLock={onToggleObjectLock} onToggleObjectHidden={onToggleObjectHidden}/>} 
+    {tab==='quality'&&<QualityPanel fa={fa} documentState={documentState} onSelectIssue={id=>{const object=objects.find(item=>item.id===id);if(object)onSelect(object);}}/>}
+    {tab==='export'&&<ExportPanel fa={fa} documentState={documentState} selected={selected}/>} 
   </aside>;
 }
 
-function Properties({ fa, bounds, selectedObjects, onBounds, onCommit, onLock, onHide }:{
-  fa:boolean;
-  bounds:ReturnType<typeof selectionBounds>;
-  selectedObjects:BioPlotObject[];
-  onBounds:(field:'x'|'y'|'width'|'height',value:number)=>void;
-  onCommit:(label:string,transform:(object:BioPlotObject)=>BioPlotObject)=>void;
-  onLock:(locked:boolean)=>void;
-  onHide:()=>void;
-}) {
-  const single = selectedObjects.length===1?selectedObjects[0]:null;
-  const opacity = selectedObjects.length?selectedObjects.reduce((sum,object)=>sum+object.opacity,0)/selectedObjects.length:1;
-
-  let primaryColor = '#0b7a75';
-  if (single?.type==='text'||single?.type==='label') primaryColor=single.color;
-  else if (single?.type==='shape'||single?.type==='container') primaryColor=single.fill;
-  else if (single?.type==='arrow'||single?.type==='connector') primaryColor=single.stroke;
-
+function Properties({ fa, bounds, selectedObjects, objects, onBounds, onCommit, onLock, onHide }:{fa:boolean;bounds:ReturnType<typeof selectionBounds>;selectedObjects:BioPlotObject[];objects:BioPlotObject[];onBounds:(field:'x'|'y'|'width'|'height',value:number)=>void;onCommit:(label:string,transform:(object:BioPlotObject)=>BioPlotObject)=>void;onLock:(locked:boolean)=>void;onHide:()=>void;}) {
+  const single=selectedObjects.length===1?selectedObjects[0]:null;
+  const opacity=selectedObjects.length?selectedObjects.reduce((sum,object)=>sum+object.opacity,0)/selectedObjects.length:1;
+  let primaryColor='#0b7a75';
+  if(single?.type==='text'||single?.type==='label')primaryColor=single.color;else if(single?.type==='shape'||single?.type==='container')primaryColor=single.fill;else if(single?.type==='arrow'||single?.type==='connector')primaryColor=single.stroke;
+  const apply=(label:string,transform:(object:BioPlotObject)=>BioPlotObject)=>onCommit(label,transform);
   return <div className="studio-properties">
     <div className="property-selection"><small>SELECTION</small><h2>{selectedObjects.length===0?(fa?'بدون انتخاب':'No selection'):single?single.name:`${selectedObjects.length} ${fa?'آبجکت':'objects'}`}</h2>{single&&<span>{single.type}</span>}</div>
     <section><h3>{fa?'موقعیت و اندازه':'Position & size'}</h3><div className="property-grid">{(['x','y','width','height'] as const).map(field=><label key={field}><span>{field==='width'?'W':field==='height'?'H':field.toUpperCase()}</span><input disabled={!bounds} type="number" value={bounds?Math.round(bounds[field]):''} onChange={event=>onBounds(field,Number(event.target.value))}/></label>)}</div></section>
-    <section><h3>{fa?'وضعیت':'Object state'}</h3><div className="property-actions"><button disabled={!selectedObjects.length} onClick={()=>onLock(!selectedObjects.every(object=>object.locked))}>{selectedObjects.every(object=>object.locked)?'Unlock':'Lock'}</button><button disabled={!selectedObjects.length} onClick={onHide}>{fa?'مخفی':'Hide'}</button></div></section>
-    <section><h3>{fa?'ظاهر':'Appearance'}</h3><label className="property-range"><span>{fa?'شفافیت':'Opacity'}</span><input disabled={!selectedObjects.length} type="range" min="5" max="100" value={Math.round(opacity*100)} onChange={event=>{const value=Number(event.target.value)/100;onCommit('Opacity',object=>({...object,opacity:value}));}}/><em>{Math.round(opacity*100)}%</em></label>{single&&!['asset','image','plot'].includes(single.type)&&<label className="property-color"><span>{fa?'رنگ اصلی':'Primary color'}</span><input type="color" value={primaryColor} onChange={event=>{const color=event.target.value;onCommit('Color',object=>{
-      if(object.type==='text') return {...object,color};
-      if(object.type==='label') return {...object,color};
-      if(object.type==='shape') return {...object,fill:color};
-      if(object.type==='container') return {...object,fill:color};
-      if(object.type==='arrow') return {...object,stroke:color};
-      if(object.type==='connector') return {...object,stroke:color};
-      return object;
-    });}}/></label>}</section>
-    {single&&(single.type==='text'||single.type==='label')&&<section><h3>{fa?'متن':'Text'}</h3><label className="property-stack"><span>{fa?'محتوا':'Content'}</span><textarea value={single.text} onChange={event=>{const text=event.target.value;onCommit('Edit text',object=>{
-      if(object.id!==single.id) return object;
-      if(object.type==='text'||object.type==='label') return {...object,text,name:text.slice(0,32)||'Text'};
-      return object;
-    });}}/></label><div className="property-grid"><label><span>Size</span><input type="number" value={single.fontSize} onChange={event=>{const fontSize=Number(event.target.value);onCommit('Font size',object=>object.id===single.id&&(object.type==='text'||object.type==='label')?{...object,fontSize}:object);}}/></label><label><span>Weight</span><select value={single.fontWeight} onChange={event=>{const fontWeight=Number(event.target.value);onCommit('Font weight',object=>object.id===single.id&&(object.type==='text'||object.type==='label')?{...object,fontWeight}:object);}}><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option><option value="800">800</option></select></label></div></section>}
-    {single&&(single.type==='arrow'||single.type==='connector')&&<section><h3>{fa?'خط و فلش':'Line & arrow'}</h3><label className="property-stack"><span>{fa?'نوع خط':'Line style'}</span><select value={single.lineStyle??'solid'} onChange={event=>{const lineStyle=event.target.value as 'solid'|'dashed'|'dotted';onCommit('Line style',object=>object.id===single.id&&(object.type==='arrow'||object.type==='connector')?{...object,lineStyle}:object);}}><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></label><label className="property-stack"><span>{fa?'سر فلش':'Arrow head'}</span><select value={single.arrowHead} onChange={event=>{const value=event.target.value;onCommit('Arrow head',object=>{
-      if(object.id!==single.id) return object;
-      if(object.type==='arrow'&&(value==='end'||value==='both'||value==='none')) return {...object,arrowHead:value};
-      if(object.type==='connector'&&(value==='end'||value==='both'||value==='none'||value==='inhibition')) return {...object,arrowHead:value};
-      return object;
-    });}}><option value="end">End</option><option value="both">Both</option><option value="none">None</option>{single.type==='connector'&&<option value="inhibition">Inhibition</option>}</select></label></section>}
-    {single&&single.type==='image'&&<section><h3>{fa?'تصویر':'Image'}</h3><div className="property-actions"><button className={single.fit==='contain'?'active':''} onClick={()=>onCommit('Image fit',object=>object.id===single.id&&object.type==='image'?{...object,fit:'contain'}:object)}>Contain</button><button className={single.fit==='cover'?'active':''} onClick={()=>onCommit('Image fit',object=>object.id===single.id&&object.type==='image'?{...object,fit:'cover'}:object)}>Cover</button></div></section>}
+    <section><h3>{fa?'وضعیت':'Object state'}</h3><div className="property-actions"><button disabled={!selectedObjects.length} onClick={()=>onLock(!selectedObjects.every(object=>object.locked))}>{selectedObjects.every(object=>object.locked)?(fa?'بازکردن قفل':'Unlock'):(fa?'قفل':'Lock')}</button><button disabled={!selectedObjects.length} onClick={onHide}>{fa?'مخفی':'Hide'}</button></div></section>
+    <section><h3>{fa?'ظاهر':'Appearance'}</h3><label className="property-range"><span>{fa?'شفافیت':'Opacity'}</span><input disabled={!selectedObjects.length} type="range" min="5" max="100" value={Math.round(opacity*100)} onChange={event=>{const value=Number(event.target.value)/100;apply('Opacity',object=>({...object,opacity:value}));}}/><em>{Math.round(opacity*100)}%</em></label>{single&&!['asset','image','plot'].includes(single.type)&&<label className="property-color"><span>{fa?'رنگ اصلی':'Primary color'}</span><input type="color" value={primaryColor} onChange={event=>{const color=event.target.value;apply('Color',object=>{if(object.type==='text'||object.type==='label')return{...object,color};if(object.type==='shape'||object.type==='container')return{...object,fill:color};if(object.type==='arrow'||object.type==='connector')return{...object,stroke:color};return object;});}}/></label>}</section>
+    {single&&(single.type==='text'||single.type==='label')&&<TextProperties fa={fa} single={single} onCommit={apply}/>} 
+    {single&&(single.type==='arrow'||single.type==='connector')&&<LineProperties fa={fa} single={single} objects={objects} onCommit={apply}/>} 
+    {single&&single.type==='image'&&<section><h3>{fa?'تصویر':'Image'}</h3><div className="property-actions"><button className={single.fit==='contain'?'active':''} onClick={()=>apply('Image fit',object=>object.id===single.id&&object.type==='image'?{...object,fit:'contain'}:object)}>Contain</button><button className={single.fit==='cover'?'active':''} onClick={()=>apply('Image fit',object=>object.id===single.id&&object.type==='image'?{...object,fit:'cover'}:object)}>Cover</button></div>{single.naturalWidth&&<p className="property-hint">{single.naturalWidth} × {single.naturalHeight}px source</p>}</section>}
   </div>;
+}
+
+function TextProperties({fa,single,onCommit}:{fa:boolean;single:Extract<BioPlotObject,{type:'text'|'label'}>;onCommit:(label:string,transform:(object:BioPlotObject)=>BioPlotObject)=>void}){
+  const change=(patch:Partial<typeof single>,label:string)=>onCommit(label,object=>object.id===single.id&&(object.type==='text'||object.type==='label')?{...object,...patch}:object);
+  const append=(value:string)=>change({text:`${single.text}${value}`,name:`${single.text}${value}`.slice(0,32)||'Text'},'Insert scientific symbol');
+  return <section><h3>{fa?'متن علمی':'Scientific text'}</h3><label className="property-stack"><span>{fa?'محتوا':'Content'}</span><textarea value={single.text} onChange={event=>change({text:event.target.value,name:event.target.value.slice(0,32)||'Text'},'Edit text')}/></label>
+    <div className="symbol-grid">{SCIENTIFIC_SYMBOLS.map(symbol=><button key={symbol} onClick={()=>append(symbol)}>{symbol}</button>)}</div>
+    <div className="property-grid"><label><span>{fa?'فونت':'Font'}</span><select value={single.fontFamily||'Inter'} onChange={event=>change({fontFamily:event.target.value},'Font family')}>{SCIENTIFIC_FONTS.map(font=><option key={font}>{font}</option>)}</select></label><label><span>Size</span><input type="number" min="6" max="96" value={single.fontSize} onChange={event=>change({fontSize:Number(event.target.value)},'Font size')}/></label><label><span>Weight</span><select value={single.fontWeight} onChange={event=>change({fontWeight:Number(event.target.value)},'Font weight')}>{[400,500,600,700,800].map(weight=><option key={weight}>{weight}</option>)}</select></label><label><span>{fa?'تراز':'Align'}</span><select value={single.align} onChange={event=>change({align:event.target.value as 'left'|'center'|'right'},'Text align')}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label></div>
+    {single.type==='text'&&<><div className="property-actions"><button className={single.fontStyle==='italic'?'active':''} onClick={()=>change({fontStyle:single.fontStyle==='italic'?'normal':'italic'},'Italic')}><i>I</i></button><button className={single.textDecoration==='underline'?'active':''} onClick={()=>change({textDecoration:single.textDecoration==='underline'?'none':'underline'},'Underline')}><u>U</u></button><button onClick={()=>append('²')}>x²</button><button onClick={()=>append('₂')}>x₂</button></div><div className="property-grid"><label><span>Line</span><input type="number" step="0.05" min="0.8" max="2.5" value={single.lineHeight??1.2} onChange={event=>change({lineHeight:Number(event.target.value)},'Line height')}/></label><label><span>Spacing</span><input type="number" step="0.1" min="-2" max="12" value={single.letterSpacing??0} onChange={event=>change({letterSpacing:Number(event.target.value)},'Letter spacing')}/></label><label><span>Vertical</span><select value={single.verticalAlign??'middle'} onChange={event=>change({verticalAlign:event.target.value as 'top'|'middle'|'bottom'},'Vertical align')}><option value="top">Top</option><option value="middle">Middle</option><option value="bottom">Bottom</option></select></label></div></>}
+  </section>;
+}
+
+function LineProperties({fa,single,objects,onCommit}:{fa:boolean;single:Extract<BioPlotObject,{type:'arrow'|'connector'}>;objects:BioPlotObject[];onCommit:(label:string,transform:(object:BioPlotObject)=>BioPlotObject)=>void}){
+  const change=(patch:Record<string,unknown>,label:string)=>onCommit(label,object=>object.id===single.id&&(object.type==='arrow'||object.type==='connector')?{...object,...patch}:object);
+  const candidates=objects.filter(object=>object.id!==single.id&&object.type!=='connector'&&!object.hidden);
+  return <section><h3>{fa?'خط و اتصال':'Line & connector'}</h3><div className="property-grid"><label><span>{fa?'ضخامت':'Width'}</span><input type="number" min="1" max="12" step="0.5" value={single.strokeWidth} onChange={event=>change({strokeWidth:Number(event.target.value)},'Stroke width')}/></label><label><span>{fa?'نوع خط':'Style'}</span><select value={single.lineStyle??'solid'} onChange={event=>change({lineStyle:event.target.value},'Line style')}><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></label></div><label className="property-stack"><span>{fa?'سر فلش':'Arrow head'}</span><select value={single.arrowHead} onChange={event=>change({arrowHead:event.target.value},'Arrow head')}><option value="end">End</option><option value="both">Both</option><option value="none">None</option>{single.type==='connector'&&<option value="inhibition">Inhibition</option>}</select></label>
+    {single.type==='connector'&&<><label className="property-stack"><span>{fa?'مسیر':'Route'}</span><select value={single.route} onChange={event=>change({route:event.target.value},'Connector route')}><option value="straight">Straight</option><option value="elbow">Elbow</option><option value="curved">Curved</option></select></label><label className="property-stack"><span>{fa?'برچسب اتصال':'Connector label'}</span><input value={single.label??''} onChange={event=>change({label:event.target.value},'Connector label')}/></label><div className="connector-bindings"><label><span>{fa?'شروع از':'From object'}</span><select value={single.fromObjectId??''} onChange={event=>change({fromObjectId:event.target.value||undefined},'Attach connector start')}><option value="">Free</option>{candidates.map(object=><option key={object.id} value={object.id}>{object.name}</option>)}</select></label><label><span>{fa?'پایان به':'To object'}</span><select value={single.toObjectId??''} onChange={event=>change({toObjectId:event.target.value||undefined},'Attach connector end')}><option value="">Free</option>{candidates.map(object=><option key={object.id} value={object.id}>{object.name}</option>)}</select></label></div><div className="property-grid">{(['fromPort','toPort'] as const).map(field=><label key={field}><span>{field==='fromPort'?'From port':'To port'}</span><select value={single[field]??'auto'} onChange={event=>change({[field]:event.target.value as ConnectorPort},'Connector port')}>{['auto','top','right','bottom','left','center'].map(port=><option key={port}>{port}</option>)}</select></label>)}</div></>}
+  </section>;
+}
+
+function Layers({fa,objects,selected,onSelect,onLayerStep,onLayerReorder,onToggleObjectLock,onToggleObjectHidden}:{fa:boolean;objects:BioPlotObject[];selected:Set<string>;onSelect:(object:BioPlotObject)=>void;onLayerStep:(id:string,action:'forward'|'backward')=>void;onLayerReorder:(draggedId:string,targetId:string)=>void;onToggleObjectLock:(object:BioPlotObject)=>void;onToggleObjectHidden:(object:BioPlotObject)=>void}){
+  const [query,setQuery]=useState('');const [collapsedGroups,setCollapsedGroups]=useState<Set<string>>(new Set());const [dragged,setDragged]=useState<string|null>(null);
+  const groups=useMemo(()=>{const map=new Map<string,BioPlotObject[]>();objects.forEach(object=>{const key=object.groupId??`single:${object.id}`;map.set(key,[...(map.get(key)??[]),object]);});return [...map.entries()].reverse();},[objects]);
+  const normalized=query.trim().toLowerCase();
+  return <div className="layers-panel-v2"><div className="studio-search compact">⌕<input value={query} onChange={event=>setQuery(event.target.value)} placeholder={fa?'جست‌وجوی لایه…':'Search layers…'}/></div><div className="studio-layers">{groups.map(([key,group])=>{const visible=group.filter(object=>!normalized||`${object.name} ${object.type}`.toLowerCase().includes(normalized));if(!visible.length)return null;const grouped=!key.startsWith('single:');const collapsed=collapsedGroups.has(key);return <div className="layer-group" key={key}>{grouped&&<button className="layer-group-title" onClick={()=>setCollapsedGroups(current=>{const next=new Set(current);next.has(key)?next.delete(key):next.add(key);return next;})}><span>{collapsed?'▸':'▾'}</span><b>{fa?'گروه':'Group'}</b><small>{group.length}</small></button>}{!collapsed&&visible.slice().reverse().map(object=><div draggable key={object.id} className={`${selected.has(object.id)?'active':''} ${object.hidden?'hidden-layer':''}`} onDragStart={()=>setDragged(object.id)} onDragOver={event=>event.preventDefault()} onDrop={()=>{if(dragged&&dragged!==object.id)onLayerReorder(dragged,object.id);setDragged(null);}}><button className="layer-main" onClick={()=>onSelect(object)}><i>{object.type.slice(0,1).toUpperCase()}</i><span><b>{object.name}</b><small>{object.type}{object.groupId?' · group':''}</small></span></button><div className="layer-actions"><button title="Show/hide" onClick={()=>onToggleObjectHidden(object)}>{object.hidden?'○':'●'}</button><button title="Lock/unlock" onClick={()=>onToggleObjectLock(object)}>{object.locked?'⌑':'◇'}</button><button title="Move up" onClick={()=>onLayerStep(object.id,'forward')}>↑</button><button title="Move down" onClick={()=>onLayerStep(object.id,'backward')}>↓</button></div></div>)}</div>;})}</div></div>;
+}
+
+function QualityPanel({fa,documentState,onSelectIssue}:{fa:boolean;documentState:BioPlotDocument;onSelectIssue:(id:string)=>void}){
+  const issues=useMemo(()=>checkPublicationQuality(documentState),[documentState]);const score=qualityScore(issues);
+  return <div className="quality-panel"><div className="quality-score"><strong>{score}</strong><div><b>{fa?'امتیاز آمادگی انتشار':'Publication readiness'}</b><small>{issues.length?`${issues.length} ${fa?'مورد برای بررسی':'items to review'}`:(fa?'بدون هشدار':'No warnings')}</small></div></div><div className="quality-list">{issues.length===0&&<div className="quality-empty">✓ {fa?'این صفحه برای خروجی آماده به نظر می‌رسد.':'This page looks ready to export.'}</div>}{issues.map(issue=><button key={issue.id} className={`quality-issue ${issue.severity}`} onClick={()=>issue.objectId&&onSelectIssue(issue.objectId)}><i>{issue.severity==='error'?'!':issue.severity==='warning'?'△':'i'}</i><span><b>{issue.title}</b><small>{issue.detail}</small></span></button>)}</div></div>;
+}
+
+function ExportPanel({fa,documentState,selected}:{fa:boolean;documentState:BioPlotDocument;selected:Set<string>}){
+  const [dpi,setDpi]=useState<number>(documentState.metadata.lastExportDpi??300);const [widthMm,setWidthMm]=useState<number>(documentState.metadata.lastExportWidthMm??160);const [transparent,setTransparent]=useState(false);const selection=selected.size?new Set(selected):undefined;
+  return <div className="export-panel-v2"><div className="export-card"><small>PUBLICATION EXPORT</small><h2>{fa?'خروجی شکل علمی':'Scientific figure export'}</h2><p>{fa?'ابعاد فیزیکی و رزولوشن را قبل از خروجی مشخص کن.':'Choose physical width and resolution before exporting.'}</p></div><section><h3>DPI</h3><div className="export-presets">{EXPORT_DPI_PRESETS.map(value=><button className={dpi===value?'active':''} key={value} onClick={()=>setDpi(value)}>{value}</button>)}</div></section><section><h3>{fa?'عرض فیزیکی':'Physical width'}</h3><div className="export-presets wrap">{JOURNAL_WIDTH_PRESETS.map(preset=><button key={preset.id} className={widthMm===preset.widthMm?'active':''} onClick={()=>setWidthMm(preset.widthMm)}>{preset.label}<small>{preset.widthMm} mm</small></button>)}</div><label className="property-stack"><span>mm</span><input type="number" min="20" max="600" value={widthMm} onChange={event=>setWidthMm(Number(event.target.value))}/></label></section><label className="export-toggle"><input type="checkbox" checked={transparent} onChange={event=>setTransparent(event.target.checked)}/><span>{fa?'پس‌زمینه شفاف':'Transparent background'}</span></label><div className="export-actions-v2"><button onClick={()=>downloadSvg(documentState,{transparent})}>SVG</button><button className="primary" onClick={()=>void downloadPng(documentState,dpi,widthMm,{transparent})}>PNG {dpi} DPI</button></div>{selection&&<div className="export-selection"><b>{fa?'خروجی انتخاب':'Export selection'}</b><div><button onClick={()=>downloadSvg(documentState,{transparent,objectIds:selection,cropToSelection:true})}>Selection SVG</button><button onClick={()=>void downloadPng(documentState,dpi,widthMm,{transparent,objectIds:selection,cropToSelection:true})}>Selection PNG</button></div></div>}</div>;
 }
