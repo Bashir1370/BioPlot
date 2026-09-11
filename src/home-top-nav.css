@@ -1,0 +1,271 @@
+/* Stage 10A refinement — turn the Home sidebar into a compact top navigation.
+   This file intentionally overrides only Home classes and leaves the editor untouched. */
+
+.home-shell{
+  display:block;
+  min-height:100vh;
+}
+
+.home-sidebar{
+  height:72px;
+  width:100%;
+  position:sticky;
+  top:0;
+  z-index:60;
+  padding:0 clamp(18px,3.2vw,52px);
+  border-inline-end:0;
+  border-bottom:1px solid rgba(220,230,233,.88);
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(18px);
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:space-between;
+  box-shadow:0 8px 26px rgba(30,56,67,.035);
+}
+
+.home-sidebar-top{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:clamp(24px,4vw,64px);
+}
+
+.home-brand{
+  flex:0 0 auto;
+  padding:0;
+}
+
+.home-brand-mark{
+  width:38px;
+  height:38px;
+  border-radius:11px;
+}
+
+.home-brand>span:last-child{
+  min-width:92px;
+}
+
+.home-nav{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  margin-inline:auto;
+  min-width:0;
+}
+
+.home-nav a{
+  height:40px;
+  min-width:auto;
+  padding:0 12px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  white-space:nowrap;
+  font-size:11px;
+}
+
+.home-nav a svg{
+  width:17px;
+  height:17px;
+}
+
+.home-nav em{
+  min-width:19px;
+  height:19px;
+  padding:0 5px;
+}
+
+.home-sidebar-bottom{
+  display:none;
+}
+
+.home-main{
+  width:100%;
+  min-width:0;
+}
+
+.home-topbar{
+  top:72px;
+  height:62px;
+  z-index:45;
+  padding:0 clamp(18px,3.2vw,52px);
+  background:rgba(244,247,248,.9);
+}
+
+.home-search-wrap{
+  width:min(720px,62vw);
+}
+
+.home-content{
+  width:min(1540px,100%);
+  padding:30px clamp(20px,3.6vw,58px) 72px;
+}
+
+.home-hero{
+  min-height:430px;
+  grid-template-columns:minmax(0,1.08fr) minmax(440px,.92fr);
+}
+
+.home-hero-copy{
+  padding-inline-start:clamp(42px,5vw,76px);
+  padding-inline-end:18px;
+}
+
+.home-hero h1{
+  max-width:760px;
+  font-size:clamp(36px,3.45vw,55px);
+}
+
+.home-hero-copy>p{
+  max-width:720px;
+}
+
+.home-hero-visual{
+  min-height:430px;
+}
+
+.home-section{
+  scroll-margin-top:150px;
+}
+
+@media(max-width:1100px){
+  .home-sidebar{
+    height:auto;
+    min-height:68px;
+    padding:10px 22px;
+  }
+
+  .home-sidebar-top{
+    gap:18px;
+  }
+
+  .home-nav{
+    justify-content:flex-end;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+
+  .home-nav::-webkit-scrollbar{display:none}
+
+  .home-nav a{
+    padding:0 9px;
+  }
+
+  .home-topbar{
+    top:68px;
+  }
+
+  .home-hero{
+    grid-template-columns:1fr 390px;
+  }
+}
+
+@media(max-width:820px){
+  .home-sidebar{
+    position:sticky;
+    padding:10px 14px;
+  }
+
+  .home-sidebar-top{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:12px;
+  }
+
+  .home-brand>span:last-child{
+    display:none;
+  }
+
+  .home-nav{
+    width:100%;
+    justify-content:flex-start;
+  }
+
+  .home-nav a{
+    height:38px;
+    padding:0 9px;
+    font-size:10px;
+  }
+
+  .home-nav a span{
+    display:inline;
+  }
+
+  .home-topbar{
+    top:58px;
+    height:58px;
+    padding:0 14px;
+  }
+
+  .home-search-wrap{
+    width:100%;
+    max-width:none;
+  }
+
+  .home-top-actions{
+    margin-inline-start:8px;
+  }
+
+  .home-avatar{
+    display:none;
+  }
+
+  .home-content{
+    padding:22px 14px 56px;
+  }
+
+  .home-hero{
+    min-height:0;
+    grid-template-columns:1fr;
+  }
+
+  .home-hero-copy{
+    padding:38px 28px 18px;
+  }
+
+  .home-hero-visual{
+    min-height:330px;
+  }
+
+  .home-section{
+    scroll-margin-top:130px;
+  }
+}
+
+@media(max-width:560px){
+  .home-sidebar{
+    position:relative;
+  }
+
+  .home-sidebar-top{
+    grid-template-columns:40px minmax(0,1fr);
+  }
+
+  .home-nav a span{
+    display:none;
+  }
+
+  .home-nav a{
+    width:38px;
+    justify-content:center;
+    padding:0;
+  }
+
+  .home-nav em{
+    position:absolute;
+    margin-top:-25px;
+    margin-inline-start:18px;
+  }
+
+  .home-topbar{
+    top:0;
+    position:sticky;
+  }
+
+  .home-language{
+    min-width:39px;
+  }
+}
