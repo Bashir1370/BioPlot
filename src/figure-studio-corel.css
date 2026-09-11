@@ -1,0 +1,345 @@
+/* Figure Studio UX v4 — CorelDRAW-inspired contextual property bar
+   Keeps the full editor engine/inspector capabilities, but turns the default
+   Properties view into a compact horizontal property bar directly under the app bar.
+*/
+
+.studio-shell{
+  --corel-bar:#f6f8f9;
+  --corel-bar-2:#eef2f4;
+  --corel-border:#cfd9de;
+  --corel-field:#ffffff;
+  --corel-text:#243e49;
+  --corel-muted:#6e818a;
+  --corel-accent:#0b7a75;
+  --corel-hover:#e7f4f2;
+}
+
+/* Workspace: rail + library keep their own columns; inspector is a true top row. */
+.studio-workspace{
+  grid-template-rows:58px minmax(0,1fr)!important;
+  overflow:hidden!important;
+}
+.studio-workspace>.studio-rail{grid-column:1!important;grid-row:1/3!important}
+.studio-workspace>.studio-library{grid-column:2!important;grid-row:1/3!important}
+.studio-workspace>.studio-library+.studio-splitter{grid-column:3!important;grid-row:1/3!important}
+.studio-workspace>.studio-inspector{grid-column:4/7!important;grid-row:1!important}
+.studio-workspace>.studio-canvas-zone{grid-column:4/7!important;grid-row:2!important}
+.studio-workspace>.studio-canvas-zone+.studio-splitter{display:none!important}
+
+/* === CORELDRAW-LIKE PROPERTY BAR === */
+.studio-workspace>.studio-inspector{
+  position:relative!important;
+  inset:auto!important;
+  width:auto!important;
+  height:58px!important;
+  min-height:58px!important;
+  overflow:visible!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:stretch!important;
+  background:linear-gradient(180deg,#fbfcfd 0%,var(--corel-bar) 100%)!important;
+  border:0!important;
+  border-bottom:1px solid var(--corel-border)!important;
+  border-radius:0!important;
+  box-shadow:0 2px 7px rgba(37,62,73,.06)!important;
+  z-index:80!important;
+  direction:ltr!important;
+}
+
+/* Tabs become a compact utility cluster at the far end of the property bar. */
+.studio-inspector .inspector-tabs{
+  order:2!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  height:58px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  padding:9px 10px!important;
+  background:var(--corel-bar-2)!important;
+  border:0!important;
+  border-left:1px solid var(--corel-border)!important;
+}
+.studio-inspector .inspector-tabs>button{
+  min-width:0!important;
+  width:auto!important;
+  height:34px!important;
+  padding:0 10px!important;
+  border:1px solid transparent!important;
+  border-radius:6px!important;
+  background:transparent!important;
+  color:#536a75!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  box-shadow:none!important;
+}
+.studio-inspector .inspector-tabs>button:hover{
+  background:#fff!important;
+  border-color:#d6e0e4!important;
+  color:var(--corel-accent)!important;
+}
+.studio-inspector .inspector-tabs>button.active{
+  background:#fff!important;
+  border-color:#b9d7d3!important;
+  color:var(--corel-accent)!important;
+  box-shadow:0 1px 2px rgba(31,55,65,.05)!important;
+}
+.studio-inspector .collapse-inspector{display:none!important}
+
+/* Properties is not a flyout anymore — it IS the horizontal property bar. */
+.studio-inspector>.studio-properties{
+  order:1!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+  width:auto!important;
+  height:58px!important;
+  max-height:58px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:0!important;
+  position:static!important;
+  inset:auto!important;
+  transform:none!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  padding:7px 9px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  scrollbar-width:thin!important;
+  direction:ltr!important;
+}
+
+/* Compact selected-object identity, similar to desktop drawing apps. */
+.studio-inspector .property-selection{
+  flex:0 0 auto!important;
+  min-width:105px!important;
+  max-width:145px!important;
+  height:42px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+  gap:1px!important;
+  padding:0 10px 0 4px!important;
+  margin:0 6px 0 0!important;
+  border:0!important;
+  border-right:1px solid #d8e1e5!important;
+}
+.studio-inspector .property-selection small{display:none!important}
+.studio-inspector .property-selection h2{
+  max-width:130px!important;
+  margin:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  color:var(--corel-text)!important;
+  font-weight:800!important;
+}
+.studio-inspector .property-selection>span{
+  font-size:9px!important;
+  line-height:12px!important;
+  color:#82939a!important;
+  text-transform:uppercase!important;
+  letter-spacing:.06em!important;
+}
+
+/* Each property section is an inline control group. */
+.studio-inspector .studio-properties>section{
+  flex:0 0 auto!important;
+  height:44px!important;
+  min-height:44px!important;
+  margin:0!important;
+  padding:2px 9px!important;
+  border:0!important;
+  border-right:1px solid #d8e1e5!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  overflow:visible!important;
+}
+.studio-inspector .studio-properties>section>h3{display:none!important}
+
+/* X / Y / W / H — the heart of the Corel-style property bar. */
+.studio-inspector .property-grid{
+  display:flex!important;
+  align-items:center!important;
+  gap:5px!important;
+  grid-template-columns:none!important;
+}
+.studio-inspector .property-grid label{
+  width:84px!important;
+  min-width:84px!important;
+  height:34px!important;
+  display:grid!important;
+  grid-template-columns:20px 1fr!important;
+  align-items:center!important;
+  gap:3px!important;
+  margin:0!important;
+  padding:0 4px!important;
+  border:1px solid #d5dfe3!important;
+  border-radius:5px!important;
+  background:var(--corel-field)!important;
+  color:#73868e!important;
+  font-size:10px!important;
+}
+.studio-inspector .property-grid label>span{
+  display:block!important;
+  color:#6e8189!important;
+  font-size:9px!important;
+  font-weight:800!important;
+  text-align:center!important;
+}
+.studio-inspector .property-grid input,
+.studio-inspector .property-grid select{
+  width:100%!important;
+  min-width:0!important;
+  height:30px!important;
+  padding:0 3px!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#263f4a!important;
+  font-size:11px!important;
+  font-weight:600!important;
+  text-align:center!important;
+}
+.studio-inspector .property-grid input:focus,
+.studio-inspector .property-grid select:focus{box-shadow:none!important}
+
+/* Object state: compact lock/hide buttons. */
+.studio-inspector .property-actions{
+  display:flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  margin:0!important;
+}
+.studio-inspector .property-actions button{
+  min-width:52px!important;
+  height:34px!important;
+  padding:0 9px!important;
+  margin:0!important;
+  border:1px solid #d4dee2!important;
+  border-radius:5px!important;
+  background:#fff!important;
+  color:#405964!important;
+  font-size:10px!important;
+  font-weight:700!important;
+}
+.studio-inspector .property-actions button:hover,
+.studio-inspector .property-actions button.active{
+  background:var(--corel-hover)!important;
+  border-color:#a9d3ce!important;
+  color:var(--corel-accent)!important;
+}
+
+/* Appearance fits in the same row: opacity and color. */
+.studio-inspector .property-range{
+  width:155px!important;
+  min-width:155px!important;
+  height:34px!important;
+  display:grid!important;
+  grid-template-columns:auto 1fr 34px!important;
+  align-items:center!important;
+  gap:6px!important;
+  margin:0!important;
+  color:#667b84!important;
+  font-size:9px!important;
+}
+.studio-inspector .property-range input{width:82px!important}
+.studio-inspector .property-range em{font-size:9px!important;font-style:normal!important;color:#506873!important}
+.studio-inspector .property-color{
+  height:34px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:5px!important;
+  margin:0!important;
+  color:#667b84!important;
+  font-size:9px!important;
+}
+.studio-inspector .property-color input{
+  width:30px!important;
+  height:30px!important;
+  padding:2px!important;
+  border:1px solid #ccd9de!important;
+  border-radius:5px!important;
+  background:#fff!important;
+}
+
+/* Advanced text/line/image controls remain available horizontally, but noisy
+   long-form controls move out of the default bar. */
+.studio-inspector .studio-properties>section:nth-of-type(n+4){padding-inline:8px!important}
+.studio-inspector .studio-properties>section:nth-of-type(n+4) .property-stack,
+.studio-inspector .studio-properties>section:nth-of-type(n+4) .symbol-grid,
+.studio-inspector .studio-properties>section:nth-of-type(n+4) .connector-bindings,
+.studio-inspector .studio-properties>section:nth-of-type(n+4) .property-hint{display:none!important}
+.studio-inspector .studio-properties>section:nth-of-type(n+4) .property-grid label{width:100px!important;min-width:100px!important}
+
+/* Layers / Quality / Export remain deep panels and open only when explicitly chosen. */
+.studio-inspector>.layers-panel-v2,
+.studio-inspector>.quality-panel,
+.studio-inspector>.export-panel-v2{
+  display:block!important;
+  position:absolute!important;
+  top:64px!important;
+  right:12px!important;
+  left:auto!important;
+  transform:none!important;
+  width:min(390px,calc(100vw - 90px))!important;
+  max-height:calc(100vh - 150px)!important;
+  overflow:auto!important;
+  z-index:140!important;
+  padding:16px!important;
+  background:#fff!important;
+  border:1px solid #cbd8dd!important;
+  border-radius:10px!important;
+  box-shadow:0 16px 38px rgba(30,54,65,.20)!important;
+}
+
+/* Remove the duplicate selection toolbar from the canvas. Property bar owns this role. */
+.studio-canvas-zone{
+  grid-template-rows:minmax(0,1fr) 38px!important;
+}
+.studio-selection-toolbar{display:none!important}
+.studio-canvas-scroll{grid-row:1!important;padding-top:48px!important}
+.studio-statusbar{grid-row:2!important}
+
+/* Technical controls stay readable regardless of RTL UI direction. */
+html[dir="rtl"] .studio-inspector>.studio-properties{direction:ltr!important}
+html[dir="rtl"] .studio-inspector .inspector-tabs{direction:rtl!important}
+
+/* Improve readability of the surrounding UI without making the canvas noisy. */
+.studio-panel-heading h2{font-size:19px!important}
+.studio-search input,.asset-category-select{font-size:12px!important}
+.asset-mode-tabs button{font-size:11px!important}
+.studio-assets b{font-size:11px!important}
+.studio-assets small{font-size:8.5px!important}
+.studio-rail button small{font-size:9.5px!important}
+.studio-statusbar{font-size:10px!important}
+
+@media(max-width:1180px){
+  .studio-inspector .property-selection{min-width:88px!important;max-width:105px!important}
+  .studio-inspector .property-grid label{width:76px!important;min-width:76px!important}
+  .studio-inspector .property-range{width:125px!important;min-width:125px!important}
+  .studio-inspector .property-range>span{display:none!important}
+  .studio-inspector .inspector-tabs>button{padding:0 7px!important;font-size:10px!important}
+}
+
+@media(max-width:860px){
+  .studio-workspace{grid-template-rows:56px minmax(0,1fr)!important}
+  .studio-workspace>.studio-inspector{height:56px!important;min-height:56px!important}
+  .studio-inspector .inspector-tabs{height:56px!important;padding:8px 6px!important}
+  .studio-inspector .inspector-tabs>button{font-size:0!important;width:32px!important;padding:0!important}
+  .studio-inspector .inspector-tabs>button:nth-child(1)::after{content:'P';font-size:10px!important}
+  .studio-inspector .inspector-tabs>button:nth-child(2)::after{content:'L';font-size:10px!important}
+  .studio-inspector .inspector-tabs>button:nth-child(3)::after{content:'Q';font-size:10px!important}
+  .studio-inspector .inspector-tabs>button:nth-child(4)::after{content:'E';font-size:10px!important}
+  .studio-inspector .property-selection{display:none!important}
+  .studio-inspector .studio-properties{padding-inline:5px!important}
+  .studio-inspector .property-grid label{width:72px!important;min-width:72px!important}
+  .studio-inspector .studio-properties>section:nth-of-type(n+2){display:none!important}
+  .studio-canvas-scroll{padding-top:36px!important}
+}
