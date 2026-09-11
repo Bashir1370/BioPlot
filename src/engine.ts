@@ -233,7 +233,7 @@ export class BioPlotStore {
   get snapshot() { return this.document; }
   subscribe(listener: (document: BioPlotDocument) => void) {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => { this.listeners.delete(listener); };
   }
   replace(document: BioPlotDocument) { this.document = document; this.emit(); }
   dispatch(command: Command) { this.document = this.history.execute(this.document, command); this.emit(); }
