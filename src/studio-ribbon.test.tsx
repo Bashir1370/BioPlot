@@ -26,7 +26,7 @@ describe('drawing ribbon integration',()=>{
     vi.stubGlobal('window',{innerWidth:1440});
     const html=renderToStaticMarkup(createElement(EditorStudio));
     expect(html.indexOf('studio-property-bar')).toBeLessThan(html.indexOf('<main'));
-    expect(html.match(/class="studio-property-bar"/g)).toHaveLength(1);
+    expect(html.match(/studio-property-bar/g)).toHaveLength(1);
     const side=renderToStaticMarkup(createElement(EditorInspector,{fa:false,tab:'properties',setTab:vi.fn(),documentState:createBlankDocument(),bounds:selectionBounds([shape]),selectedObjects:[shape],objects:[shape],selected:new Set([shape.id]),onBounds:vi.fn(),onCommit:vi.fn(),onLock:vi.fn(),onHide:vi.fn(),onSelect:vi.fn(),onLayerStep:vi.fn(),onLayerReorder:vi.fn(),onToggleObjectLock:vi.fn(),onToggleObjectHidden:vi.fn(),onCollapse:vi.fn()}));
     expect(side).not.toContain('type="number"');
     expect(side).not.toContain('type="range"');
