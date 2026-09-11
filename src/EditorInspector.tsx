@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { StudioIcon } from './StudioIcon';
 import { Bounds, selectionBounds } from './engine';
 import { downloadPng, downloadSvg, EXPORT_DPI_PRESETS, JOURNAL_WIDTH_PRESETS } from './export';
 import { BioPlotDocument, BioPlotObject, ConnectorObject, ConnectorPort, LabelObject, TextObject } from './model';
@@ -34,11 +35,11 @@ export function EditorInspector({
 }) {
   return <aside className="studio-inspector">
     <div className="inspector-tabs">
-      <button className={tab === 'properties' ? 'active' : ''} onClick={() => setTab('properties')}>{fa ? 'ویژگی‌ها' : 'Properties'}</button>
-      <button className={tab === 'layers' ? 'active' : ''} onClick={() => setTab('layers')}>{fa ? 'لایه‌ها' : 'Layers'}</button>
-      <button className={tab === 'quality' ? 'active' : ''} onClick={() => setTab('quality')}>{fa ? 'کیفیت' : 'Quality'}</button>
-      <button className={tab === 'export' ? 'active' : ''} onClick={() => setTab('export')}>{fa ? 'خروجی' : 'Export'}</button>
-      <button className="collapse-inspector" onClick={onCollapse}>×</button>
+      <button className={tab === 'properties' ? 'active' : ''} onClick={() => setTab('properties')} aria-pressed={tab === 'properties'}><StudioIcon name="settings"/>{fa ? 'ویژگی‌ها' : 'Properties'}</button>
+      <button className={tab === 'layers' ? 'active' : ''} onClick={() => setTab('layers')} aria-pressed={tab === 'layers'}><StudioIcon name="layers"/>{fa ? 'لایه‌ها' : 'Layers'}</button>
+      <button className={tab === 'quality' ? 'active' : ''} onClick={() => setTab('quality')} aria-pressed={tab === 'quality'}><StudioIcon name="check"/>{fa ? 'کیفیت' : 'Quality'}</button>
+      <button className={tab === 'export' ? 'active' : ''} onClick={() => setTab('export')} aria-pressed={tab === 'export'}><StudioIcon name="download"/>{fa ? 'خروجی' : 'Export'}</button>
+      <button className="collapse-inspector" onClick={onCollapse} aria-label={fa?'بستن پنل':'Close panel'}><StudioIcon name="close"/></button>
     </div>
     {tab === 'properties' && <Properties fa={fa} bounds={bounds} selectedObjects={selectedObjects} objects={objects} onBounds={onBounds} onCommit={onCommit} onLock={onLock} onHide={onHide} />}
     {tab === 'layers' && <Layers fa={fa} objects={objects} selected={selected} onSelect={onSelect} onLayerStep={onLayerStep} onLayerReorder={onLayerReorder} onToggleObjectLock={onToggleObjectLock} onToggleObjectHidden={onToggleObjectHidden} />}
@@ -47,7 +48,7 @@ export function EditorInspector({
   </aside>;
 }
 
-function Properties({ fa, bounds, selectedObjects, objects, onBounds, onCommit, onLock, onHide }: {
+function Properties({ fa, selectedObjects, objects, onCommit }: {
   fa: boolean;
   bounds: ReturnType<typeof selectionBounds>;
   selectedObjects: BioPlotObject[];
@@ -58,50 +59,15 @@ function Properties({ fa, bounds, selectedObjects, objects, onBounds, onCommit, 
   onHide: () => void;
 }) {
   const single = selectedObjects.length === 1 ? selectedObjects[0] : null;
-  const opacity = selectedObjects.length ? selectedObjects.reduce((sum, object) => sum + object.opacity, 0) / selectedObjects.length : 1;
-  let primaryColor = '#0b7a75';
-  if (single?.type === 'text' || single?.type === 'label') primaryColor = single.color;
-  else if (single?.type === 'shape' || single?.type === 'container') primaryColor = single.fill;
-  else if (single?.type === 'arrow' || single?.type === 'connector') primaryColor = single.stroke;
 
   return <div className="studio-properties">
     <div className="property-selection">
-      <small>SELECTION</small>
+      <small>{fa?'انتخاب فعلی':'SELECTION'}</small>
       <h2>{selectedObjects.length === 0 ? (fa ? 'بدون انتخاب' : 'No selection') : single ? single.name : `${selectedObjects.length} ${fa ? 'آبجکت' : 'objects'}`}</h2>
       {single && <span>{single.type}</span>}
     </div>
 
-    <section>
-      <h3>{fa ? 'موقعیت و اندازه' : 'Position & size'}</h3>
-      <div className="property-grid">
-        {(['x', 'y', 'width', 'height'] as const).map(field => <label key={field}>
-          <span>{field === 'width' ? 'W' : field === 'height' ? 'H' : field.toUpperCase()}</span>
-          <input disabled={!bounds} type="number" value={bounds ? Math.round(bounds[field]) : ''} onChange={event => onBounds(field, Number(event.target.value))} />
-        </label>)}
-      </div>
-    </section>
-
-    <section>
-      <h3>{fa ? 'وضعیت' : 'Object state'}</h3>
-      <div className="property-actions">
-        <button disabled={!selectedObjects.length} onClick={() => onLock(!selectedObjects.every(object => object.locked))}>{selectedObjects.every(object => object.locked) ? (fa ? 'بازکردن قفل' : 'Unlock') : (fa ? 'قفل' : 'Lock')}</button>
-        <button disabled={!selectedObjects.length} onClick={onHide}>{fa ? 'مخفی' : 'Hide'}</button>
-      </div>
-    </section>
-
-    <section>
-      <h3>{fa ? 'ظاهر' : 'Appearance'}</h3>
-      <label className="property-range"><span>{fa ? 'شفافیت' : 'Opacity'}</span><input disabled={!selectedObjects.length} type="range" min="5" max="100" value={Math.round(opacity * 100)} onChange={event => { const value = Number(event.target.value) / 100; onCommit('Opacity', object => ({ ...object, opacity: value })); }} /><em>{Math.round(opacity * 100)}%</em></label>
-      {single && !['asset', 'image', 'plot'].includes(single.type) && <label className="property-color"><span>{fa ? 'رنگ اصلی' : 'Primary color'}</span><input type="color" value={primaryColor} onChange={event => {
-        const color = event.target.value;
-        onCommit('Color', object => {
-          if (object.type === 'text' || object.type === 'label') return { ...object, color };
-          if (object.type === 'shape' || object.type === 'container') return { ...object, fill: color };
-          if (object.type === 'arrow' || object.type === 'connector') return { ...object, stroke: color };
-          return object;
-        });
-      }} /></label>}
-    </section>
+    <p className="property-hint">{fa ? 'موقعیت، اندازه و ظاهر در نوار بالای بوم قرار دارند.' : 'Position, size and appearance are in the bar above the canvas.'}</p>
 
     {single && (single.type === 'text' || single.type === 'label') && <TextProperties fa={fa} single={single} onCommit={onCommit} />}
     {single && (single.type === 'arrow' || single.type === 'connector') && <LineProperties fa={fa} single={single} objects={objects} onCommit={onCommit} />}
@@ -212,5 +178,54 @@ function ExportPanel({ fa, documentState, selected }: { fa: boolean; documentSta
     <label className="export-toggle"><input type="checkbox" checked={transparent} onChange={event => setTransparent(event.target.checked)} /><span>{fa ? 'پس‌زمینه شفاف' : 'Transparent background'}</span></label>
     <div className="export-actions-v2"><button onClick={() => downloadSvg(documentState, { transparent })}>SVG</button><button className="primary" onClick={() => void downloadPng(documentState, dpi, widthMm, { transparent })}>PNG {dpi} DPI</button></div>
     {selection && <div className="export-selection"><b>{fa ? 'خروجی انتخاب' : 'Export selection'}</b><div><button onClick={() => downloadSvg(documentState, { transparent, objectIds: selection, cropToSelection: true })}>Selection SVG</button><button onClick={() => void downloadPng(documentState, dpi, widthMm, { transparent, objectIds: selection, cropToSelection: true })}>Selection PNG</button></div></div>}
+  </div>;
+}
+
+export function SelectionProperties({fa,bounds,selectedObjects,onBounds,onCommit,onLock,onHide}:{
+  fa:boolean; bounds:Bounds|null; selectedObjects:BioPlotObject[];
+  onBounds:(field:'x'|'y'|'width'|'height',value:number)=>void;
+  onCommit:Commit; onLock:(locked:boolean)=>void; onHide:()=>void;
+}) {
+  const single=selectedObjects.length===1?selectedObjects[0]:null;
+  const opacity = selectedObjects.length ? selectedObjects.reduce((sum, object) => sum + object.opacity, 0) / selectedObjects.length : 1;
+  let primaryColor = '#0b7a75';
+  if (single?.type === 'text' || single?.type === 'label') primaryColor = single.color;
+  else if (single?.type === 'shape' || single?.type === 'container') primaryColor = single.fill;
+  else if (single?.type === 'arrow' || single?.type === 'connector') primaryColor = single.stroke;
+
+  return <div className="studio-property-bar" role="region" aria-label={fa?'ویژگی‌های انتخاب':'Selection properties'}>
+    <div className="ribbon-selection"><StudioIcon name="settings"/><div><small>{fa?'انتخاب فعلی':'SELECTION'}</small><strong>{single?single.name:selectedObjects.length?`${selectedObjects.length} ${fa?'آبجکت':'objects'}`:fa?'بدون انتخاب':'No selection'}</strong></div></div>
+    <section>
+      <h3>{fa ? 'موقعیت و اندازه' : 'Position & size'} <span className="ribbon-unit">px</span></h3>
+      <div className="property-grid">
+        {(['x', 'y', 'width', 'height'] as const).map(field => <label key={field}>
+          <span>{field === 'width' ? 'W' : field === 'height' ? 'H' : field.toUpperCase()}</span>
+          <input disabled={!bounds || selectedObjects.every(object => object.locked)} type="number" value={bounds ? Math.round(bounds[field]) : ''} onChange={event => onBounds(field, Number(event.target.value))} />
+        </label>)}
+      </div>
+    </section>
+
+    <section>
+      <h3>{fa ? 'وضعیت' : 'Object state'}</h3>
+      <div className="property-actions">
+        <button disabled={!selectedObjects.length} onClick={() => onLock(!selectedObjects.every(object => object.locked))}><StudioIcon name={selectedObjects.length>0&&selectedObjects.every(object => object.locked)?'unlock':'lock'}/>{selectedObjects.length>0&&selectedObjects.every(object => object.locked) ? (fa ? 'بازکردن قفل' : 'Unlock') : (fa ? 'قفل' : 'Lock')}</button>
+        <button disabled={!selectedObjects.length} onClick={onHide}><StudioIcon name="hide"/>{fa ? 'مخفی' : 'Hide'}</button>
+      </div>
+    </section>
+
+    <section>
+      <h3>{fa ? 'ظاهر' : 'Appearance'}</h3>
+      <label className="property-range"><span>{fa ? 'شفافیت' : 'Opacity'}</span><input disabled={!selectedObjects.length} type="range" min="5" max="100" value={Math.round(opacity * 100)} onChange={event => { const value = Number(event.target.value) / 100; onCommit('Opacity', object => ({ ...object, opacity: value })); }} /><em>{Math.round(opacity * 100)}%</em></label>
+      {single && !['asset', 'image', 'plot'].includes(single.type) && <label className="property-color"><span>{fa ? 'رنگ اصلی' : 'Primary color'}</span><input type="color" value={primaryColor} onChange={event => {
+        const color = event.target.value;
+        onCommit('Color', object => {
+          if (object.type === 'text' || object.type === 'label') return { ...object, color };
+          if (object.type === 'shape' || object.type === 'container') return { ...object, fill: color };
+          if (object.type === 'arrow' || object.type === 'connector') return { ...object, stroke: color };
+          return object;
+        });
+      }} /></label>}
+    </section>
+
   </div>;
 }
