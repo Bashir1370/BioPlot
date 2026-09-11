@@ -4,8 +4,6 @@ import { plotToSvg } from './plots';
 const esc = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[char] ?? char));
 
 function transform(object: BioPlotObject) {
-  const cx = object.x + object.width / 2;
-  const cy = object.y + object.height / 2;
   return `translate(${object.x} ${object.y}) rotate(${object.rotation} ${object.width / 2} ${object.height / 2})`;
 }
 
@@ -62,36 +60,36 @@ export function objectToSvg(object: BioPlotObject) {
   }
 }
 
-export function documentToSvg(document: BioPlotDocument) {
-  const page = activePage(document);
+export function documentToSvg(bioDocument: BioPlotDocument) {
+  const page = activePage(bioDocument);
   const objects = page.objects.map(objectToSvg).join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${page.width}" height="${page.height}" viewBox="0 0 ${page.width} ${page.height}"><defs><marker id="bp-arrow-end" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="context-stroke"/></marker><marker id="bp-arrow-start" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto-start-reverse"><path d="M8 0L0 4L8 8Z" fill="context-stroke"/></marker></defs><rect width="100%" height="100%" fill="${page.background}"/>${objects}</svg>`;
 }
 
 const safeFileName = (title: string) => title.trim().replace(/[^a-z0-9-_]+/gi, '-').replace(/^-|-$/g, '') || 'bioplot-figure';
 
-export function downloadSvg(document: BioPlotDocument) {
-  const blob = new Blob([documentToSvg(document)], { type: 'image/svg+xml;charset=utf-8' });
-  downloadBlob(blob, `${safeFileName(document.title)}.svg`);
+export function downloadSvg(bioDocument: BioPlotDocument) {
+  const blob = new Blob([documentToSvg(bioDocument)], { type: 'image/svg+xml;charset=utf-8' });
+  downloadBlob(blob, `${safeFileName(bioDocument.title)}.svg`);
 }
 
-export async function downloadPng(document: BioPlotDocument, dpi = 300, widthMm = 160) {
-  const page = activePage(document);
+export async function downloadPng(bioDocument: BioPlotDocument, dpi = 300, widthMm = 160) {
+  const page = activePage(bioDocument);
   const targetWidth = Math.max(1, Math.round((widthMm / 25.4) * dpi));
   const scale = targetWidth / page.width;
   const targetHeight = Math.round(page.height * scale);
-  const svg = documentToSvg(document);
+  const svg = documentToSvg(bioDocument);
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
   try {
     const image = await loadImage(url);
-    const canvas = document.createElement('canvas');
+    const canvas = window.document.createElement('canvas');
     canvas.width = targetWidth;
     canvas.height = targetHeight;
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Canvas is not available.');
     context.drawImage(image, 0, 0, targetWidth, targetHeight);
-    const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('PNG export failed.')), 'image/png'));
-    downloadBlob(blob, `${safeFileName(document.title)}-${dpi}dpi.png`);
+    const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((result: Blob | null) => result ? resolve(result) : reject(new Error('PNG export failed.')), 'image/png'));
+    downloadBlob(blob, `${safeFileName(bioDocument.title)}-${dpi}dpi.png`);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -107,11 +105,11 @@ function loadImage(url: string) {
 }
 
 function downloadBlob(blob: Blob, name: string) {
-  const anchor = document.createElement('a');
+  const anchor = window.document.createElement('a');
   const url = URL.createObjectURL(blob);
   anchor.href = url;
   anchor.download = name;
-  document.body.appendChild(anchor);
+  window.document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
