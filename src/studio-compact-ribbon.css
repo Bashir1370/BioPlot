@@ -1,17 +1,17 @@
 /* Compact one-row selection ribbon: icon-first controls with on-demand popovers. */
 .studio-shell.has-selection{--compact-ribbon-height:48px}
-.studio-shell.has-selection .studio-command-deck{display:block;min-height:var(--compact-ribbon-height);height:var(--compact-ribbon-height);margin:0 14px 8px 70px;overflow:visible;border-color:#cfe3df;background:#f9fdfc;box-shadow:0 2px 8px #164f4710}
-.studio-shell.has-selection .studio-command-row{height:var(--compact-ribbon-height);min-height:var(--compact-ribbon-height);display:flex;align-items:center;gap:6px;padding:5px 8px;background:#f9fdfc;overflow:visible}
+.studio-shell.has-selection .studio-command-deck{display:flex;align-items:center;min-height:var(--compact-ribbon-height);height:var(--compact-ribbon-height);margin:0 14px 8px 70px;padding:0 6px;overflow:visible;border-color:#cfe3df;background:#f9fdfc;box-shadow:0 2px 8px #164f4710}
+.studio-shell.has-selection .studio-command-row{flex:0 1 auto;height:var(--compact-ribbon-height);min-height:var(--compact-ribbon-height);display:flex;align-items:center;gap:6px;padding:5px 4px;background:transparent;overflow:visible}
 .studio-shell.has-selection .studio-selection-toolbar{display:flex;align-items:center;gap:5px;min-width:0;overflow:visible}
 .studio-shell.has-selection .studio-selection-toolbar .toolbar-group{display:flex;align-items:center;gap:3px;padding-inline:4px;border-inline-end:1px solid #deebe8}
 .studio-shell.has-selection .studio-selection-toolbar button,.compact-property-action,.compact-property-tool>summary,.ribbon-inspector-toggle{width:34px!important;height:34px!important;min-width:34px!important;display:grid!important;place-items:center!important;padding:0!important;border:1px solid transparent!important;border-radius:7px!important;background:transparent!important;color:#4b625f!important;cursor:pointer}
 .studio-shell.has-selection .studio-selection-toolbar button:hover:not(:disabled),.compact-property-action:hover:not(:disabled),.compact-property-tool>summary:hover,.ribbon-inspector-toggle:hover{background:#e5f4f1!important;border-color:#bfded8!important;color:#087f79!important}
 .studio-shell.has-selection .studio-selection-toolbar button:disabled,.compact-property-action:disabled{opacity:.34;cursor:not-allowed}
 .studio-shell.has-selection .studio-selection-toolbar .studio-ui-icon,.compact-property-tools .studio-ui-icon,.ribbon-inspector-toggle .studio-ui-icon{width:18px;height:18px}
-.studio-shell.has-selection .ribbon-inspector-toggle{margin-inline-start:auto!important;position:static!important;box-shadow:none!important}
+.studio-shell.has-selection .ribbon-inspector-toggle{margin-inline-start:2px!important;position:static!important;box-shadow:none!important}
 .studio-shell.has-selection .ribbon-inspector-toggle>span{display:none!important}
 
-.compact-property-tools{position:relative;display:flex!important;align-items:center;gap:3px;min-height:34px!important;height:34px!important;width:auto!important;padding:0 5px!important;margin:0!important;background:transparent!important;border:0!important;border-inline-start:1px solid #deebe8!important;overflow:visible!important}
+.compact-property-tools{position:relative;display:flex!important;align-items:center;gap:3px;min-height:34px!important;height:34px!important;width:auto!important;flex:0 0 auto;padding:0 5px!important;margin:0!important;background:transparent!important;border:0!important;border-inline-start:1px solid #deebe8!important;overflow:visible!important}
 .compact-selection-indicator{width:34px;height:34px;display:grid;place-items:center;border-radius:7px;color:#087f79;background:#e6f5f2;border:1px solid #cce7e2;flex:0 0 auto}
 .compact-property-tool{position:relative;flex:0 0 auto}
 .compact-property-tool>summary{list-style:none}
