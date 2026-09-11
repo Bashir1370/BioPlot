@@ -8,6 +8,7 @@ import './home-top-nav.css';
 import './editor-pro.css';
 import './template-previews-pro.css';
 import './studio-polish.css';
+import './studio-ribbon.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
