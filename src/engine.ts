@@ -184,7 +184,10 @@ export class DeleteObjectsCommand implements Command {
     const next = cloneDocument(document);
     const page = activePage(next);
     const restored = [...page.objects];
-    this.objects.forEach(object => restored.splice(Math.min(this.indexes.get(object.id) ?? restored.length, restored.length), 0, structuredClone(object)));
+    this.objects
+      .slice()
+      .sort((a, b) => (this.indexes.get(a.id) ?? 0) - (this.indexes.get(b.id) ?? 0))
+      .forEach(object => restored.splice(Math.min(this.indexes.get(object.id) ?? restored.length, restored.length), 0, structuredClone(object)));
     page.objects = restored;
     next.updatedAt = new Date().toISOString();
     return next;
@@ -197,10 +200,13 @@ export class HistoryManager {
   constructor(private limit = 100) {}
   execute(document: BioPlotDocument, command: Command) {
     const next = command.execute(document);
+    this.record(command);
+    return next;
+  }
+  record(command: Command) {
     this.undoStack.push(command);
     if (this.undoStack.length > this.limit) this.undoStack.shift();
     this.redoStack = [];
-    return next;
   }
   undo(document: BioPlotDocument) {
     const command = this.undoStack.pop();
@@ -244,13 +250,7 @@ export class BioPlotStore {
   commitObjectState(before: BioPlotObject[], after: BioPlotObject[], label: string) {
     const command = new ObjectStateCommand(label, before, after);
     this.document = command.execute(this.document);
-    this.history.execute(this.document, new ObjectStateCommand(label, after, after));
-    // Replace the no-op history record with the real command through a controlled rewind.
-    this.history.undo(this.document);
-    this.document = command.execute(this.document);
-    (this.history as unknown as { undoStack: Command[] }).undoStack.pop();
-    (this.history as unknown as { undoStack: Command[] }).undoStack.push(command);
-    (this.history as unknown as { redoStack: Command[] }).redoStack = [];
+    this.history.record(command);
     this.emit();
   }
   private emit() { this.listeners.forEach(listener => listener(this.document)); }
