@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { DashboardApp } from './DashboardApp';
 import { EditorApp } from './EditorApp';
 import './styles-v3.css';
+import './home-top-nav.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
