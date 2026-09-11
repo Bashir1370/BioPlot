@@ -68,7 +68,7 @@ const copy = {
 };
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
-  const paths: Record<IconName, JSX.Element> = {
+  const paths = {
     home: <><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-7h5v7"/></>,
     projects: <><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18"/><path d="M8 5V3h8v2"/></>,
     templates: <><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></>,
