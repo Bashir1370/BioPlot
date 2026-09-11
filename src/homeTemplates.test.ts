@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { activePage } from './model';
+import { activePage, DOCUMENT_SCHEMA_VERSION } from './model';
 import { createHomeTemplateDocument, homeTemplates, templateIdFromDocument } from './homeTemplates';
 
 describe('Home scientific figure templates', () => {
   it('creates a valid structured document for every quick start', () => {
     homeTemplates.forEach(template => {
       const document = createHomeTemplateDocument(template.id, 'en');
-      expect(document.schemaVersion).toBe(3);
+      expect(document.schemaVersion).toBe(DOCUMENT_SCHEMA_VERSION);
       expect(document.metadata.locale).toBe('en');
       expect(document.metadata.tags).toContain(`template:${template.id}`);
       expect(activePage(document).objects.length).toBeGreaterThan(0);

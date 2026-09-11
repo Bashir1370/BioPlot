@@ -11,6 +11,10 @@ export interface Bounds {
   cy: number;
 }
 
+export type AlignMode = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
+export type DistributionAxis = 'horizontal' | 'vertical';
+export type ZOrderAction = 'front' | 'back' | 'forward' | 'backward';
+
 const radians = (degrees: number) => (degrees * Math.PI) / 180;
 
 export function objectBounds(object: BioPlotObject): Bounds {
@@ -36,6 +40,22 @@ export function selectionBounds(objects: BioPlotObject[]): Bounds | null {
   return { x, y, width: right - x, height: bottom - y, right, bottom, cx: (x + right) / 2, cy: (y + bottom) / 2 };
 }
 
+export function rectFromPoints(ax: number, ay: number, bx: number, by: number): Bounds {
+  const x = Math.min(ax, bx);
+  const y = Math.min(ay, by);
+  const right = Math.max(ax, bx);
+  const bottom = Math.max(ay, by);
+  return { x, y, right, bottom, width: right - x, height: bottom - y, cx: (x + right) / 2, cy: (y + bottom) / 2 };
+}
+
+export function boundsIntersect(a: Bounds, b: Bounds) {
+  return a.x <= b.right && a.right >= b.x && a.y <= b.bottom && a.bottom >= b.y;
+}
+
+export function objectsInRect(objects: BioPlotObject[], rect: Bounds) {
+  return objects.filter(object => !object.hidden && boundsIntersect(objectBounds(object), rect));
+}
+
 export function rotateObjects(objects: BioPlotObject[], delta: number, center?: { x: number; y: number }): BioPlotObject[] {
   const bounds = selectionBounds(objects);
   if (!bounds) return objects;
@@ -50,12 +70,7 @@ export function rotateObjects(objects: BioPlotObject[], delta: number, center?: 
     const dy = cy - pivot.y;
     const nextCx = pivot.x + dx * cos - dy * sin;
     const nextCy = pivot.y + dx * sin + dy * cos;
-    return {
-      ...object,
-      x: nextCx - object.width / 2,
-      y: nextCy - object.height / 2,
-      rotation: normalizeRotation(object.rotation + delta)
-    };
+    return { ...object, x: nextCx - object.width / 2, y: nextCy - object.height / 2, rotation: normalizeRotation(object.rotation + delta) };
   });
 }
 
@@ -71,6 +86,53 @@ export function resizeObjects(objects: BioPlotObject[], next: Pick<Bounds, 'x' |
     width: Math.max(8, object.width * sx),
     height: Math.max(8, object.height * sy)
   }));
+}
+
+export function alignObjects(objects: BioPlotObject[], mode: AlignMode): BioPlotObject[] {
+  const selection = selectionBounds(objects);
+  if (!selection || objects.length < 2) return objects;
+  return objects.map(object => {
+    const bounds = objectBounds(object);
+    let dx = 0;
+    let dy = 0;
+    if (mode === 'left') dx = selection.x - bounds.x;
+    if (mode === 'center') dx = selection.cx - bounds.cx;
+    if (mode === 'right') dx = selection.right - bounds.right;
+    if (mode === 'top') dy = selection.y - bounds.y;
+    if (mode === 'middle') dy = selection.cy - bounds.cy;
+    if (mode === 'bottom') dy = selection.bottom - bounds.bottom;
+    return { ...object, x: object.x + dx, y: object.y + dy };
+  });
+}
+
+export function distributeObjects(objects: BioPlotObject[], axis: DistributionAxis): BioPlotObject[] {
+  if (objects.length < 3) return objects;
+  const ordered = [...objects].sort((a, b) => axis === 'horizontal' ? objectBounds(a).cx - objectBounds(b).cx : objectBounds(a).cy - objectBounds(b).cy);
+  const first = objectBounds(ordered[0]);
+  const last = objectBounds(ordered[ordered.length - 1]);
+  const start = axis === 'horizontal' ? first.cx : first.cy;
+  const end = axis === 'horizontal' ? last.cx : last.cy;
+  const step = (end - start) / (ordered.length - 1);
+  const positions = new Map<string, number>();
+  ordered.forEach((object, index) => positions.set(object.id, start + step * index));
+  return objects.map(object => {
+    const bounds = objectBounds(object);
+    const target = positions.get(object.id) ?? (axis === 'horizontal' ? bounds.cx : bounds.cy);
+    return axis === 'horizontal' ? { ...object, x: object.x + target - bounds.cx } : { ...object, y: object.y + target - bounds.cy };
+  });
+}
+
+export function reorderObjects(objects: BioPlotObject[], selectedIds: Set<string>, action: ZOrderAction) {
+  if (!selectedIds.size) return objects;
+  const next = [...objects];
+  if (action === 'front') return [...next.filter(item => !selectedIds.has(item.id)), ...next.filter(item => selectedIds.has(item.id))];
+  if (action === 'back') return [...next.filter(item => selectedIds.has(item.id)), ...next.filter(item => !selectedIds.has(item.id))];
+  if (action === 'forward') {
+    for (let i = next.length - 2; i >= 0; i--) if (selectedIds.has(next[i].id) && !selectedIds.has(next[i + 1].id)) [next[i], next[i + 1]] = [next[i + 1], next[i]];
+  } else {
+    for (let i = 1; i < next.length; i++) if (selectedIds.has(next[i].id) && !selectedIds.has(next[i - 1].id)) [next[i], next[i - 1]] = [next[i - 1], next[i]];
+  }
+  return next;
 }
 
 export function normalizeRotation(value: number) {
@@ -89,15 +151,11 @@ export function buildSnapTargets(document: BioPlotDocument, excludedIds: Set<str
     { axis: 'x', value: page.width / 2 },
     { axis: 'y', value: page.height / 2 }
   ];
-  page.objects.filter(o => !excludedIds.has(o.id) && !o.hidden).forEach(object => {
+  page.objects.filter(object => !excludedIds.has(object.id) && !object.hidden).forEach(object => {
     const b = objectBounds(object);
     targets.push(
-      { axis: 'x', value: b.x },
-      { axis: 'x', value: b.cx },
-      { axis: 'x', value: b.right },
-      { axis: 'y', value: b.y },
-      { axis: 'y', value: b.cy },
-      { axis: 'y', value: b.bottom }
+      { axis: 'x', value: b.x }, { axis: 'x', value: b.cx }, { axis: 'x', value: b.right },
+      { axis: 'y', value: b.y }, { axis: 'y', value: b.cy }, { axis: 'y', value: b.bottom }
     );
   });
   return targets;
@@ -115,19 +173,16 @@ export function snapDelta(bounds: Bounds, dx: number, dy: number, targets: SnapT
     candidates.forEach(candidate => {
       const distance = target.value - candidate;
       if (Math.abs(distance) > threshold) return;
-      if (target.axis === 'x' && Math.abs(distance) < Math.abs(bestXDistance)) {
-        bestXDistance = distance;
-        bestXValue = target.value;
-      }
-      if (target.axis === 'y' && Math.abs(distance) < Math.abs(bestYDistance)) {
-        bestYDistance = distance;
-        bestYValue = target.value;
-      }
+      if (target.axis === 'x' && Math.abs(distance) < Math.abs(bestXDistance)) { bestXDistance = distance; bestXValue = target.value; }
+      if (target.axis === 'y' && Math.abs(distance) < Math.abs(bestYDistance)) { bestYDistance = distance; bestYValue = target.value; }
     });
   });
-  const resolvedX = Number.isFinite(bestXDistance) ? bestXDistance : 0;
-  const resolvedY = Number.isFinite(bestYDistance) ? bestYDistance : 0;
-  return { dx: dx + resolvedX, dy: dy + resolvedY, guideX: bestXValue, guideY: bestYValue };
+  return {
+    dx: dx + (Number.isFinite(bestXDistance) ? bestXDistance : 0),
+    dy: dy + (Number.isFinite(bestYDistance) ? bestYDistance : 0),
+    guideX: bestXValue,
+    guideY: bestYValue
+  };
 }
 
 export interface Command {
@@ -137,12 +192,7 @@ export interface Command {
 }
 
 export class ObjectStateCommand implements Command {
-  constructor(
-    public label: string,
-    private before: BioPlotObject[],
-    private after: BioPlotObject[]
-  ) {}
-
+  constructor(public label: string, private before: BioPlotObject[], private after: BioPlotObject[]) {}
   private apply(document: BioPlotDocument, objects: BioPlotObject[]) {
     const next = cloneDocument(document);
     const page = activePage(next);
@@ -151,7 +201,18 @@ export class ObjectStateCommand implements Command {
     next.updatedAt = new Date().toISOString();
     return next;
   }
+  execute(document: BioPlotDocument) { return this.apply(document, this.after); }
+  undo(document: BioPlotDocument) { return this.apply(document, this.before); }
+}
 
+export class PageObjectsCommand implements Command {
+  constructor(public label: string, private before: BioPlotObject[], private after: BioPlotObject[]) {}
+  private apply(document: BioPlotDocument, objects: BioPlotObject[]) {
+    const next = cloneDocument(document);
+    activePage(next).objects = structuredClone(objects);
+    next.updatedAt = new Date().toISOString();
+    return next;
+  }
   execute(document: BioPlotDocument) { return this.apply(document, this.after); }
   undo(document: BioPlotDocument) { return this.apply(document, this.before); }
 }
@@ -189,10 +250,7 @@ export class DeleteObjectsCommand implements Command {
     const next = cloneDocument(document);
     const page = activePage(next);
     const restored = [...page.objects];
-    this.objects
-      .slice()
-      .sort((a, b) => (this.indexes.get(a.id) ?? 0) - (this.indexes.get(b.id) ?? 0))
-      .forEach(object => restored.splice(Math.min(this.indexes.get(object.id) ?? restored.length, restored.length), 0, structuredClone(object)));
+    this.objects.slice().sort((a, b) => (this.indexes.get(a.id) ?? 0) - (this.indexes.get(b.id) ?? 0)).forEach(object => restored.splice(Math.min(this.indexes.get(object.id) ?? restored.length, restored.length), 0, structuredClone(object)));
     page.objects = restored;
     next.updatedAt = new Date().toISOString();
     return next;
@@ -203,28 +261,10 @@ export class HistoryManager {
   private undoStack: Command[] = [];
   private redoStack: Command[] = [];
   constructor(private limit = 100) {}
-  execute(document: BioPlotDocument, command: Command) {
-    const next = command.execute(document);
-    this.record(command);
-    return next;
-  }
-  record(command: Command) {
-    this.undoStack.push(command);
-    if (this.undoStack.length > this.limit) this.undoStack.shift();
-    this.redoStack = [];
-  }
-  undo(document: BioPlotDocument) {
-    const command = this.undoStack.pop();
-    if (!command) return document;
-    this.redoStack.push(command);
-    return command.undo(document);
-  }
-  redo(document: BioPlotDocument) {
-    const command = this.redoStack.pop();
-    if (!command) return document;
-    this.undoStack.push(command);
-    return command.execute(document);
-  }
+  execute(document: BioPlotDocument, command: Command) { const next = command.execute(document); this.record(command); return next; }
+  record(command: Command) { this.undoStack.push(command); if (this.undoStack.length > this.limit) this.undoStack.shift(); this.redoStack = []; }
+  undo(document: BioPlotDocument) { const command = this.undoStack.pop(); if (!command) return document; this.redoStack.push(command); return command.undo(document); }
+  redo(document: BioPlotDocument) { const command = this.redoStack.pop(); if (!command) return document; this.undoStack.push(command); return command.execute(document); }
   get canUndo() { return this.undoStack.length > 0; }
   get canRedo() { return this.redoStack.length > 0; }
 }
@@ -233,13 +273,9 @@ export class BioPlotStore {
   private document: BioPlotDocument;
   readonly history = new HistoryManager();
   private listeners = new Set<(document: BioPlotDocument) => void>();
-
   constructor(document: BioPlotDocument) { this.document = document; }
   get snapshot() { return this.document; }
-  subscribe(listener: (document: BioPlotDocument) => void) {
-    this.listeners.add(listener);
-    return () => { this.listeners.delete(listener); };
-  }
+  subscribe(listener: (document: BioPlotDocument) => void) { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; }
   replace(document: BioPlotDocument) { this.document = document; this.emit(); }
   dispatch(command: Command) { this.document = this.history.execute(this.document, command); this.emit(); }
   undo() { this.document = this.history.undo(this.document); this.emit(); }
