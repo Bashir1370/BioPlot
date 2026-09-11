@@ -1,13 +1,174 @@
-/* BioPlot green/teal visual theme. Presentation-only override for the reference workspace. */
-.studio-shell{--brand:#087f79;--brand-dark:#05645f;--brand-strong:#075f5b;--brand-soft:#e6f5f2;--brand-soft-2:#f1faf8;--brand-line:#b9ddd6;--ink:#263f46;--muted:#6d8084;--line:#dce8e5;--soft:#eaf6f3;background:#f3f7f6}
-.studio-shell :is(button,a,input,select,textarea):focus-visible{outline-color:#2b9a90}
-.studio-brand>span{background:var(--brand)!important}.studio-brand strong{color:#136d68!important}
-.studio-top-actions .studio-export,.canvas-settings-form>button{background:var(--brand)!important;border-color:var(--brand)!important;color:#fff!important}.studio-top-actions .studio-export:hover{background:var(--brand-dark)!important;border-color:var(--brand-dark)!important}.studio-top-actions button:hover{background:#eef8f6!important;border-color:#b9ddd6!important}.canvas-edit-details[open]>summary{color:var(--brand)!important;background:#edf8f5!important}
-.reference-document-card,.studio-library,.reference-pages,.studio-inspector,.studio-top-actions,.canvas-settings-form{background:#fbfefd!important;border-color:#d9e7e3!important}.studio-library{box-shadow:0 5px 18px rgba(26,71,67,.07)!important}.reference-pages,.studio-inspector{box-shadow:0 5px 18px rgba(26,71,67,.065)!important}.reference-panel-title,.page-actions{border-color:#e2ece9!important}.property-selection{background:#f0f8f6!important}
-.studio-command-deck{border-color:#d5e6e1!important;box-shadow:0 4px 14px rgba(24,74,69,.06)!important}.studio-command-row{background:#f7fbfa!important}.studio-property-bar{background:#fcfefd!important}.ribbon-selection>.studio-ui-icon{color:var(--brand)!important;background:#e5f4f0!important}.studio-selection-toolbar button:hover:not(:disabled){background:#e6f4f1!important;border-color:#b7d9d1!important;color:#08756d!important}.studio-property-bar .property-grid label:focus-within{border-color:#359b91!important;box-shadow:0 0 0 2px rgba(53,155,145,.12)!important}.ribbon-inspector-toggle[aria-pressed=true]{background:#e6f2ef!important;color:#176b66!important}
-.reference-tool-rail{background:#fbfefd!important;border-color:#d9e7e3!important;box-shadow:0 4px 14px rgba(26,71,67,.06)!important}.reference-tool-rail>button:hover{background:#eff8f6!important}.reference-tool-rail>button.active{color:var(--brand)!important;background:#e4f3ef!important}.asset-mode-tabs button.active{background:#e7f5f2!important;border-color:#8bc9bf!important;color:#08766e!important}.catalog-section>div>button{color:#0a7c74!important}.studio-assets .asset-main:hover{border-color:#7fc2b7!important;background:#f4fbf9!important;box-shadow:0 0 0 1px rgba(127,194,183,.18)!important}.catalog-categories>button:hover{border-color:#a9d5ce!important;background:#f6fbfa!important}.catalog-categories>button>.studio-ui-icon{color:#7ea79f!important}
-.page-card.active img{border-color:#159187!important;box-shadow:0 0 0 2px rgba(21,145,135,.12)!important}.page-card:hover img{box-shadow:0 0 0 2px #d9efea!important}.page-actions>button{color:#0a7a73!important}
-.studio-shell .inspector-tabs>button.active{background:#e5f4f0!important;border-color:#b7ddd5!important;color:#08766e!important}.studio-elements button span{color:#0a7f77!important}
-.studio-shell{background:#f2f6f5!important}.studio-canvas-scroll{background-color:#eef3f2!important}.grid-visible .studio-canvas-scroll{background-image:radial-gradient(circle,rgba(98,126,122,.30) .8px,transparent .8px)!important}.studio-splitter:after{background:#abcfc8!important}.reference-artboard-label{color:#667b7b!important}
-.reference-bottom-bar{background:#f3f7f6!important;color:#405b5e!important}.reference-bottom-bar .canvas-edit-details>summary:hover{color:var(--brand)!important}.reference-zoom-controls button:hover,.reference-zoom-controls button.active{background:#e4f0ed!important;color:var(--brand)!important}.reference-slides-toggle.active{background:#e1f0ec!important;color:#08766e!important}.reference-zoom-controls input{accent-color:var(--brand)!important}.canvas-color-control input{border-color:#cadbd7!important}
-.studio-shell input[type="range"],.studio-shell input[type="checkbox"]{accent-color:var(--brand)}.studio-search:focus-within{border-color:#8bc9bf!important;box-shadow:0 0 0 3px rgba(8,127,121,.08)!important}.studio-shell ::selection{background:#ccebe5;color:#193f3b}
+/* BioPlot Studio: neutral working surfaces with a focused teal identity.
+   Imported after the compact ribbon; all rules are scoped to editor chrome.
+   Artboard content, document colors and layout state stay owned by the editor. */
+.studio-shell {
+  --brand: #087f79;
+  --brand-dark: #05645f;
+  --brand-strong: #075f5b;
+  --brand-soft: #e4f4f1;
+  --brand-soft-2: #f2faf8;
+  --brand-line: #a8d5ce;
+  --ink: #243449;
+  --muted: #64748b;
+  --line: #dfe5ec;
+  --soft: #e4f4f1;
+  --panel-shadow: 0 3px 12px #24344906, 0 1px 2px #24344905;
+  background: #edf1f5;
+  color: var(--ink);
+  font-size: 14px;
+}
+.studio-shell :is(button, input, select, textarea, summary) { font-family: inherit; }
+.studio-shell :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid #26a89c;
+  outline-offset: 3px;
+}
+.studio-shell button { transition: background .16s ease, border-color .16s ease, box-shadow .16s ease, color .16s ease; }
+.studio-shell button:disabled { cursor: not-allowed; }
+.studio-shell .studio-ui-icon { stroke-width: 1.8; flex-shrink: 0; }
+.studio-shell ::selection { background: #c9ebe5; color: #134c47; }
+.studio-shell :is(input[type=range], input[type=checkbox]) { accent-color: var(--brand); }
+.studio-shell :is(.studio-library, .studio-inspector, .reference-pages, .studio-canvas-scroll) {
+  scrollbar-width: thin;
+  scrollbar-color: #c2ccd7 transparent;
+}
+
+/* Header: one quiet band, with Export as the primary action. */
+.studio-shell .studio-topbar { padding-inline: 12px; background: #f8fafc; border-bottom: 1px solid var(--line); margin-bottom: 8px; gap: 10px; }
+.studio-shell .reference-document-card { background: transparent; border-color: transparent; box-shadow: none; padding-inline: 0; }
+.studio-shell .studio-brand { gap: 9px; padding-inline-end: 16px; }
+.studio-shell .studio-brand > span { width: 32px; height: 32px; border-radius: 10px; background: var(--brand); box-shadow: inset 0 1px 0 #ffffff35, 0 3px 6px #087f791a; }
+.studio-shell .studio-brand strong { color: #174b49; font-size: 16px; font-weight: 750; }
+.studio-shell .studio-document input { color: var(--ink); border-radius: 6px; }
+.studio-shell .studio-document input:hover { background: #eaf0f5; }
+.studio-shell .studio-document small { color: #586c7e; font-size: 12px; }
+.studio-shell .studio-history button { border-radius: 7px; }
+.studio-shell .studio-history button:hover:not(:disabled) { color: var(--brand); background: var(--soft); }
+.studio-shell .studio-top-actions { background: transparent; border: 0; box-shadow: none; padding: 6px 0; gap: 8px; }
+.studio-shell .studio-top-actions button { border-radius: 8px; border-color: #d8e0e9; background: #fff; font-weight: 600; color: #405169; }
+.studio-shell .studio-top-actions button:hover { background: #edf5f4 !important; border-color: #a8d5ce !important; }
+.studio-shell .studio-top-actions .studio-export { color: #fff; background: var(--brand); border-color: var(--brand); box-shadow: 0 3px 7px #087f791f, inset 0 1px 0 #ffffff20; padding-inline: 20px; }
+.studio-shell .studio-top-actions .studio-export:hover { background: var(--brand-dark) !important; border-color: var(--brand-dark) !important; }
+.studio-shell .canvas-edit-details > summary { height: 44px; border-radius: 8px; box-shadow: none; color: #405169; font-size: 14px; }
+.studio-shell .studio-topbar > .canvas-edit-details { align-self: center; }
+.studio-shell .canvas-edit-details[open] > summary { color: var(--brand); background: var(--soft); border-color: var(--brand-line); }
+
+/* Dark tool rail anchors the workspace without changing its position. */
+.studio-shell .reference-tool-rail { background: #172b3a; border-color: #172b3a; border-radius: 12px; box-shadow: 0 6px 16px #172b3a1c; margin-top: 0; padding: 6px 4px; gap: 5px; }
+.studio-shell .reference-tool-rail > button { position: relative; background: transparent; color: #c2ced9; border-radius: 8px; min-height: 66px; gap: 7px; }
+.studio-shell .reference-tool-rail > button > span { font-size: 12px; font-weight: 500; }
+.studio-shell .reference-tool-rail > button > .studio-ui-icon { width: 22px; height: 22px; }
+.studio-shell .reference-tool-rail > button:hover { background: #284253; color: #fff; }
+.studio-shell .reference-tool-rail > button.active { color: #fff; background: #087f79; box-shadow: inset 0 1px 0 #ffffff20; }
+.studio-shell .reference-rail-spacer { border-color: #ffffff20; height: 8px; }
+
+/* Panels share a consistent surface, corner and section hierarchy. */
+.studio-shell :is(.studio-library, .studio-inspector, .reference-pages) { background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--panel-shadow); }
+.studio-shell .studio-library { padding: 20px 16px; }
+.studio-shell .studio-panel-heading { margin-bottom: 20px; }
+.studio-shell :is(.studio-panel-heading h2, .reference-panel-title h2) { color: #243449; font-size: 17px; font-weight: 700; letter-spacing: -.35px; }
+.studio-shell :is(.studio-panel-heading > button, .reference-panel-title button) { width: 30px; height: 30px; border-radius: 7px; color: #718096; }
+.studio-shell :is(.studio-panel-heading > button, .reference-panel-title button):hover { background: #eef2f6; color: #243449; }
+.studio-shell .studio-search { height: 44px; border-color: #dce3eb; background: #f7f9fc; border-radius: 8px; gap: 8px; }
+.studio-shell .studio-search input { color: var(--ink); background: transparent; font-size: 14px; }
+.studio-shell .studio-search input::placeholder { color: #718096; }
+.studio-shell .studio-search:focus-within { border-color: #35a89d; background: #fff; box-shadow: 0 0 0 3px #087f7912; }
+.studio-shell .asset-mode-tabs { padding: 4px; margin: 12px 0; border-radius: 9px; background: #eef2f6; gap: 2px; }
+.studio-shell .asset-mode-tabs button { flex: 1; justify-content: center; border: 1px solid transparent; border-radius: 6px; min-height: 32px; background: transparent; color: #596a7f; padding: 4px 6px; font-size: 14px; }
+.studio-shell .asset-mode-tabs button.active { color: var(--brand-dark); background: #fff; border-color: #dde5ec; box-shadow: 0 1px 3px #24344912; font-weight: 650; }
+.studio-shell .asset-category-select { height: 38px; margin-bottom: 18px; border-color: #dce3eb; border-radius: 8px; color: #526479; background: #fff; }
+.studio-shell .catalog-intro { padding-top: 18px; gap: 6px; border-color: #e7ecf2; margin-bottom: 22px; }
+.studio-shell .catalog-intro strong { color: #314359; font-size: 14px; }
+.studio-shell .catalog-intro > span { color: #64748b; font-size: 13px; line-height: 1.65; }
+.studio-shell .catalog-section { margin-bottom: 24px; }
+.studio-shell :is(.catalog-section h3, .catalog-categories h3) { color: #42546b; font-size: 14px; font-weight: 650; }
+.studio-shell .catalog-section > div:first-child { margin-bottom: 10px; }
+.studio-shell .catalog-section > div > button { color: var(--brand); font-size: 12px; font-weight: 600; padding-block: 4px; }
+.studio-shell .studio-assets { gap: 8px; }
+.studio-shell .studio-assets .asset-main { background: #f7f9fc; border: 1px solid #e7ecf2; border-radius: 10px; padding: 9px; aspect-ratio: 1; min-height: 64px; }
+.studio-shell .studio-assets .asset-main:hover { border-color: #71bfb4; background: #eef9f6; box-shadow: 0 3px 9px #087f7910; }
+.studio-shell .studio-assets .asset-favorite { border-radius: 6px; top: 4px !important; right: 4px !important; }
+.studio-shell .catalog-categories > button { border-color: #e7ecf2; border-radius: 9px; min-height: 60px; }
+.studio-shell .catalog-categories > button:hover { border-color: #a8d5ce; background: #f3faf8; }
+.studio-shell .catalog-categories small { color: #64748b; }
+.studio-shell .category-preview { width: 38px; height: 38px; border-radius: 8px; background: #f2f5f9; }
+
+/* Compact ribbon keeps its existing controls and responsive behavior. */
+.studio-shell.has-selection .studio-command-deck { background: #fff; border-color: var(--line); border-radius: 10px; box-shadow: var(--panel-shadow); }
+.studio-shell .studio-command-row { background: transparent; }
+.studio-shell.has-selection .studio-selection-toolbar .toolbar-group { border-color: #e4e9f0; }
+.studio-shell.has-selection .studio-selection-toolbar button,
+.studio-shell .compact-property-action,
+.studio-shell .compact-property-tool > summary,
+.studio-shell .ribbon-inspector-toggle { color: #526479 !important; }
+.studio-shell.has-selection .studio-selection-toolbar button:hover:not(:disabled),
+.studio-shell .compact-property-action:hover:not(:disabled),
+.studio-shell .compact-property-tool > summary:hover,
+.studio-shell .ribbon-inspector-toggle:hover { background: var(--soft) !important; color: var(--brand-dark) !important; border-color: var(--brand-line) !important; }
+.studio-shell .ribbon-inspector-toggle[aria-pressed=true],
+.studio-shell .compact-property-tool[open] > summary { background: var(--soft) !important; color: var(--brand) !important; }
+.studio-shell.has-selection .studio-selection-toolbar button.danger:hover:not(:disabled) { background: #fff0f0 !important; color: #be3545 !important; border-color: #f2bec4 !important; }
+
+/* Neutral stage separates the document from editor chrome. */
+.studio-shell .studio-canvas-scroll { background-color: #e9eef3; border-radius: 12px; }
+.studio-shell.grid-visible .studio-canvas-scroll { background-image: radial-gradient(circle, #9baec078 .8px, transparent .8px); }
+.studio-shell .studio-artboard { box-shadow: 0 0 0 1px #263a5012, 0 14px 38px #263a5014, 0 2px 5px #263a500a; }
+.studio-shell .reference-artboard-label { color: #596d82; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .2px; }
+.studio-shell .studio-splitter:after { background: #70bcb2; border-radius: 4px; }
+.studio-shell .studio-selection { border-color: #0b9488; }
+.studio-shell :is(.studio-handle, .studio-rotate) { border-color: #0b9488; box-shadow: 0 1px 3px #24344916; }
+.studio-shell .studio-handle { border-radius: 2px; }
+.studio-shell .studio-rotate-line { background: #0b9488; }
+
+/* Slide previews and inspector use the same selected-state language. */
+.studio-shell .reference-panel-title { height: 56px; border-color: #e7ecf2; padding-inline: 16px; }
+.studio-shell .page-actions { height: 50px; padding-inline: 16px; border-color: #e7ecf2; }
+.studio-shell .page-actions > button { color: var(--brand); font-size: 14px; font-weight: 550; }
+.studio-shell .page-actions > span { display: grid; place-items: center; min-width: 24px; height: 24px; border-radius: 6px; background: #eef2f6; color: #5d6f82; }
+.studio-shell .page-list { gap: 12px; padding: 12px; }
+.studio-shell .page-card { padding: 9px; border: 1px solid transparent; border-radius: 10px; background: transparent; }
+.studio-shell .page-card.active { background: #edf8f5; border-color: #c7e7df; }
+.studio-shell .page-card > span { color: #64748b; margin-bottom: 9px; }
+.studio-shell .page-card b { color: #42546b; font-size: 13px; font-weight: 550; }
+.studio-shell .page-card img { border-radius: 6px; border-color: #dce3eb; }
+.studio-shell .page-card.active img { border: 2px solid #11978a; box-shadow: 0 2px 5px #087f7910; }
+.studio-shell .page-card:hover img { box-shadow: 0 0 0 2px #bce0d9; }
+.studio-shell .inspector-tabs > button.active { background: var(--soft); color: var(--brand-dark); border-color: var(--brand); }
+.studio-shell .property-selection { background: #f5f8fb; border-color: #e4eaf1; }
+.studio-shell :is(.property-grid input, .property-grid select, .property-stack select, .property-stack textarea) { background: #f8fafc; border-color: #dce3eb; border-radius: 7px; }
+.studio-shell .studio-elements button span { color: var(--brand); }
+.studio-shell :is(.canvas-settings-form, .compact-property-popover, .studio-context-menu) { background: #fff; border: 1px solid #dfe5ec; border-radius: 12px; box-shadow: 0 12px 40px #24344924, 0 2px 6px #2434490a; }
+.studio-shell .canvas-settings-form > button { background: var(--brand); color: #fff; border-radius: 7px; }
+.studio-shell .studio-context-menu button { font-size: 14px; height: 36px; }
+.studio-shell .studio-context-menu kbd { font-size: 12px; }
+
+/* Status controls stay understated and readable. */
+.studio-shell .reference-bottom-bar { background: #f8fafc; color: #526479; border-top: 1px solid var(--line); margin-top: 4px; }
+.studio-shell .reference-bottom-bar .canvas-edit-details > summary { height: 34px; font-size: 14px; }
+.studio-shell .reference-zoom-controls { gap: 5px; }
+.studio-shell .reference-zoom-controls > span { color: #42546b; font-variant-numeric: tabular-nums; }
+.studio-shell .reference-zoom-controls button { border-radius: 7px; color: #596d82; }
+.studio-shell .reference-zoom-controls button:hover,
+.studio-shell .reference-zoom-controls button.active,
+.studio-shell .reference-slides-toggle.active { color: var(--brand-dark); background: var(--soft); }
+.studio-shell .reference-slides-toggle { border-radius: 8px; }
+.studio-shell .canvas-color-control input { border-color: #cad5e1; border-radius: 4px; }
+
+@media (max-width: 820px) {
+  .studio-shell .studio-topbar { padding-inline: 7px; gap: 5px; }
+  .studio-shell .studio-brand { padding-inline-end: 8px; }
+  .studio-shell .studio-top-actions { gap: 4px; }
+  .studio-shell .studio-top-actions .studio-export { padding-inline: 10px; }
+  .studio-shell .studio-topbar > .canvas-edit-details > summary { height: 42px; }
+  .studio-shell .studio-library { padding: 16px; }
+  .studio-shell .reference-tool-rail > button { min-height: 60px; }
+}
+
+@media (max-width: 560px) {
+  .studio-shell .studio-brand > span { width: 28px; height: 28px; border-radius: 8px; }
+  .studio-shell .reference-tool-rail > button { min-height: 55px; }
+  .studio-shell .reference-zoom-controls { gap: 2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-shell button { transition: none; }
+}
