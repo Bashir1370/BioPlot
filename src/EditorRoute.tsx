@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { EditorStudio } from './EditorStudio';
 import { StudioIcon } from './StudioIcon';
 import { getAdminSessionState, subscribeAdminState } from './adminAuth';
-import { loadCustomAssets, ScientificAsset } from './assets';
+import { loadCustomAssets } from './assets';
+import type { ScientificAsset } from './assets';
 import { syncPublishedCloudAssetsToBrowserCache } from './cloudAssetLibrary';
 import './admin-access.css';
 
