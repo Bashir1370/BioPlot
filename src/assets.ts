@@ -257,7 +257,27 @@ export function markAssetUsed(id:string){const ids=[id,...recentAssetIds().filte
 export function recentAssets(){const ids=recentAssetIds(),catalog=getAssetCatalog();return ids.map(id=>catalog.find(asset=>asset.id===id)).filter((asset):asset is ScientificAsset=>Boolean(asset));}
 export function favoriteAssets(){const ids=new Set(favoriteAssetIds());return getAssetCatalog().filter(asset=>ids.has(asset.id));}
 
+function assetAspectRatio(svg:string){
+  const viewBox=svg.match(/\bviewBox\s*=\s*["']\s*[-+\d.eE]+[\s,]+[-+\d.eE]+[\s,]+([-+\d.eE]+)[\s,]+([-+\d.eE]+)\s*["']/i);
+  if(viewBox){
+    const width=Number(viewBox[1]),height=Number(viewBox[2]);
+    if(Number.isFinite(width)&&Number.isFinite(height)&&width>0&&height>0)return width/height;
+  }
+  const width=svg.match(/\bwidth\s*=\s*["']([\d.]+)/i),height=svg.match(/\bheight\s*=\s*["']([\d.]+)/i);
+  if(width&&height){
+    const w=Number(width[1]),h=Number(height[1]);
+    if(Number.isFinite(w)&&Number.isFinite(h)&&w>0&&h>0)return w/h;
+  }
+  return 150/110;
+}
+
 export function assetToObject(asset: ScientificAsset, x = 360, y = 260): AssetObject {
   markAssetUsed(asset.id);
-  return { id: makeId(), type: 'asset', name: asset.name, assetId: asset.id, svg: asset.svg, colors: asset.colorSlots.map(slot => ({ key: slot.key, label: slot.label, value: slot.defaultValue })), x, y, width: 150, height: 110, rotation: 0, opacity: 1 };
+  const ratio=Math.max(.3,Math.min(3.3,assetAspectRatio(asset.svg)));
+  const targetArea=150*110;
+  let width=Math.sqrt(targetArea*ratio),height=width/ratio;
+  const maxSide=190;
+  if(width>maxSide){height*=maxSide/width;width=maxSide;}
+  if(height>maxSide){width*=maxSide/height;height=maxSide;}
+  return { id: makeId(), type: 'asset', name: asset.name, assetId: asset.id, svg: asset.svg, colors: asset.colorSlots.map(slot => ({ key: slot.key, label: slot.label, value: slot.defaultValue })), x, y, width: Math.round(width), height: Math.round(height), rotation: 0, opacity: 1 };
 }

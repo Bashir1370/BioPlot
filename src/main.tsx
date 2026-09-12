@@ -15,6 +15,7 @@ import './studio-reference.css';
 import './studio-compact-ribbon.css';
 import './studio-green-theme.css';
 import './admin-asset-presets.css';
+import './studio-floating-selection.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
