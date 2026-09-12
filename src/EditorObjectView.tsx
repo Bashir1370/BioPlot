@@ -1,4 +1,5 @@
 import { PointerEvent as ReactPointerEvent } from 'react';
+import { assetCssFilter, StyledAssetObject } from './assetStyling';
 import { connectorPath, resolveConnector } from './connectors';
 import { BioPlotObject } from './model';
 import { plotToSvg } from './plots';
@@ -35,7 +36,10 @@ export function EditorObjectView({ object, objects, selected, onPointerDown, onC
   if (rendered.type === 'label') return <div {...common} className={`${common.className} studio-label label-${rendered.variant}`} style={{...style,color:rendered.color,background:rendered.background,borderColor:rendered.borderColor,fontSize:rendered.fontSize,fontWeight:rendered.fontWeight,fontFamily:fontStackForText(rendered.text,rendered.fontFamily),textAlign:rendered.align}}>{rendered.text}</div>;
   if (rendered.type === 'shape') return <div {...common} style={{...style,background:rendered.fill,border:`${rendered.strokeWidth}px ${rendered.lineStyle==='dashed'?'dashed':rendered.lineStyle==='dotted'?'dotted':'solid'} ${rendered.stroke}`,borderRadius:rendered.shape==='ellipse'?'50%':rendered.radius}}/>;
   if (rendered.type === 'container') return <div {...common} className={`${common.className} studio-container`} style={{...style,background:rendered.fill,border:`${rendered.strokeWidth}px solid ${rendered.stroke}`,borderRadius:rendered.radius}}/>;
-  if (rendered.type === 'asset') return <div {...common} className={`${common.className} studio-asset`} dangerouslySetInnerHTML={{__html:rendered.svg}}/>;
+  if (rendered.type === 'asset') {
+    const asset=rendered as StyledAssetObject;
+    return <div {...common} className={`${common.className} studio-asset`}><div className="studio-asset-visual" style={{filter:assetCssFilter(asset)}} dangerouslySetInnerHTML={{__html:asset.svg}}/></div>;
+  }
   if (rendered.type === 'image') return <div {...common} className={`${common.className} studio-image`}><img src={rendered.src} alt={rendered.alt??rendered.name} style={{objectFit:rendered.fit}}/></div>;
   if (rendered.type === 'plot') return <div {...common} className={`${common.className} studio-plot`}><svg width="100%" height="100%" viewBox={`0 0 ${rendered.width} ${rendered.height}`} dangerouslySetInnerHTML={{__html:plotToSvg(rendered.spec,rendered.width,rendered.height)}}/></div>;
   if (rendered.type === 'arrow') return <div {...common}><svg width="100%" height="100%" viewBox={`0 0 ${rendered.width} ${rendered.height}`}><Markers object={rendered}/><line x1="4" y1={rendered.height/2} x2={rendered.width-9} y2={rendered.height/2} stroke={rendered.stroke} strokeWidth={rendered.strokeWidth} strokeDasharray={dash(rendered.lineStyle)} markerStart={rendered.arrowHead==='both'?`url(#start-${rendered.id})`:undefined} markerEnd={rendered.arrowHead==='none'?undefined:`url(#end-${rendered.id})`}/></svg></div>;
