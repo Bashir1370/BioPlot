@@ -7,6 +7,7 @@ import { AccountPage } from './AccountPage';
 import { isAccountPath, isAdminLibraryPath, isEditorPath } from './routing';
 import { installSelectionDragToolbarBehavior } from './selectionDragToolbar';
 import { installTightAssetSelection } from './tightAssetSelection';
+import { installObjectWheelScaling } from './objectWheelScale';
 import './styles-v3.css';
 import './home-top-nav.css';
 import './editor-pro.css';
@@ -31,6 +32,7 @@ const isEditor = isEditorPath(window.location.pathname);
 if (isEditor) {
   installSelectionDragToolbarBehavior();
   installTightAssetSelection();
+  installObjectWheelScaling();
 }
 
 createRoot(root).render(
