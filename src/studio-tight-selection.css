@@ -1,0 +1,6 @@
+.studio-shell .studio-selection.studio-selection-tight{
+  left:var(--bioplot-tight-left)!important;
+  top:var(--bioplot-tight-top)!important;
+  width:var(--bioplot-tight-width)!important;
+  height:var(--bioplot-tight-height)!important;
+}
