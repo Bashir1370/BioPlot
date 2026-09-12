@@ -2,15 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { EditorStudio } from './EditorStudio';
 import { StudioIcon } from './StudioIcon';
 import { getAdminSessionState, subscribeAdminState } from './adminAuth';
-import { loadCustomAssets } from './assets';
 import type { ScientificAsset } from './assets';
 import { syncPublishedCloudAssetsToBrowserCache } from './cloudAssetLibrary';
 import './admin-access.css';
 
-function cloudLibrarySignature() {
+function cloudLibrarySignature(assets: ScientificAsset[]) {
   return JSON.stringify(
-    loadCustomAssets()
-      .filter(asset => Boolean((asset as ScientificAsset & { cloudManaged?: boolean }).cloudManaged))
+    assets
       .map(asset => [
         asset.id,
         asset.version,
@@ -22,6 +20,7 @@ function cloudLibrarySignature() {
         asset.name,
         asset.nameFa,
         asset.category,
+        asset.svg.length,
       ])
       .sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
   );
@@ -41,15 +40,15 @@ export function EditorRoute() {
       if (syncing) return;
       syncing = true;
       try {
-        await syncPublishedCloudAssetsToBrowserCache();
+        const cloud = await syncPublishedCloudAssetsToBrowserCache();
         if (!alive) return;
-        const nextSignature = cloudLibrarySignature();
+        const nextSignature = cloudLibrarySignature(cloud);
         if (librarySignatureRef.current && librarySignatureRef.current !== nextSignature) {
           setLibraryEpoch(value => value + 1);
         }
         librarySignatureRef.current = nextSignature;
       } catch {
-        // Keep the cached library available when the network is temporarily unavailable.
+        // Keep the current in-memory/cached library available when the network is temporarily unavailable.
       } finally {
         syncing = false;
         if (initial && alive) setLibraryReady(true);
