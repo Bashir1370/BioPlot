@@ -1,9 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DashboardApp } from './DashboardApp';
+import { HomeRoute } from './HomeRoute';
 import { EditorRoute } from './EditorRoute';
 import { AdminLibraryPage } from './AdminLibraryPage';
-import { isAdminLibraryPath, isEditorPath } from './routing';
+import { AccountPage } from './AccountPage';
+import { isAccountPath, isAdminLibraryPath, isEditorPath } from './routing';
 import './styles-v3.css';
 import './home-top-nav.css';
 import './editor-pro.css';
@@ -18,10 +19,11 @@ const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
 
 const isAdminLibrary = isAdminLibraryPath(window.location.pathname);
+const isAccount = isAccountPath(window.location.pathname);
 const isEditor = isEditorPath(window.location.pathname);
 
 createRoot(root).render(
   <StrictMode>
-    {isAdminLibrary ? <AdminLibraryPage /> : isEditor ? <EditorRoute /> : <DashboardApp />}
+    {isAdminLibrary ? <AdminLibraryPage /> : isAccount ? <AccountPage /> : isEditor ? <EditorRoute /> : <HomeRoute />}
   </StrictMode>
 );
