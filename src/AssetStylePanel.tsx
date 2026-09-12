@@ -19,11 +19,11 @@ export function AssetStylePanel({fa,object,onChange,onBrowse}:{fa:boolean;object
   const setStyle=(label:string,patch:Partial<typeof style>)=>onChange(label,{...object,assetStyle:{...style,...patch}});
   const previewFilter=assetCssFilter(object);
 
-  // Selection on the canvas can transiently request the style panel. Resolve that
-  // before the browser paints so the Library never flashes for a single frame.
+  // Only decide whether this panel is allowed to open when the selected asset itself
+  // changes. Parent re-renders must not consume the one-time Library insertion token.
   useLayoutEffect(()=>{
     if(!consumeAssetStyleAutoOpenFromLibrary()) onBrowse();
-  },[object.id,onBrowse]);
+  },[object.id]);
 
   useEffect(()=>{
     const dismissFromCanvas=(event:PointerEvent)=>{
