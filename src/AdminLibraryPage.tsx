@@ -1,5 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { sanitizeSvg } from './assets';
+import type { AssetStylePresetConfig } from './assetStyling';
 import { claimAdmin, getAdminSessionState, signInAdmin, signOutAdmin, signUpAdmin } from './adminAuth';
 import {
   CloudAsset,
@@ -21,11 +22,13 @@ import './admin-access.css';
 type Gate = 'loading' | 'signed-out' | 'claim' | 'admin';
 type Draft = CloudAssetDraft & { tagsEn: string; tagsFa: string };
 
-const emptyDraft: Draft = {
+const originalPreset: AssetStylePresetConfig = { id: 'original', label: 'Original', labelFa: 'اصلی', kind: 'original' };
+const freshDraft = (): Draft => ({
   name: '', nameFa: '', category: '', description: '', descriptionFa: '',
   synonyms: { en: [], fa: [] }, tagsEn: '', tagsFa: '', renderSvg: '', sourceType: 'svg',
   reviewStatus: 'draft', premium: false, active: true, featured: false,
-};
+  stylePresets: [{ ...originalPreset }],
+});
 const split = (value: string) => value.split(/[,،\n]/).map(item => item.trim()).filter(Boolean);
 
 function readAsDataUrl(file: File): Promise<string> {
@@ -63,6 +66,7 @@ function assetToDraft(asset: CloudAsset): Draft {
     synonyms: asset.synonyms, tagsEn: asset.synonyms.en.join(', '), tagsFa: asset.synonyms.fa.join('، '),
     renderSvg: asset.svg, sourceType: asset.sourceType ?? 'svg', reviewStatus: asset.reviewStatus,
     premium: asset.premium, active: asset.active !== false, featured: Boolean(asset.featured),
+    stylePresets: asset.stylePresets ? structuredClone(asset.stylePresets) : undefined,
   };
 }
 
@@ -114,7 +118,7 @@ export function AdminLibraryPage() {
   const [email, setEmail] = useState('');
   const [assets, setAssets] = useState<CloudAsset[]>([]);
   const [categories, setCategories] = useState<CloudCategory[]>([]);
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [draft, setDraft] = useState<Draft>(() => freshDraft());
   const [file, setFile] = useState<File | null>(null);
   const [editing, setEditing] = useState<CloudAsset | null>(null);
   const [query, setQuery] = useState('');
@@ -146,7 +150,7 @@ export function AdminLibraryPage() {
   if (gate === 'loading') return <div className="editor-cloud-loading"><span>B</span><strong>BioPlot Admin</strong><small>در حال بررسی دسترسی…</small></div>;
   if (gate !== 'admin') return <AuthCard gate={gate} onReady={checkAccess} />;
 
-  const reset = () => { setEditing(null); setFile(null); setDraft(emptyDraft); setMessage(''); };
+  const reset = () => { setEditing(null); setFile(null); setDraft(freshDraft()); setMessage(''); };
   const pickFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const next = event.target.files?.[0]; if (!next) return;
     setBusy(true); setMessage('');
@@ -171,6 +175,20 @@ export function AdminLibraryPage() {
   const renameCategory = async (category: CloudCategory) => { const en = prompt('نام انگلیسی دسته', category.nameEn); if (!en) return; const fa = prompt('نام فارسی دسته', category.nameFa ?? '') ?? ''; await updateCloudCategory(category.slug, en, fa); if (filterCategory === category.slug) setFilterCategory(en.trim()); await refresh(); };
   const removeCategory = async (category: CloudCategory) => { if (!confirm(`دسته «${category.nameEn}» حذف شود؟`)) return; await deleteCloudCategory(category.slug); if (filterCategory === category.slug) setFilterCategory(''); await refresh(); };
   const exportBackup = () => { const blob = new Blob([JSON.stringify({ version: 2, exportedAt: new Date().toISOString(), categories, assets }, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `bioplot-cloud-library-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); };
+  const customizePresets = () => setDraft(current => ({ ...current, stylePresets: [{ ...originalPreset }] }));
+  const toggleOriginalPreset = (enabled: boolean) => setDraft(current => {
+    const presets = current.stylePresets ?? [];
+    const withoutOriginal = presets.filter(item => item.kind !== 'original');
+    return { ...current, stylePresets: enabled ? [{ ...originalPreset }, ...withoutOriginal] : withoutOriginal };
+  });
+  const addColorPreset = () => setDraft(current => {
+    const presets = current.stylePresets ?? [];
+    const count = presets.filter(item => item.kind === 'tint').length + 1;
+    const preset: AssetStylePresetConfig = { id: `color-${Date.now()}-${count}`, label: `Color ${count}`, labelFa: `رنگ ${count}`, kind: 'tint', color: '#087f79' };
+    return { ...current, stylePresets: [...presets, preset] };
+  });
+  const updatePreset = (index: number, changes: Partial<AssetStylePresetConfig>) => setDraft(current => ({ ...current, stylePresets: (current.stylePresets ?? []).map((item, itemIndex) => itemIndex === index ? { ...item, ...changes } : item) }));
+  const removePreset = (index: number) => setDraft(current => ({ ...current, stylePresets: (current.stylePresets ?? []).filter((_, itemIndex) => itemIndex !== index) }));
 
   return <div className="admin-library" dir="rtl">
     <header className="admin-header"><div className="admin-brand"><span>B</span><div><strong>BioPlot Admin</strong><small>Supabase Library Manager</small></div></div><nav><div className="admin-header-user"><small>{email}</small><button onClick={() => void signOutAdmin().then(() => location.reload())}>خروج</button></div><a href="/">داشبورد</a><a className="primary" href="/editor">ویرایشگر</a></nav></header>
@@ -179,7 +197,9 @@ export function AdminLibraryPage() {
       <section className="admin-content">
         <div className="admin-page-title"><div><p>SUPABASE LIBRARY MANAGER</p><h1>مدیریت مرکزی المان‌های علمی</h1><span>هر چیزی که اینجا منتشر کنی، از Supabase برای کاربران BioPlot بارگذاری می‌شود.</span></div><div className="admin-stat"><strong>{assets.length}</strong><span>المان ابری</span></div><div className="admin-stat"><strong>{assets.filter(a => a.active).length}</strong><span>منتشرشده</span></div></div>
         <div className="admin-cloud-note"><StudioIcon name="check" /><div><strong>Supabase Database + Storage فعال است</strong><span>اطلاعات در Database و فایل اصلی در public-assets ذخیره می‌شود. RLS نوشتن و حذف را فقط برای حساب Admin مجاز می‌کند.</span></div></div>
-        <section className="admin-editor-card"><div className="admin-editor-head"><div><strong>{editing ? 'ویرایش المان' : 'افزودن المان جدید'}</strong><span>{editing ? 'فایل جدید اختیاری است.' : 'SVG، PNG، JPG یا WebP تا ۲.۵MB'}</span></div>{editing && <button onClick={reset}>لغو ویرایش</button>}</div><form className="asset-editor-form" onSubmit={e => void submitAsset(e)}><label className={`asset-drop ${draft.renderSvg ? 'has-preview' : ''}`}><input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg" onChange={e => void pickFile(e)} />{draft.renderSvg ? <span className="asset-upload-preview" dangerouslySetInnerHTML={{ __html: draft.renderSvg }} /> : <><StudioIcon name="upload" /><strong>{busy ? 'در حال پردازش…' : 'تصویر را انتخاب کن'}</strong><small>SVG / PNG / JPG / WebP</small></>}</label><div className="asset-fields"><div className="field-pair"><label>نام انگلیسی<input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} required /></label><label>نام فارسی<input value={draft.nameFa ?? ''} onChange={e => setDraft({ ...draft, nameFa: e.target.value })} /></label></div><div className="field-pair"><label>دسته‌بندی<select value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value })} required><option value="">انتخاب دسته</option>{categories.map(c => <option value={c.slug} key={c.slug}>{c.nameEn}{c.nameFa ? ` — ${c.nameFa}` : ''}</option>)}</select></label><label>وضعیت علمی<select value={draft.reviewStatus} onChange={e => setDraft({ ...draft, reviewStatus: e.target.value as Draft['reviewStatus'] })}><option value="draft">Draft</option><option value="reviewed">Reviewed</option></select></label></div><div className="field-pair"><label>کلیدواژه انگلیسی<input value={draft.tagsEn} onChange={e => setDraft({ ...draft, tagsEn: e.target.value })} /></label><label>کلیدواژه فارسی<input value={draft.tagsFa} onChange={e => setDraft({ ...draft, tagsFa: e.target.value })} /></label></div><div className="field-pair"><label>توضیح انگلیسی<textarea rows={2} value={draft.description ?? ''} onChange={e => setDraft({ ...draft, description: e.target.value })} /></label><label>توضیح فارسی<textarea rows={2} value={draft.descriptionFa ?? ''} onChange={e => setDraft({ ...draft, descriptionFa: e.target.value })} /></label></div><div className="asset-switches"><label><input type="checkbox" checked={draft.active} onChange={e => setDraft({ ...draft, active: e.target.checked })} /><span>منتشر در Library</span></label><label><input type="checkbox" checked={draft.featured} onChange={e => setDraft({ ...draft, featured: e.target.checked })} /><span>Featured</span></label><label><input type="checkbox" checked={draft.premium} onChange={e => setDraft({ ...draft, premium: e.target.checked })} /><span>Premium</span></label></div><div className="asset-form-actions"><button type="submit" className="save" disabled={busy}>{editing ? 'ذخیره تغییرات' : 'انتشار در Library'}</button><button type="button" onClick={reset}>پاک کردن فرم</button>{message && <span>{message}</span>}</div></div></form></section>
+        <section className="admin-editor-card"><div className="admin-editor-head"><div><strong>{editing ? 'ویرایش المان' : 'افزودن المان جدید'}</strong><span>{editing ? 'فایل جدید اختیاری است.' : 'SVG، PNG، JPG یا WebP تا ۲.۵MB'}</span></div>{editing && <button onClick={reset}>لغو ویرایش</button>}</div><form className="asset-editor-form" onSubmit={e => void submitAsset(e)}><label className={`asset-drop ${draft.renderSvg ? 'has-preview' : ''}`}><input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg" onChange={e => void pickFile(e)} />{draft.renderSvg ? <span className="asset-upload-preview" dangerouslySetInnerHTML={{ __html: draft.renderSvg }} /> : <><StudioIcon name="upload" /><strong>{busy ? 'در حال پردازش…' : 'تصویر را انتخاب کن'}</strong><small>SVG / PNG / JPG / WebP</small></>}</label><div className="asset-fields"><div className="field-pair"><label>نام انگلیسی<input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} required /></label><label>نام فارسی<input value={draft.nameFa ?? ''} onChange={e => setDraft({ ...draft, nameFa: e.target.value })} /></label></div><div className="field-pair"><label>دسته‌بندی<select value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value })} required><option value="">انتخاب دسته</option>{categories.map(c => <option value={c.slug} key={c.slug}>{c.nameEn}{c.nameFa ? ` — ${c.nameFa}` : ''}</option>)}</select></label><label>وضعیت علمی<select value={draft.reviewStatus} onChange={e => setDraft({ ...draft, reviewStatus: e.target.value as Draft['reviewStatus'] })}><option value="draft">Draft</option><option value="reviewed">Reviewed</option></select></label></div><div className="field-pair"><label>کلیدواژه انگلیسی<input value={draft.tagsEn} onChange={e => setDraft({ ...draft, tagsEn: e.target.value })} /></label><label>کلیدواژه فارسی<input value={draft.tagsFa} onChange={e => setDraft({ ...draft, tagsFa: e.target.value })} /></label></div><div className="field-pair"><label>توضیح انگلیسی<textarea rows={2} value={draft.description ?? ''} onChange={e => setDraft({ ...draft, description: e.target.value })} /></label><label>توضیح فارسی<textarea rows={2} value={draft.descriptionFa ?? ''} onChange={e => setDraft({ ...draft, descriptionFa: e.target.value })} /></label></div>
+        <section className="admin-preset-editor"><div className="admin-preset-head"><div><strong>رنگ‌های قابل انتخاب در Editor</strong><span>تعداد و رنگ گزینه‌هایی که کاربر برای این شکل می‌بیند را خودت تعیین کن.</span></div>{draft.stylePresets===undefined?<button type="button" onClick={customizePresets}>شخصی‌سازی رنگ‌ها</button>:<b>{draft.stylePresets.length} گزینه</b>}</div>{draft.stylePresets===undefined?<div className="admin-preset-legacy">این المان فعلاً از پالت پیش‌فرض قدیمی BioPlot استفاده می‌کند. برای کنترل دقیق، «شخصی‌سازی رنگ‌ها» را بزن.</div>:<><label className="admin-original-toggle"><input type="checkbox" checked={draft.stylePresets.some(item=>item.kind==='original')} onChange={e=>toggleOriginalPreset(e.target.checked)}/><span>نمایش رنگ اصلی تصویر (Original)</span></label><div className="admin-preset-list">{draft.stylePresets.map((preset,index)=>preset.kind==='tint'?<div className="admin-preset-row" key={preset.id}><input type="color" value={preset.color??'#087f79'} onChange={e=>updatePreset(index,{color:e.target.value})}/><label>نام انگلیسی<input value={preset.label} onChange={e=>updatePreset(index,{label:e.target.value})}/></label><label>نام فارسی<input value={preset.labelFa??''} onChange={e=>updatePreset(index,{labelFa:e.target.value})}/></label><button type="button" className="danger" onClick={()=>removePreset(index)}>حذف</button></div>:null)}</div><button type="button" className="add-preset" onClick={addColorPreset}><StudioIcon name="plus"/> افزودن رنگ</button><small className="admin-preset-tip">مثال: برای Mouse می‌توانی Original را خاموش کنی و فقط Black #000000 و White #FFFFFF بسازی.</small></>}</section>
+        <div className="asset-switches"><label><input type="checkbox" checked={draft.active} onChange={e => setDraft({ ...draft, active: e.target.checked })} /><span>منتشر در Library</span></label><label><input type="checkbox" checked={draft.featured} onChange={e => setDraft({ ...draft, featured: e.target.checked })} /><span>Featured</span></label><label><input type="checkbox" checked={draft.premium} onChange={e => setDraft({ ...draft, premium: e.target.checked })} /><span>Premium</span></label></div><div className="asset-form-actions"><button type="submit" className="save" disabled={busy}>{editing ? 'ذخیره تغییرات' : 'انتشار در Library'}</button><button type="button" onClick={reset}>پاک کردن فرم</button>{message && <span>{message}</span>}</div></div></form></section>
         <section className="admin-assets-card"><div className="admin-assets-toolbar"><div><strong>المان‌های Supabase</strong><span>{visible.length} مورد</span></div><input placeholder="جستجو…" value={query} onChange={e => setQuery(e.target.value)} /><button onClick={exportBackup}>خروجی JSON</button></div><div className="admin-asset-grid">{visible.map(asset => <article className="admin-asset-card" key={asset.id}><div className="admin-asset-preview" dangerouslySetInnerHTML={{ __html: asset.svg }} /><div className="admin-asset-info"><strong>{asset.nameFa || asset.name}</strong><span>{asset.nameFa ? asset.name : asset.category}</span><small>{asset.category} · {asset.reviewStatus}</small></div><div className="admin-asset-flags"><button className={asset.active ? 'on' : ''} onClick={() => void toggle(asset, 'active')}>{asset.active ? 'منتشر' : 'مخفی'}</button><button className={asset.featured ? 'on' : ''} onClick={() => void toggle(asset, 'featured')}>Featured</button><button className={asset.premium ? 'on' : ''} onClick={() => void toggle(asset, 'premium')}>Premium</button></div><div className="admin-asset-actions"><button onClick={() => editAsset(asset)}>ویرایش</button><button className="danger" onClick={() => void removeAsset(asset)}>حذف</button></div></article>)}</div>{!visible.length && <p className="asset-empty">هنوز المانی در این بخش وجود ندارد.</p>}</section>
       </section>
     </main>
