@@ -1,0 +1,57 @@
+/* BioPlot marquee multi-select + group UX. */
+
+/* Dragging on empty canvas should feel like a selection tool while objects keep their move cursor. */
+.studio-shell .studio-artboard{cursor:crosshair}
+.studio-shell .studio-object{cursor:move}
+.studio-shell .studio-object.is-locked{cursor:not-allowed}
+
+/* Marquee: clear but lightweight, matching the teal BioPlot language. */
+.studio-shell .studio-marquee{
+  border:1.5px solid #0b8d86!important;
+  background:rgba(11,141,134,.08)!important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.55) inset!important;
+  border-radius:2px!important;
+}
+
+/* Do not let the contextual toolbar chase the pointer while the marquee is being drawn. */
+.studio-shell:has(.studio-marquee) .studio-command-deck{
+  display:none!important;
+}
+
+/* Multi-selection gets one shared selection box; make it a touch more obvious than a single item. */
+.studio-shell:has(.studio-object.is-selected ~ .studio-object.is-selected) .studio-selection{
+  border:1.5px solid #07877f!important;
+  box-shadow:0 0 0 1px rgba(7,135,127,.08)!important;
+}
+
+/* Promote Group as the primary action after two or more objects are selected. */
+.studio-shell:has(.studio-object.is-selected ~ .studio-object.is-selected)
+  .studio-selection-toolbar .toolbar-group:last-child button:first-child:not(:disabled){
+  min-width:58px!important;
+  color:#fff!important;
+  background:#0a8a82!important;
+  border-color:#0a8a82!important;
+  box-shadow:0 6px 14px rgba(10,138,130,.18)!important;
+}
+.studio-shell:has(.studio-object.is-selected ~ .studio-object.is-selected)
+  .studio-selection-toolbar .toolbar-group:last-child button:first-child:not(:disabled)::after{
+  color:#fff!important;
+  font-weight:800!important;
+}
+.studio-shell:has(.studio-object.is-selected ~ .studio-object.is-selected)
+  .studio-selection-toolbar .toolbar-group:last-child button:first-child:not(:disabled):hover{
+  background:#08766f!important;
+  border-color:#08766f!important;
+}
+
+/* Keep the shared toolbar comfortably above a multi-selection, including small groups. */
+.studio-shell:has(.studio-object.is-selected ~ .studio-object.is-selected) .studio-command-deck{
+  margin-bottom:6px!important;
+}
+
+/* Selection handles should stay visible above dense scientific assets. */
+.studio-shell:has(.studio-object.is-selected ~ .studio-object.is-selected) .studio-handle,
+.studio-shell:has(.studio-object.is-selected ~ .studio-object.is-selected) .studio-rotate{
+  border-color:#07877f!important;
+  box-shadow:0 1px 3px rgba(24,65,70,.18)!important;
+}
