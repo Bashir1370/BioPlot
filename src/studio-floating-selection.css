@@ -4,7 +4,10 @@
 .studio-shell .studio-selection{anchor-name:--bioplot-selection}
 .studio-shell .studio-object.is-selected{outline:none!important}
 
-.studio-shell{grid-template-rows:64px minmax(0,1fr)!important}
+/* The old selection ribbon no longer owns a layout row. */
+.studio-shell{grid-template-rows:64px minmax(0,1fr) 54px!important}
+.studio-shell .studio-workspace{grid-row:2!important}
+.studio-shell .reference-bottom-bar{grid-row:3!important}
 .studio-shell.no-selection .studio-command-deck{display:none!important}
 
 .studio-shell.has-selection .studio-command-deck{
