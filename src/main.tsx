@@ -8,6 +8,7 @@ import { isAccountPath, isAdminLibraryPath, isEditorPath } from './routing';
 import { installSelectionDragToolbarBehavior } from './selectionDragToolbar';
 import { installTightAssetSelection } from './tightAssetSelection';
 import { installCanvasWheelZoomV2 } from './canvasWheelZoomV2';
+import { installZoomLimit250 } from './zoomLimit250';
 import './styles-v3.css';
 import './home-top-nav.css';
 import './editor-pro.css';
@@ -32,6 +33,7 @@ const isEditor = isEditorPath(window.location.pathname);
 if (isEditor) {
   installSelectionDragToolbarBehavior();
   installTightAssetSelection();
+  installZoomLimit250();
   installCanvasWheelZoomV2();
 }
 
