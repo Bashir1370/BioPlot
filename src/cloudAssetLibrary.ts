@@ -1,5 +1,5 @@
 import type { ScientificAsset } from './assets';
-import { loadCustomAssets, replaceCustomAssets, sanitizeSvg } from './assets';
+import { loadCustomAssets, replaceCustomAssets, sanitizeSvg, setRuntimeCloudAssets } from './assets';
 import { supabase } from './supabaseClient';
 
 export type CloudCategory = {
@@ -141,9 +141,18 @@ export async function loadPublishedCloudAssets(): Promise<CloudAsset[]> {
 
 export async function syncPublishedCloudAssetsToBrowserCache() {
   const cloud = await loadPublishedCloudAssets();
+  setRuntimeCloudAssets(cloud);
+
+  // Older builds cached full cloud SVG/base64 payloads in localStorage. Keep only
+  // genuinely local user assets there so large raster assets cannot exhaust the quota.
   const localOnly = loadCustomAssets().filter(asset => !(asset as ScientificAsset & { cloudManaged?: boolean }).cloudManaged);
-  replaceCustomAssets([...cloud, ...localOnly]);
-  return cloud.length;
+  try {
+    replaceCustomAssets(localOnly);
+  } catch {
+    // Runtime cloud assets are already available. Cache cleanup is best-effort only.
+  }
+
+  return cloud;
 }
 
 function safeFileName(name: string) {
