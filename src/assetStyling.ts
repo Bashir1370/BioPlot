@@ -121,14 +121,23 @@ export function tintAssetSvg(source: string, color: string): string {
     const svg = parsed.documentElement;
     if (!svg || svg.nodeName.toLowerCase() !== 'svg' || parsed.querySelector('parsererror')) return source;
     const ns = 'http://www.w3.org/2000/svg';
+    const filterId = `bioplot-admin-tint-${color.slice(1).toLowerCase()}`;
     let defs = svg.querySelector(':scope > defs');
     if (!defs) {
       defs = parsed.createElementNS(ns, 'defs');
       svg.insertBefore(defs, svg.firstChild);
     }
-    defs.querySelector('#bioplot-admin-tint')?.remove();
+
+    // Inline SVG ids share the document namespace in browsers. Using one fixed id
+    // made every preset thumbnail resolve to the first tint filter on the page.
+    defs.querySelectorAll('[id^="bioplot-admin-tint"]').forEach(node => node.remove());
+    svg.querySelectorAll('[filter]').forEach(node => {
+      const value = node.getAttribute('filter') ?? '';
+      if (value.startsWith('url(#bioplot-admin-tint')) node.removeAttribute('filter');
+    });
+
     const filter = parsed.createElementNS(ns, 'filter');
-    filter.setAttribute('id', 'bioplot-admin-tint');
+    filter.setAttribute('id', filterId);
     filter.setAttribute('x', '-20%');
     filter.setAttribute('y', '-20%');
     filter.setAttribute('width', '140%');
@@ -144,7 +153,7 @@ export function tintAssetSvg(source: string, color: string): string {
     defs.appendChild(filter);
 
     const group = parsed.createElementNS(ns, 'g');
-    group.setAttribute('filter', 'url(#bioplot-admin-tint)');
+    group.setAttribute('filter', `url(#${filterId})`);
     [...svg.childNodes].filter(node => node !== defs).forEach(node => group.appendChild(node));
     svg.appendChild(group);
     return new XMLSerializer().serializeToString(svg);
