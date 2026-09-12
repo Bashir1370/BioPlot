@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { getAssetCatalog, ScientificAsset } from './assets';
 import { AssetObject } from './model';
 import { ASSET_STYLE_PRESETS, applyAssetPreset, applyConfiguredAssetPreset, AssetStylePresetConfig, assetCssFilter, consumeAssetStyleAutoOpenFromLibrary, normalizedAssetVisualStyle, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject, tintAssetSvg } from './assetStyling';
@@ -19,9 +19,11 @@ export function AssetStylePanel({fa,object,onChange,onBrowse}:{fa:boolean;object
   const setStyle=(label:string,patch:Partial<typeof style>)=>onChange(label,{...object,assetStyle:{...style,...patch}});
   const previewFilter=assetCssFilter(object);
 
-  useEffect(()=>{
+  // Selection on the canvas can transiently request the style panel. Resolve that
+  // before the browser paints so the Library never flashes for a single frame.
+  useLayoutEffect(()=>{
     if(!consumeAssetStyleAutoOpenFromLibrary()) onBrowse();
-  },[object.id]);
+  },[object.id,onBrowse]);
 
   useEffect(()=>{
     const dismissFromCanvas=(event:PointerEvent)=>{
