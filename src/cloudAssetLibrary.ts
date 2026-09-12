@@ -1,5 +1,6 @@
 import type { ScientificAsset } from './assets';
 import { loadCustomAssets, replaceCustomAssets, sanitizeSvg, setRuntimeCloudAssets } from './assets';
+import type { AssetStylePresetConfig } from './assetStyling';
 import { supabase } from './supabaseClient';
 
 export type CloudCategory = {
@@ -13,6 +14,7 @@ export type CloudCategory = {
 export type CloudAsset = ScientificAsset & {
   storagePath: string;
   cloudManaged: true;
+  stylePresets?: AssetStylePresetConfig[];
 };
 
 export type CloudAssetDraft = {
@@ -28,10 +30,29 @@ export type CloudAssetDraft = {
   premium: boolean;
   active: boolean;
   featured: boolean;
+  stylePresets?: AssetStylePresetConfig[];
 };
 
 function sourceType(value: unknown): CloudAsset['sourceType'] {
   return value === 'png' || value === 'jpeg' || value === 'webp' ? value : 'svg';
+}
+
+function stylePresets(value: unknown): AssetStylePresetConfig[]|undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.flatMap((item, index) => {
+    if (!item || typeof item !== 'object') return [];
+    const record = item as Record<string, unknown>;
+    const kind = record.kind === 'original' ? 'original' : 'tint';
+    const color = typeof record.color === 'string' && /^#[0-9a-f]{6}$/i.test(record.color) ? record.color : undefined;
+    if (kind === 'tint' && !color) return [];
+    return [{
+      id: typeof record.id === 'string' && record.id ? record.id : `preset-${index + 1}`,
+      label: typeof record.label === 'string' && record.label ? record.label : kind === 'original' ? 'Original' : `Color ${index + 1}`,
+      labelFa: typeof record.labelFa === 'string' && record.labelFa ? record.labelFa : undefined,
+      kind,
+      color,
+    } satisfies AssetStylePresetConfig];
+  });
 }
 
 function rowToAsset(row: Record<string, any>): CloudAsset {
@@ -59,6 +80,7 @@ function rowToAsset(row: Record<string, any>): CloudAsset {
     version: Number(row.version ?? 1),
     storagePath: String(row.storage_path ?? ''),
     cloudManaged: true,
+    stylePresets: stylePresets(metadata.style_presets),
   };
 }
 
@@ -143,8 +165,6 @@ export async function syncPublishedCloudAssetsToBrowserCache() {
   const cloud = await loadPublishedCloudAssets();
   setRuntimeCloudAssets(cloud);
 
-  // Older builds cached full cloud SVG/base64 payloads in localStorage. Keep only
-  // genuinely local user assets there so large raster assets cannot exhaust the quota.
   const localOnly = loadCustomAssets().filter(asset => !(asset as ScientificAsset & { cloudManaged?: boolean }).cloudManaged);
   try {
     replaceCustomAssets(localOnly);
@@ -189,6 +209,9 @@ export async function saveCloudAsset(draft: CloudAssetDraft, file: File | null, 
 
   const currentAssets = existing ? [] : await loadAdminCloudAssets();
   const maxOrder = currentAssets.reduce((max, item) => Math.max(max, item.sortOrder ?? 0), 0);
+  const metadata: Record<string, unknown> = { source: 'admin-library' };
+  if (file?.name) metadata.original_file = file.name;
+  if (draft.stylePresets !== undefined) metadata.style_presets = draft.stylePresets;
   const payload = {
     name: draft.name.trim(),
     name_fa: draft.nameFa?.trim() || null,
@@ -209,7 +232,7 @@ export async function saveCloudAsset(draft: CloudAssetDraft, file: File | null, 
     color_slots: existing?.colorSlots ?? [],
     created_by: user.id,
     updated_at: new Date().toISOString(),
-    metadata: { source: 'admin-library', original_file: file?.name ?? undefined },
+    metadata,
   };
 
   if (existing) {
