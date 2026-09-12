@@ -1,8 +1,11 @@
-import { getAssetCatalog } from './assets';
+import { useEffect } from 'react';
+import { getAssetCatalog, ScientificAsset } from './assets';
 import { AssetObject } from './model';
-import { ASSET_STYLE_PRESETS, assetCssFilter, applyAssetPreset, normalizedAssetVisualStyle, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject } from './assetStyling';
+import { ASSET_STYLE_PRESETS, applyAssetPreset, applyConfiguredAssetPreset, AssetStylePresetConfig, assetCssFilter, consumeAssetStyleAutoOpenFromLibrary, normalizedAssetVisualStyle, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject, tintAssetSvg } from './assetStyling';
 import { StudioIcon } from './StudioIcon';
 import './asset-style-panel.css';
+
+type AssetWithPresets = ScientificAsset & { stylePresets?: AssetStylePresetConfig[] };
 
 function RangeRow({label,value,min,max,unit='%',onChange}:{label:string;value:number;min:number;max:number;unit?:string;onChange:(value:number)=>void}){
   return <label className="asset-style-range"><span>{label}</span><input type="number" min={min} max={max} value={Math.round(value)} onChange={event=>onChange(Number(event.target.value))}/><input type="range" min={min} max={max} value={value} onChange={event=>onChange(Number(event.target.value))}/><em>{unit}</em></label>;
@@ -10,10 +13,15 @@ function RangeRow({label,value,min,max,unit='%',onChange}:{label:string;value:nu
 
 export function AssetStylePanel({fa,object,onChange,onBrowse}:{fa:boolean;object:StyledAssetObject;onChange:(label:string,next:StyledAssetObject)=>void;onBrowse:()=>void}){
   const style=normalizedAssetVisualStyle(object);
-  const original=getAssetCatalog(true).find(asset=>asset.id===object.assetId);
+  const original=getAssetCatalog(true).find(asset=>asset.id===object.assetId) as AssetWithPresets|undefined;
   const originalColors:AssetObject['colors']|undefined=original?.colorSlots.map(slot=>({key:slot.key,label:slot.label,value:slot.defaultValue}));
+  const configuredPresets=original?.stylePresets;
   const setStyle=(label:string,patch:Partial<typeof style>)=>onChange(label,{...object,assetStyle:{...style,...patch}});
   const previewFilter=assetCssFilter(object);
+
+  useEffect(()=>{
+    if(!consumeAssetStyleAutoOpenFromLibrary()) onBrowse();
+  },[object.id]);
 
   return <div className="asset-style-panel">
     <div className="asset-style-titlebar">
@@ -25,9 +33,15 @@ export function AssetStylePanel({fa,object,onChange,onBrowse}:{fa:boolean;object
 
     <section className="asset-style-section">
       <div className="asset-style-section-head"><div><b>{fa?'استایل':'Style'}</b><small>{fa?'پریست‌های سریع':'Quick presets'}</small></div><button onClick={()=>onChange('Reset asset style',resetAssetVisualStyle(object,original?.svg,originalColors))}>{fa?'بازنشانی':'Reset styles'}</button></div>
-      <div className="asset-style-presets">
+      {configuredPresets===undefined?<div className="asset-style-presets">
         {ASSET_STYLE_PRESETS.map(preset=><button key={preset.id} onClick={()=>onChange(`Apply ${preset.label} style`,applyAssetPreset(object,preset.id))} title={fa?preset.labelFa:preset.label}><span style={{filter:`saturate(${preset.saturation}%) brightness(${preset.brightness}%) contrast(${preset.contrast}%) hue-rotate(${preset.hueRotate}deg)`}} dangerouslySetInnerHTML={{__html:object.svg}}/><small>{fa?preset.labelFa:preset.label}</small></button>)}
-      </div>
+      </div>:configuredPresets.length?<div className="asset-style-presets">
+        {configuredPresets.map(preset=>{
+          const source=original?.svg??object.svg;
+          const preview=preset.kind==='original'?source:tintAssetSvg(source,preset.color??'#087f79');
+          return <button key={preset.id} onClick={()=>onChange(`Apply ${preset.label} style`,applyConfiguredAssetPreset(object,preset,original?.svg,originalColors))} title={fa&&preset.labelFa?preset.labelFa:preset.label}><span dangerouslySetInnerHTML={{__html:preview}}/><small>{fa&&preset.labelFa?preset.labelFa:preset.label}</small></button>;
+        })}
+      </div>:<p className="asset-style-empty">{fa?'برای این المان پریست رنگی تعریف نشده است.':'No color presets are configured for this asset.'}</p>}
     </section>
 
     {object.colors.length>0&&<section className="asset-style-section">
