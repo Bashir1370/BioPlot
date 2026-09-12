@@ -5,6 +5,8 @@ const SCALABLE_TYPES = new Set<BioPlotObject['type']>(['asset', 'image', 'shape'
 const SESSION_DELAY_MS = 180;
 const MIN_SIZE = 12;
 const MAX_PAGE_MULTIPLIER = 4;
+const DOM_DELTA_LINE = 1;
+const DOM_DELTA_PAGE = 2;
 
 let installed = false;
 let storeCaptureInstalled = false;
@@ -113,7 +115,8 @@ function scaleHoveredObject(event: WheelEvent) {
     };
   }
 
-  const normalizedDelta = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? 120 : 1);
+  const deltaMultiplier = event.deltaMode === DOM_DELTA_LINE ? 16 : event.deltaMode === DOM_DELTA_PAGE ? 120 : 1;
+  const normalizedDelta = event.deltaY * deltaMultiplier;
   const requestedFactor = Math.min(1.1, Math.max(0.9, Math.exp(-normalizedDelta * 0.00125)));
   const minFactor = Math.max(MIN_SIZE / bounds.width, MIN_SIZE / bounds.height);
   const maxFactor = Math.min(
