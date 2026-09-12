@@ -22,6 +22,7 @@ import './admin-asset-presets.css';
 import './studio-floating-selection.css';
 import './studio-drag-toolbar.css';
 import './studio-tight-selection.css';
+import './studio-multi-select.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
