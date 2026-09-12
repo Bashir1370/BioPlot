@@ -23,6 +23,15 @@ export function AssetStylePanel({fa,object,onChange,onBrowse}:{fa:boolean;object
     if(!consumeAssetStyleAutoOpenFromLibrary()) onBrowse();
   },[object.id]);
 
+  useEffect(()=>{
+    const dismissFromCanvas=(event:PointerEvent)=>{
+      const target=event.target;
+      if(target instanceof Element&&target.closest('.studio-artboard')) onBrowse();
+    };
+    window.addEventListener('pointerdown',dismissFromCanvas,true);
+    return()=>window.removeEventListener('pointerdown',dismissFromCanvas,true);
+  },[onBrowse]);
+
   return <div className="asset-style-panel">
     <div className="asset-style-titlebar">
       <button className="asset-style-back" onClick={onBrowse} title={fa?'بازگشت به کتابخانه':'Back to library'} aria-label={fa?'بازگشت به کتابخانه':'Back to library'}><StudioIcon name="arrow"/></button>
