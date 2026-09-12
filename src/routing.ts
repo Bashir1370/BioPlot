@@ -9,3 +9,8 @@ export function isAdminLibraryPath(pathname:string){
   const normalized=normalizedPath(pathname);
   return normalized==='/admin/library'||normalized.endsWith('/admin/library');
 }
+
+export function isAccountPath(pathname:string){
+  const normalized=normalizedPath(pathname);
+  return normalized==='/account'||normalized.endsWith('/account');
+}
