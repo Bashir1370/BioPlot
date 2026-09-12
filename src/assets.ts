@@ -55,9 +55,14 @@ const CUSTOM_CATEGORY_KEY = 'bioplot_v3_custom_asset_categories';
 const FAVORITES_KEY='bioplot_asset_favorites_v1';
 const RECENTS_KEY='bioplot_asset_recents_v1';
 const UNCAT='Uncategorized';
+let runtimeCloudAssets: ScientificAsset[] | null = null;
 
 function notifyLibraryChanged() {
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('bioplot:asset-library-changed'));
+}
+
+function isCloudManagedAsset(asset: ScientificAsset) {
+  return Boolean((asset as ScientificAsset & { cloudManaged?: boolean }).cloudManaged);
 }
 
 export function sanitizeSvg(source: string): string {
@@ -91,6 +96,20 @@ function normalizeAsset(asset: ScientificAsset, index = 0): ScientificAsset {
     sortOrder: Number.isFinite(asset.sortOrder) ? asset.sortOrder : index * 10,
     version: Number.isFinite(asset.version) ? asset.version : 1,
   };
+}
+
+export function setRuntimeCloudAssets(assets: ScientificAsset[]) {
+  const next = assets.flatMap((asset,index) => {
+    try {
+      return [normalizeAsset({ ...asset, svg: sanitizeSvg(asset.svg) }, index)];
+    } catch {
+      return [];
+    }
+  });
+  const signature = (items: ScientificAsset[]) => JSON.stringify(items.map(asset => [asset.id, asset.version, asset.active, asset.featured, asset.sortOrder, asset.svg.length]));
+  const changed = runtimeCloudAssets === null || signature(runtimeCloudAssets) !== signature(next);
+  runtimeCloudAssets = next;
+  if (changed) notifyLibraryChanged();
 }
 
 export function loadCustomAssets(): ScientificAsset[] {
@@ -190,9 +209,13 @@ export function getAdminCategories():AssetCategoryRecord[]{
 }
 
 export function getAssetCatalog(includeInactive=false) {
-  const custom=loadCustomAssets();
-  const combined=[...seedAssets.map((asset,index)=>normalizeAsset(asset,index+10000)),...custom];
-  return combined.filter(asset=>includeInactive||asset.active!==false).sort((a,b)=>{
+  const stored=loadCustomAssets();
+  const localOnly=stored.filter(asset=>!isCloudManagedAsset(asset));
+  const cachedCloud=stored.filter(isCloudManagedAsset);
+  const cloud=runtimeCloudAssets ?? cachedCloud;
+  const combined=[...seedAssets.map((asset,index)=>normalizeAsset(asset,index+10000)),...cloud,...localOnly];
+  const unique=[...new Map(combined.map(asset=>[asset.id,asset])).values()];
+  return unique.filter(asset=>includeInactive||asset.active!==false).sort((a,b)=>{
     if(Boolean(a.featured)!==Boolean(b.featured))return a.featured?-1:1;
     return (a.sortOrder??0)-(b.sortOrder??0);
   });
