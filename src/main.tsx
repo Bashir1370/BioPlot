@@ -3,8 +3,9 @@ import { createRoot } from 'react-dom/client';
 import { HomeRoute } from './HomeRoute';
 import { EditorRoute } from './EditorRoute';
 import { AdminLibraryPage } from './AdminLibraryPage';
+import { AdminShowcasePage } from './AdminShowcasePage';
 import { AccountPage } from './AccountPage';
-import { isAccountPath, isAdminLibraryPath, isEditorPath } from './routing';
+import { isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
 import { installTightAssetSelection } from './tightAssetSelection';
 import { installCanvasWheelZoomV2 } from './canvasWheelZoomV2';
 import { installZoomLimit250 } from './zoomLimit250';
@@ -28,6 +29,7 @@ const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
 
 const isAdminLibrary = isAdminLibraryPath(window.location.pathname);
+const isAdminShowcase = isAdminShowcasePath(window.location.pathname);
 const isAccount = isAccountPath(window.location.pathname);
 const isEditor = isEditorPath(window.location.pathname);
 
@@ -39,6 +41,6 @@ if (isEditor) {
 
 createRoot(root).render(
   <StrictMode>
-    {isAdminLibrary ? <AdminLibraryPage /> : isAccount ? <AccountPage /> : isEditor ? <EditorRoute /> : <HomeRoute />}
+    {isAdminLibrary ? <AdminLibraryPage /> : isAdminShowcase ? <AdminShowcasePage /> : isAccount ? <AccountPage /> : isEditor ? <EditorRoute /> : <HomeRoute />}
   </StrictMode>
 );
