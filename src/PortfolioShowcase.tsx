@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { StudioIcon } from './StudioIcon';
 import { loadPublishedShowcaseItems, ShowcaseItem, showcasePublicUrl } from './showcasePortfolio';
@@ -6,9 +6,16 @@ import './portfolio-showcase.css';
 
 type Locale = 'en' | 'fa';
 const AUTOPLAY_MS = 5200;
+const MIN_RATIO = 0.62;
+const MAX_RATIO = 2.6;
 
 function localeFromDocument(): Locale {
   return document.documentElement.lang === 'fa' || localStorage.getItem('bioplot-lang') === 'fa' ? 'fa' : 'en';
+}
+
+function safeImageRatio(image: HTMLImageElement) {
+  if (!image.naturalWidth || !image.naturalHeight) return 1.65;
+  return Math.min(MAX_RATIO, Math.max(MIN_RATIO, image.naturalWidth / image.naturalHeight));
 }
 
 export function PortfolioShowcasePortal() {
@@ -17,6 +24,7 @@ export function PortfolioShowcasePortal() {
   const [slides, setSlides] = useState<ShowcaseItem[]>([]);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [ratios, setRatios] = useState<Record<string, number>>({});
   const pointerStart = useRef<number | null>(null);
 
   useEffect(() => {
@@ -85,8 +93,12 @@ export function PortfolioShowcasePortal() {
       }}>
         {slides.map((slide, index) => {
           const isActive = index === active;
-          return <button type="button" key={slide.id} className={`portfolio-slide ${isActive ? 'active' : ''}`} aria-label={locale === 'fa' ? 'تصویر سفارشی' : 'Custom visual'} aria-current={isActive ? 'true' : undefined} onClick={() => setActive(index)}>
-            <img src={showcasePublicUrl(slide.storagePath)} alt="" loading={isActive ? 'eager' : 'lazy'}/>
+          const style = { '--slide-ratio': String(ratios[slide.id] ?? 1.65) } as CSSProperties;
+          return <button type="button" key={slide.id} style={style} className={`portfolio-slide ${isActive ? 'active' : ''}`} aria-label={locale === 'fa' ? 'تصویر سفارشی' : 'Custom visual'} aria-current={isActive ? 'true' : undefined} onClick={() => setActive(index)}>
+            <img src={showcasePublicUrl(slide.storagePath)} alt="" loading={isActive ? 'eager' : 'lazy'} onLoad={event => {
+              const ratio = safeImageRatio(event.currentTarget);
+              setRatios(current => current[slide.id] === ratio ? current : { ...current, [slide.id]: ratio });
+            }}/>
           </button>;
         })}
       </div>
