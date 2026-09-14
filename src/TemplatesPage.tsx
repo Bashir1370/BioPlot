@@ -4,7 +4,7 @@ import { projects } from './persistence';
 import { homeTemplateCategoryMap } from './scientificVisualContentModel';
 import { scientificVisualCategories, type ScientificVisualCategory, type ScientificVisualCategoryId } from './scientificVisualTaxonomy';
 import { StudioIcon, type StudioIconName } from './StudioIcon';
-import { journalSources, publicationBaseline, templatePublicationGuides } from './templateGuideContent';
+import { templatePublicationGuides } from './templateGuideContent';
 import './templates-page.css';
 
 type Locale = 'en' | 'fa';
@@ -125,12 +125,6 @@ export function TemplatesPage() {
           <div className="tkh-score-ring"><strong>01</strong><span>{fa ? 'اصل پایه' : 'baseline'}</span></div>
           <div><small>{fa ? 'هدف این بخش' : 'WHY THIS EXISTS'}</small><h2>{fa ? 'شکل خوب، ادعای علمی را سریع‌تر قابل‌داوری می‌کند.' : 'A strong figure makes the scientific claim easier to review.'}</h2><p>{fa ? 'این راهنماها تضمین پذیرش نیستند؛ اما شکل را برای خوانایی، integrity و الزامات فنی رایج آماده‌تر می‌کنند.' : 'These guides cannot guarantee acceptance; they help make figures clearer, more defensible and technically ready for submission.'}</p></div>
         </div>
-      </section>
-
-      <section className="tkh-baseline" aria-labelledby="baseline-title">
-        <div className="tkh-baseline-heading"><span>PUBLICATION READINESS</span><h2 id="baseline-title">{fa ? 'پنج کنترل قبل از ارسال هر شکل' : 'Five checks before any figure leaves your desk'}</h2><p>{fa ? 'مشخصات دقیق بین مجلات فرق می‌کند؛ این‌ها baseline مشترک برای طراحی حرفه‌ای هستند.' : 'Exact specifications vary by journal. These are shared design habits that reduce preventable production and readability problems.'}</p></div>
-        <div className="tkh-baseline-grid">{publicationBaseline.map((item, index) => <article key={item.en}><span>{String(index + 1).padStart(2, '0')}</span><p>{item[locale]}</p></article>)}</div>
-        <div className="tkh-source-row"><span>{fa ? 'منابع رسمی برای چک نهایی:' : 'Official references for final checks:'}</span>{journalSources.map(source => <a key={source.href} href={source.href} target="_blank" rel="noreferrer">{source.label}<StudioIcon name="arrow" size={13}/></a>)}</div>
       </section>
 
       <section className="tkh-library" id="library" aria-labelledby="library-title">
