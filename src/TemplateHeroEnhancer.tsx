@@ -6,11 +6,52 @@ import './template-hero.css';
 
 type Locale = 'en' | 'fa';
 const FALLBACK = '/images/scientific-cell-hero.webp';
+const CACHE_KEY = 'bioplot-template-hero-images-v1';
+
+function readCachedImages(): TemplateHeroImage[] {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(item => item && [1, 2, 3].includes(Number(item.slot)) && typeof item.storagePath === 'string');
+  } catch {
+    return [];
+  }
+}
+
+function cacheImages(images: TemplateHeroImage[]) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(images));
+  } catch {
+    // Local storage can be unavailable in private or restricted browsing contexts.
+  }
+}
+
+function preloadImage(src: string) {
+  return new Promise<void>(resolve => {
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      if (typeof image.decode === 'function') {
+        void image.decode().catch(() => undefined).finally(() => resolve());
+      } else {
+        resolve();
+      }
+    };
+    image.onerror = () => resolve();
+    image.src = src;
+    if (image.complete && image.naturalWidth > 0) resolve();
+  });
+}
 
 export function TemplateHeroEnhancer() {
+  const cachedAtStartup = useMemo(() => readCachedImages(), []);
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [locale, setLocale] = useState<Locale>(() => document.documentElement.lang === 'fa' ? 'fa' : 'en');
-  const [images, setImages] = useState<TemplateHeroImage[]>([]);
+  const [images, setImages] = useState<TemplateHeroImage[]>(cachedAtStartup);
+  const [sourceResolved, setSourceResolved] = useState(cachedAtStartup.length > 0);
+  const [collageReady, setCollageReady] = useState(false);
   const fa = locale === 'fa';
 
   useEffect(() => {
@@ -37,17 +78,46 @@ export function TemplateHeroEnhancer() {
   }, []);
 
   useEffect(() => {
-    void loadTemplateHeroImages().then(setImages).catch(() => setImages([]));
+    let cancelled = false;
+    void loadTemplateHeroImages()
+      .then(freshImages => {
+        if (cancelled) return;
+        cacheImages(freshImages);
+        setImages(freshImages);
+        setSourceResolved(true);
+      })
+      .catch(() => {
+        if (!cancelled) setSourceResolved(true);
+      });
+    return () => { cancelled = true; };
   }, []);
 
-  const slots = useMemo(() => ([1, 2, 3] as const).map(slot => {
-    const item = images.find(image => image.slot === slot);
-    return {
-      slot,
-      src: item ? templateHeroPublicUrl(item.storagePath) : FALLBACK,
-      alt: item ? (fa ? item.altFa : item.altEn) : (fa ? 'نمونه تصویر علمی BioPlot' : 'BioPlot scientific figure inspiration'),
-    };
-  }), [images, fa]);
+  const slots = useMemo(() => {
+    if (!sourceResolved) return [];
+    return ([1, 2, 3] as const).map(slot => {
+      const item = images.find(image => image.slot === slot);
+      return {
+        slot,
+        src: item ? templateHeroPublicUrl(item.storagePath) : FALLBACK,
+        alt: item ? (fa ? item.altFa : item.altEn) : (fa ? 'نمونه تصویر علمی BioPlot' : 'BioPlot scientific figure inspiration'),
+      };
+    });
+  }, [images, fa, sourceResolved]);
+
+  const slotKey = slots.map(item => item.src).join('|');
+
+  useEffect(() => {
+    if (slots.length !== 3) {
+      setCollageReady(false);
+      return;
+    }
+    let cancelled = false;
+    setCollageReady(false);
+    void Promise.all(slots.map(item => preloadImage(item.src))).then(() => {
+      if (!cancelled) setCollageReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [slotKey]);
 
   if (!host) return null;
 
@@ -72,17 +142,23 @@ export function TemplateHeroEnhancer() {
         </div>
       </div>
 
-      <div className="tkh-hero-collage" aria-label={fa ? 'نمونه تصاویر علمی' : 'Scientific visual examples'}>
+      <div
+        className={`tkh-hero-collage${collageReady ? ' is-ready' : ' is-loading'}`}
+        aria-label={fa ? 'نمونه تصاویر علمی' : 'Scientific visual examples'}
+        aria-busy={!collageReady}
+      >
         <span className="hero-collage-glow glow-a" aria-hidden="true"/>
         <span className="hero-collage-glow glow-b" aria-hidden="true"/>
         <span className="hero-collage-orbit" aria-hidden="true"/>
         <span className="hero-collage-dot dot-a" aria-hidden="true"/>
         <span className="hero-collage-dot dot-b" aria-hidden="true"/>
-        {slots.map(({ slot, src, alt }) => <figure className={`hero-photo hero-photo-${slot}`} style={{ height: 'auto' }} key={slot}>
+        {slots.map(({ slot, src, alt }) => <figure className={`hero-photo hero-photo-${slot}`} style={{ height: 'auto' }} key={`${slot}-${src}`}>
           <div className="hero-photo-frame" style={{ height: 'auto', aspectRatio: 'var(--hero-image-ratio, 4 / 3)' }}>
             <img
               src={src}
               alt={alt}
+              decoding="async"
+              fetchPriority={slot === 1 ? 'high' : 'auto'}
               style={{ objectFit: 'contain' }}
               onLoad={event => {
                 const image = event.currentTarget;
