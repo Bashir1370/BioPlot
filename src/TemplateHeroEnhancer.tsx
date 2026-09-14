@@ -78,11 +78,12 @@ export function TemplateHeroEnhancer() {
         <span className="hero-collage-orbit" aria-hidden="true"/>
         <span className="hero-collage-dot dot-a" aria-hidden="true"/>
         <span className="hero-collage-dot dot-b" aria-hidden="true"/>
-        {slots.map(({ slot, src, alt }) => <figure className={`hero-photo hero-photo-${slot}`} key={slot}>
-          <div className="hero-photo-frame">
+        {slots.map(({ slot, src, alt }) => <figure className={`hero-photo hero-photo-${slot}`} style={{ height: 'auto' }} key={slot}>
+          <div className="hero-photo-frame" style={{ height: 'auto', aspectRatio: 'var(--hero-image-ratio, 4 / 3)' }}>
             <img
               src={src}
               alt={alt}
+              style={{ objectFit: 'contain' }}
               onLoad={event => {
                 const image = event.currentTarget;
                 const rawRatio = image.naturalWidth / Math.max(1, image.naturalHeight);
