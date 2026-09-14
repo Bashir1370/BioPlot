@@ -54,6 +54,7 @@ const icons = {
   projects: FolderSimple,
   templates: SquaresFour,
   figure: Graph,
+  graph: Graph,
   dots: DotsThreeVertical,
   edit: PencilSimple,
   sparkle: Sparkle,
