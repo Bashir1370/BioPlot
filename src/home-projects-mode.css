@@ -1,0 +1,5 @@
+.home-shell:not(.home-projects-view) #projects{display:none!important}
+
+.home-shell.home-projects-view .home-content>:not(#projects):not(.home-error-banner){display:none!important}
+.home-shell.home-projects-view #projects{display:block!important;margin-top:0;padding-top:34px;min-height:calc(100vh - 150px)}
+.home-shell.home-projects-view #projects .home-section-heading{margin-top:0}
