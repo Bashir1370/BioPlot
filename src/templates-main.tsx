@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { TemplatesPage } from './TemplatesPage';
+import { TemplateHeroEnhancer } from './TemplateHeroEnhancer';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/vazirmatn';
 import './persian-typography.css';
@@ -10,6 +11,9 @@ if (!root) throw new Error('BioPlot templates root element was not found.');
 
 createRoot(root).render(
   <StrictMode>
-    <TemplatesPage />
+    <>
+      <TemplatesPage />
+      <TemplateHeroEnhancer />
+    </>
   </StrictMode>,
 );
