@@ -79,10 +79,19 @@ export function TemplateHeroEnhancer() {
         <span className="hero-collage-dot dot-a" aria-hidden="true"/>
         <span className="hero-collage-dot dot-b" aria-hidden="true"/>
         {slots.map(({ slot, src, alt }) => <figure className={`hero-photo hero-photo-${slot}`} key={slot}>
-          <div className="hero-photo-frame"><img src={src} alt={alt}/></div>
-          <figcaption><span>0{slot}</span>{fa ? ['مکانیسم', 'داده تا بینش', 'طراحی مطالعه'][slot - 1] : ['Mechanism', 'Data → insight', 'Study design'][slot - 1]}</figcaption>
+          <div className="hero-photo-frame">
+            <img
+              src={src}
+              alt={alt}
+              onLoad={event => {
+                const image = event.currentTarget;
+                const rawRatio = image.naturalWidth / Math.max(1, image.naturalHeight);
+                const safeRatio = Math.min(1.6, Math.max(.78, rawRatio));
+                image.parentElement?.style.setProperty('--hero-image-ratio', String(safeRatio));
+              }}
+            />
+          </div>
         </figure>)}
-        <div className="hero-collage-badge"><span><StudioIcon name="sparkle" size={17}/></span><div><b>{fa ? 'قابل ویرایش از Admin' : 'Admin-editable'}</b><small>{fa ? 'سه تصویر Hero را هر زمان عوض کن' : 'Swap all three hero images anytime'}</small></div></div>
       </div>
     </div>,
     host,
