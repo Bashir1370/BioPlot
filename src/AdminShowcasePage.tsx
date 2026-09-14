@@ -68,7 +68,7 @@ export function AdminShowcasePage() {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    void run(() => addShowcaseItem(file), 'تصویر به Showcase اضافه شد.');
+    void run(() => addShowcaseItem(file), 'تصویر سفارشی اضافه شد.');
   };
 
   const addFromProject = () => {
@@ -77,7 +77,7 @@ export function AdminShowcasePage() {
       const documentState = await projects.load(projectId);
       if (!documentState) throw new Error('پروژه پیدا نشد.');
       await addShowcaseItem(projectFile(documentState.title, documentToSvg(documentState)), projectId);
-    }, 'پیش‌نمایش پروژه به Showcase اضافه شد.');
+    }, 'تصویر پروژه به تصاویر سفارشی اضافه شد.');
   };
 
   const replaceFile = (item: ShowcaseItem, event: ChangeEvent<HTMLInputElement>) => {
@@ -107,7 +107,7 @@ export function AdminShowcasePage() {
 
     <main className="admin-showcase-main">
       <section className="admin-showcase-title">
-        <div><span>PORTFOLIO SHOWCASE</span><h1>مدیریت تصاویر اختصاصی</h1><p>تصاویر این صفحه مستقیماً در بخش «تصاویر اختصاصی» سایت نمایش داده می‌شوند. متن روی اسلایدها نمایش داده نمی‌شود.</p></div>
+        <div><span>PORTFOLIO SHOWCASE</span><h1>مدیریت تصاویر سفارشی</h1><p>این تصاویر حاصل سفارش مشتری هستند و توسط تیم BioPlot خلق شده‌اند. در سایت فقط خود تصویر نمایش داده می‌شود و هیچ عنوان، نوشته یا شماره‌ای روی آن اضافه نمی‌شود.</p></div>
         <div className="admin-showcase-count"><strong>{items.length}</strong><small>از {showcaseLimit} تصویر</small></div>
       </section>
 
@@ -120,15 +120,15 @@ export function AdminShowcasePage() {
 
       <section className="admin-showcase-list">
         <div className="admin-showcase-list-head"><div><strong>ترتیب نمایش در سایت</strong><small>با فلش‌ها ترتیب را تغییر بده؛ تغییرات بلافاصله از Supabase خوانده می‌شوند.</small></div><a href="/#portfolio-showcase-title" target="_blank" rel="noreferrer">مشاهده در سایت <StudioIcon name="arrow" size={15}/></a></div>
-        {!items.length && <div className="admin-showcase-empty"><StudioIcon name="figure" size={34} weight="duotone"/><strong>هنوز تصویری انتخاب نشده</strong><span>یک تصویر آپلود کن یا یکی از پروژه‌های BioPlot را به Showcase اضافه کن.</span></div>}
+        {!items.length && <div className="admin-showcase-empty"><StudioIcon name="figure" size={34} weight="duotone"/><strong>هنوز تصویری انتخاب نشده</strong><span>یک تصویر آپلود کن یا یکی از پروژه‌های BioPlot را به بخش تصاویر سفارشی اضافه کن.</span></div>}
         <div className="admin-showcase-grid">{items.map((item, index) => <article className={`admin-showcase-card ${item.active ? '' : 'inactive'}`} key={item.id}>
-          <div className="admin-showcase-preview"><img src={showcasePublicUrl(item.storagePath)} alt=""/><span>{String(index + 1).padStart(2, '0')}</span>{!item.active && <em>مخفی</em>}</div>
+          <div className="admin-showcase-preview"><img src={showcasePublicUrl(item.storagePath)} alt=""/>{!item.active && <em>مخفی</em>}</div>
           <div className="admin-showcase-card-body"><div><strong>{item.sourceProjectId ? projectNames.get(item.sourceProjectId) || 'پروژه BioPlot' : 'تصویر آپلودی'}</strong><small>{item.sourceProjectId ? 'متصل به Figure Studio' : 'فایل مستقل'}</small></div><div className="admin-showcase-order"><button disabled={busy || index === 0} title="انتقال به قبل" onClick={() => void run(() => moveShowcaseItem(items, item, -1))}>↑</button><button disabled={busy || index === items.length - 1} title="انتقال به بعد" onClick={() => void run(() => moveShowcaseItem(items, item, 1))}>↓</button></div></div>
           <div className="admin-showcase-card-actions">
             <button className={item.active ? 'active' : ''} disabled={busy} onClick={() => void run(() => setShowcaseItemActive(item, !item.active))}>{item.active ? 'نمایش در سایت' : 'نمایش بده'}</button>
             <label><input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg" disabled={busy} onChange={event => replaceFile(item, event)}/>جایگزینی تصویر</label>
             {item.sourceProjectId && <><a href={`/editor?id=${encodeURIComponent(item.sourceProjectId)}`}>ویرایش پروژه</a><button disabled={busy} onClick={() => refreshFromProject(item)}>به‌روزرسانی از پروژه</button></>}
-            <button className="danger" disabled={busy} onClick={() => { if (confirm('این تصویر از Showcase حذف شود؟')) void run(() => deleteShowcaseItem(item), 'تصویر حذف شد.'); }}>حذف</button>
+            <button className="danger" disabled={busy} onClick={() => { if (confirm('این تصویر از تصاویر سفارشی حذف شود؟')) void run(() => deleteShowcaseItem(item), 'تصویر حذف شد.'); }}>حذف</button>
           </div>
         </article>)}</div>
       </section>

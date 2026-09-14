@@ -62,7 +62,7 @@ export function PortfolioShowcasePortal() {
   if (!target || slides.length === 0) return null;
   const previous = () => setActive(current => (current - 1 + slides.length) % slides.length);
   const next = () => setActive(current => (current + 1) % slides.length);
-  const title = locale === 'fa' ? 'تصاویر اختصاصی' : 'Exclusive scientific visuals';
+  const title = locale === 'fa' ? 'تصاویر سفارشی' : 'Custom client visuals';
   const previousLabel = locale === 'fa' ? 'تصویر قبلی' : 'Previous image';
   const nextLabel = locale === 'fa' ? 'تصویر بعدی' : 'Next image';
 
@@ -70,9 +70,8 @@ export function PortfolioShowcasePortal() {
     <section className="portfolio-showcase home-section" aria-labelledby="portfolio-showcase-title" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
       <div className="portfolio-showcase-heading">
         <h2 id="portfolio-showcase-title">{title}</h2>
-        {slides.length > 1 && <div className="portfolio-showcase-controls" aria-label="Portfolio carousel controls">
+        {slides.length > 1 && <div className="portfolio-showcase-controls" aria-label={locale === 'fa' ? 'کنترل تصاویر سفارشی' : 'Custom visuals carousel controls'}>
           <button type="button" onClick={previous} aria-label={previousLabel}><StudioIcon name="arrow"/></button>
-          <span>{String(active + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}</span>
           <button type="button" onClick={next} aria-label={nextLabel}><StudioIcon name="arrow"/></button>
         </div>}
       </div>
@@ -86,7 +85,7 @@ export function PortfolioShowcasePortal() {
       }}>
         {slides.map((slide, index) => {
           const isActive = index === active;
-          return <button type="button" key={slide.id} className={`portfolio-slide ${isActive ? 'active' : ''}`} aria-label={`${title} ${index + 1}`} aria-current={isActive ? 'true' : undefined} onClick={() => setActive(index)}>
+          return <button type="button" key={slide.id} className={`portfolio-slide ${isActive ? 'active' : ''}`} aria-label={locale === 'fa' ? 'تصویر سفارشی' : 'Custom visual'} aria-current={isActive ? 'true' : undefined} onClick={() => setActive(index)}>
             <img src={showcasePublicUrl(slide.storagePath)} alt="" loading={isActive ? 'eager' : 'lazy'}/>
           </button>;
         })}
