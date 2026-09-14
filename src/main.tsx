@@ -4,6 +4,7 @@ import { HomeRoute } from './HomeRoute';
 import { EditorRoute } from './EditorRoute';
 import { AdminLibraryPage } from './AdminLibraryPage';
 import { AdminShowcasePage } from './AdminShowcasePage';
+import { AdminShowcaseAccountPortal } from './AdminShowcaseAccountPortal';
 import { AccountPage } from './AccountPage';
 import { isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
 import { installTightAssetSelection } from './tightAssetSelection';
@@ -41,6 +42,6 @@ if (isEditor) {
 
 createRoot(root).render(
   <StrictMode>
-    {isAdminLibrary ? <AdminLibraryPage /> : isAdminShowcase ? <AdminShowcasePage /> : isAccount ? <AccountPage /> : isEditor ? <EditorRoute /> : <HomeRoute />}
+    {isAdminLibrary ? <AdminLibraryPage /> : isAdminShowcase ? <AdminShowcasePage /> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
   </StrictMode>
 );
