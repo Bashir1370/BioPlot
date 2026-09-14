@@ -9,6 +9,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         dashboard: resolve(__dirname, 'index.html'),
+        templates: resolve(__dirname, 'templates.html'),
         editor: resolve(__dirname, 'editor.html')
       }
     }
