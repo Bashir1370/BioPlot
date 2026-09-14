@@ -197,6 +197,7 @@ export function SelectionProperties({fa,bounds,selectedObjects,onBounds,onCommit
   const title=single?single.name:selectedObjects.length?`${selectedObjects.length} ${fa?'آبجکت':'objects'}`:fa?'بدون انتخاب':'No selection';
   return <div className="studio-property-bar compact-property-tools" role="region" aria-label={fa?'ویژگی‌های انتخاب':'Selection properties'}>
     <span className="compact-selection-indicator" title={title} aria-label={title}><StudioIcon name="settings"/></span>
+    <div className="precision-size-fields"><span>{fa?'اندازه':'Size'}</span>{(['width','height'] as const).map(field=><label key={field}><span>{field==='width'?'W':'H'}</span><input aria-label={fa?(field==='width'?'عرض انتخاب':'ارتفاع انتخاب'):(field==='width'?'Selection width':'Selection height')} disabled={!bounds||allLocked} type="number" min="1" value={bounds?Math.round(bounds[field]):''} placeholder="—" onChange={event=>{const value=Number(event.target.value);if(value>0)onBounds(field,value);}}/></label>)}</div>
 
     <details className="compact-property-tool transform-tool">
       <summary title={fa?'موقعیت و اندازه':'Position & size'} aria-label={fa?'موقعیت و اندازه':'Position & size'}><StudioIcon name="fit"/></summary>
