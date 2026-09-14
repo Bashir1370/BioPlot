@@ -17,7 +17,9 @@
 .tkh-hero-v2-stats>div>span{grid-row:1/3;width:42px;height:42px;border-radius:14px;background:#ecf6f3;border:1px solid #d5e9e4;display:grid;place-items:center;color:#0d8277}
 .tkh-hero-v2-stats strong{font-size:20px;line-height:1.05;color:#17303f}.tkh-hero-v2-stats small{font-size:10.5px;color:#7b8d91;margin-top:3px}
 
-.tkh-hero-collage{position:relative;height:540px;isolation:isolate}
+.tkh-hero-collage{position:relative;height:540px;isolation:isolate;opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .22s ease,transform .22s ease;will-change:opacity,transform}
+.tkh-hero-collage.is-ready{opacity:1;visibility:visible;transform:translateY(0)}
+.tkh-hero-collage.is-loading{pointer-events:none}
 .tkh-hero-collage:before{content:"";position:absolute;inset:38px 24px 20px 42px;border-radius:42px;background:linear-gradient(145deg,rgba(231,245,241,.85),rgba(250,252,251,.25));border:1px solid rgba(199,225,219,.72);z-index:-3}
 .hero-collage-glow{position:absolute;border-radius:50%;filter:blur(1px);z-index:-2}.glow-a{width:260px;height:260px;right:6%;top:4%;background:radial-gradient(circle,rgba(86,188,169,.2),rgba(86,188,169,0) 70%)}.glow-b{width:220px;height:220px;left:3%;bottom:2%;background:radial-gradient(circle,rgba(121,125,198,.14),rgba(121,125,198,0) 72%)}
 .hero-collage-orbit{position:absolute;width:330px;height:330px;border-radius:50%;border:1px dashed rgba(56,133,124,.18);left:50%;top:50%;transform:translate(-50%,-50%);z-index:-1}
@@ -34,7 +36,7 @@
 .hero-collage-badge{position:absolute;right:19%;bottom:22px;z-index:6;background:#173f46;color:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 18px 36px rgba(23,63,70,.2);animation:tkhHeroFloat 8s ease-in-out infinite reverse}
 .hero-collage-badge>span{width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.12);display:grid;place-items:center;color:#9ee1d3}.hero-collage-badge>div{display:grid;gap:2px}.hero-collage-badge b{font-size:11px}.hero-collage-badge small{font-size:8.5px;color:rgba(255,255,255,.65)}
 @keyframes tkhHeroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
-@media(prefers-reduced-motion:reduce){.hero-photo,.hero-collage-badge{animation:none}}
+@media(prefers-reduced-motion:reduce){.hero-photo,.hero-collage-badge{animation:none}.tkh-hero-collage{transition:none;transform:none}}
 
 html[dir="rtl"] .tkh-hero-v2-copy h1{letter-spacing:0;line-height:1.22;font-family:"B Nazanin",BNazanin,Nazanin,Vazirmatn,Tahoma,sans-serif}
 html[dir="rtl"] .tkh-hero-v2-copy>p{font-size:21px;line-height:2.05}
