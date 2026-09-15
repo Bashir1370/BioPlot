@@ -7,10 +7,6 @@ import './admin-access.css';
 
 const LIBRARY_REFRESH_COOLDOWN_MS = 30_000;
 
-type IdleCapableWindow = Window & {
-  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
-  cancelIdleCallback?: (handle: number) => void;
-};
 
 export function EditorRoute() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -19,9 +15,6 @@ export function EditorRoute() {
     let alive = true;
     let syncing = false;
     let lastSyncStartedAt = 0;
-    let fallbackTimer: number | undefined;
-    let idleHandle: number | undefined;
-    const idleWindow = window as IdleCapableWindow;
 
     const refreshLibrary = async () => {
       if (!alive || syncing) return;
@@ -39,17 +32,10 @@ export function EditorRoute() {
       }
     };
 
-    // Do not hold the editor behind the cloud library request. Let React paint the
-    // workspace first, then start the heavier network/SVG work when the browser is idle.
-    if (idleWindow.requestIdleCallback) {
-      idleHandle = idleWindow.requestIdleCallback(() => {
-        void refreshLibrary();
-      }, { timeout: 1200 });
-    } else {
-      fallbackTimer = window.setTimeout(() => {
-        void refreshLibrary();
-      }, 250);
-    }
+    // The editor is already rendered because this runs in useEffect. Start the
+    // cloud refresh immediately after paint instead of waiting for idle time.
+    // Cached assets are visible on the first render; this request only refreshes them.
+    void refreshLibrary();
 
     const onFocus = () => { void refreshLibrary(); };
     const onVisibilityChange = () => {
@@ -61,8 +47,6 @@ export function EditorRoute() {
 
     return () => {
       alive = false;
-      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
-      if (idleHandle !== undefined) idleWindow.cancelIdleCallback?.(idleHandle);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
