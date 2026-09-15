@@ -2,10 +2,18 @@ import { useEffect, useState } from 'react';
 import { EditorStudio } from './EditorStudio';
 import { StudioIcon } from './StudioIcon';
 import { getAdminSessionState, subscribeAdminState } from './adminAuth';
-import { syncPublishedCloudAssetsToBrowserCache } from './cloudAssetLibrary';
+import { hydratePublishedCloudAssetsFromIndexedDb, syncPublishedCloudAssetsToBrowserCache } from './cloudAssetLibrary';
 import './admin-access.css';
 
 const LIBRARY_REFRESH_COOLDOWN_MS = 30_000;
+
+// Start local-disk hydration as soon as this route module is evaluated. This is
+// deliberately separate from the network refresh, so cached images can appear
+// before React's first post-paint effect runs.
+const initialLibraryHydration =
+  typeof window !== 'undefined'
+    ? hydratePublishedCloudAssetsFromIndexedDb().catch(() => [])
+    : Promise.resolve([]);
 
 
 export function EditorRoute() {
@@ -32,10 +40,12 @@ export function EditorRoute() {
       }
     };
 
-    // The editor is already rendered because this runs in useEffect. Start the
-    // cloud refresh immediately after paint instead of waiting for idle time.
-    // Cached assets are visible on the first render; this request only refreshes them.
-    void refreshLibrary();
+    // IndexedDB is local and usually resolves within a frame or two. Refresh
+    // Supabase only after local hydration so stale network timing can never delay
+    // (or overwrite) the fast cached first view.
+    void initialLibraryHydration.finally(() => {
+      void refreshLibrary();
+    });
 
     const onFocus = () => { void refreshLibrary(); };
     const onVisibilityChange = () => {
