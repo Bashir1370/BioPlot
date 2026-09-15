@@ -3,13 +3,14 @@ const PADDING_PX = 1;
 
 type PixelBounds = { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number };
 
+type Point = { x: number; y: number };
+
 const boundsCache = new Map<string, Promise<PixelBounds | null>>();
 let installed = false;
 
 function readImageBounds(src: string): Promise<PixelBounds | null> {
   const cached = boundsCache.get(src);
   if (cached) return cached;
-
   const job = new Promise<PixelBounds | null>((resolve) => {
     const image = new Image();
     image.onload = () => {
@@ -22,13 +23,11 @@ function readImageBounds(src: string): Promise<PixelBounds | null> {
       canvas.height = height;
       const context = canvas.getContext('2d', { willReadFrequently: true });
       if (!context) { resolve(null); return; }
-
       try {
         context.clearRect(0, 0, width, height);
         context.drawImage(image, 0, 0, width, height);
         const data = context.getImageData(0, 0, width, height).data;
         let minX = width, minY = height, maxX = -1, maxY = -1;
-
         for (let y = 0; y < height; y += 1) {
           for (let x = 0; x < width; x += 1) {
             const alpha = data[(y * width + x) * 4 + 3];
@@ -39,7 +38,6 @@ function readImageBounds(src: string): Promise<PixelBounds | null> {
             if (y > maxY) maxY = y;
           }
         }
-
         if (maxX < minX || maxY < minY) { resolve(null); return; }
         minX = Math.max(0, minX - PADDING_PX);
         minY = Math.max(0, minY - PADDING_PX);
@@ -90,6 +88,47 @@ function clearTightStyle(selection: HTMLElement | null) {
   ['--bioplot-tight-left', '--bioplot-tight-top', '--bioplot-tight-width', '--bioplot-tight-height'].forEach(key => selection.style.removeProperty(key));
 }
 
+function transformPoint(matrix: DOMMatrix, x: number, y: number): Point {
+  const point = new DOMPoint(x, y).matrixTransform(matrix);
+  return { x: point.x, y: point.y };
+}
+
+function renderedCropBounds(
+  artboard: HTMLElement,
+  svg: SVGSVGElement,
+  cropX: number,
+  cropY: number,
+  cropRight: number,
+  cropBottom: number,
+) {
+  const matrix = svg.getScreenCTM();
+  const artboardRect = artboard.getBoundingClientRect();
+  const artboardWidth = Number.parseFloat(artboard.style.width || '') || artboard.offsetWidth;
+  const artboardHeight = Number.parseFloat(artboard.style.height || '') || artboard.offsetHeight;
+  if (!matrix || !artboardWidth || !artboardHeight || !artboardRect.width || !artboardRect.height) return null;
+
+  const points = [
+    transformPoint(matrix, cropX, cropY),
+    transformPoint(matrix, cropRight, cropY),
+    transformPoint(matrix, cropRight, cropBottom),
+    transformPoint(matrix, cropX, cropBottom),
+  ];
+  const minX = Math.min(...points.map(point => point.x));
+  const maxX = Math.max(...points.map(point => point.x));
+  const minY = Math.min(...points.map(point => point.y));
+  const maxY = Math.max(...points.map(point => point.y));
+  const scaleX = artboardRect.width / artboardWidth;
+  const scaleY = artboardRect.height / artboardHeight;
+  if (!(scaleX > 0 && scaleY > 0)) return null;
+
+  return {
+    left: (minX - artboardRect.left) / scaleX,
+    top: (minY - artboardRect.top) / scaleY,
+    width: (maxX - minX) / scaleX,
+    height: (maxY - minY) / scaleY,
+  };
+}
+
 async function updateTightSelection() {
   const artboard = document.querySelector<HTMLElement>('.studio-artboard');
   const selection = artboard?.querySelector<HTMLElement>('.studio-selection') ?? null;
@@ -100,7 +139,6 @@ async function updateTightSelection() {
     clearTightStyle(selection);
     return;
   }
-
   const object = selected[0];
   const rotationMatch = object.style.transform.match(/rotate\(([-+\d.]+)deg\)/);
   const rotation = rotationMatch ? Number(rotationMatch[1]) : 0;
@@ -115,7 +153,6 @@ async function updateTightSelection() {
     clearTightStyle(selection);
     return;
   }
-
   const href = imageNode.getAttribute('href') ?? imageNode.getAttributeNS('http://www.w3.org/1999/xlink', 'href') ?? '';
   if (!/^data:image\/(?:png|webp|jpe?g);base64,/i.test(href)) {
     clearTightStyle(selection);
@@ -125,23 +162,15 @@ async function updateTightSelection() {
   const pixel = await readImageBounds(href);
   if (!pixel || !object.isConnected || !selection.isConnected || !object.classList.contains('is-selected')) return;
 
-  const boxLeft = Number.parseFloat(object.style.left || '0');
-  const boxTop = Number.parseFloat(object.style.top || '0');
-  const boxWidth = Number.parseFloat(object.style.width || '0');
-  const boxHeight = Number.parseFloat(object.style.height || '0');
-  if (!(boxWidth > 0 && boxHeight > 0)) return;
-
   const viewBox = parseViewBox(svg, pixel.width, pixel.height);
   const imageX = numericAttribute(imageNode, 'x', 0);
   const imageY = numericAttribute(imageNode, 'y', 0);
   const imageWidth = numericAttribute(imageNode, 'width', pixel.width);
   const imageHeight = numericAttribute(imageNode, 'height', pixel.height);
-
   const cropX = imageX + (pixel.minX / pixel.width) * imageWidth;
   const cropY = imageY + (pixel.minY / pixel.height) * imageHeight;
   const cropRight = imageX + ((pixel.maxX + 1) / pixel.width) * imageWidth;
   const cropBottom = imageY + ((pixel.maxY + 1) / pixel.height) * imageHeight;
-
   const fx = Math.max(0, Math.min(1, (cropX - viewBox.x) / viewBox.width));
   const fy = Math.max(0, Math.min(1, (cropY - viewBox.y) / viewBox.height));
   const fr = Math.max(0, Math.min(1, (cropRight - viewBox.x) / viewBox.width));
@@ -154,6 +183,21 @@ async function updateTightSelection() {
     return;
   }
 
+  /* Use the browser's actual SVG screen matrix rather than assuming the root
+     viewBox is stretched linearly. This keeps the selection tight when an SVG
+     uses preserveAspectRatio and the object's box changes aspect ratio. */
+  const rendered = renderedCropBounds(artboard, svg, cropX, cropY, cropRight, cropBottom);
+  if (rendered && rendered.width > 0 && rendered.height > 0) {
+    setTightStyle(selection, rendered.left, rendered.top, rendered.width, rendered.height);
+    return;
+  }
+
+  // Safe fallback for browsers that cannot provide an SVG screen matrix.
+  const boxLeft = Number.parseFloat(object.style.left || '0');
+  const boxTop = Number.parseFloat(object.style.top || '0');
+  const boxWidth = Number.parseFloat(object.style.width || '0');
+  const boxHeight = Number.parseFloat(object.style.height || '0');
+  if (!(boxWidth > 0 && boxHeight > 0)) return;
   setTightStyle(selection, boxLeft + boxWidth * fx, boxTop + boxHeight * fy, boxWidth * fw, boxHeight * fh);
 }
 
@@ -166,14 +210,12 @@ export function installTightAssetSelection() {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => { void updateTightSelection(); });
   };
-
   const observer = new MutationObserver(records => {
     if (records.some(record => {
       const target = record.target instanceof Element ? record.target : null;
       return Boolean(target?.closest('.studio-object') || target?.classList.contains('studio-object'));
     })) schedule();
   });
-
   const start = () => {
     const artboard = document.querySelector('.studio-artboard');
     if (!artboard) { requestAnimationFrame(start); return; }
