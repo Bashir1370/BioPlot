@@ -34,10 +34,6 @@ const freshDraft = (): Draft => ({
 });
 const split = (value: string) => value.split(/[,،\n]/).map(item => item.trim()).filter(Boolean);
 
-const initialAdminLibraryHydration =
-  typeof window !== 'undefined'
-    ? hydrateAdminCloudAssetsFromIndexedDb().catch(() => [])
-    : Promise.resolve([]);
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -136,7 +132,8 @@ export function AdminLibraryPage() {
   const [newCategoryFa, setNewCategoryFa] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   const checkAccess = async () => {
     const state = await getAdminSessionState();
@@ -144,28 +141,47 @@ export function AdminLibraryPage() {
     setGate(!state.user ? 'signed-out' : state.isAdmin ? 'admin' : 'claim');
   };
 
-  const refresh = async () => {
-    setLibraryLoading(true);
-    try {
-      const [nextAssets, nextCategories] = await Promise.all([loadAdminCloudAssets(), loadCloudCategories()]);
-      setAssets(nextAssets); setCategories(nextCategories);
-    } finally {
-      setLibraryLoading(false);
-    }
-  };
-
   useEffect(() => { void checkAccess(); }, []);
   useEffect(() => {
     if (gate !== 'admin') return;
+
     let alive = true;
-    void initialAdminLibraryHydration
+    let networkAssetsResolved = false;
+
+    // Local IndexedDB and Supabase start together. A warm local cache can paint
+    // first, but a cold/blocked IndexedDB can never postpone the network request.
+    void hydrateAdminCloudAssetsFromIndexedDb()
       .then(cached => {
-        if (alive && cached.length) setAssets(cached);
+        if (alive && !networkAssetsResolved && cached.length) setAssets(cached);
+      })
+      .catch(() => undefined);
+
+    setAssetsLoading(true);
+    void loadAdminCloudAssets()
+      .then(nextAssets => {
+        networkAssetsResolved = true;
+        if (alive) setAssets(nextAssets);
+      })
+      .catch(error => {
+        if (alive) setMessage(error instanceof Error ? error.message : 'خطا در دریافت المان‌ها');
       })
       .finally(() => {
-        if (!alive) return;
-        void refresh().catch(error => setMessage(error instanceof Error ? error.message : 'خطا در دریافت اطلاعات'));
+        if (alive) setAssetsLoading(false);
       });
+
+    // Categories are tiny. Do not make them wait for the image-heavy asset query.
+    setCategoriesLoading(true);
+    void loadCloudCategories()
+      .then(nextCategories => {
+        if (alive) setCategories(nextCategories);
+      })
+      .catch(error => {
+        if (alive) setMessage(error instanceof Error ? error.message : 'خطا در دریافت دسته‌بندی‌ها');
+      })
+      .finally(() => {
+        if (alive) setCategoriesLoading(false);
+      });
+
     return () => { alive = false; };
   }, [gate]);
 
@@ -221,8 +237,9 @@ export function AdminLibraryPage() {
   const updatePreset = (index: number, changes: Partial<AssetStylePresetConfig>) => setDraft(current => ({ ...current, stylePresets: (current.stylePresets ?? []).map((item, itemIndex) => itemIndex === index ? { ...item, ...changes } : item) }));
   const removePreset = (index: number) => setDraft(current => ({ ...current, stylePresets: (current.stylePresets ?? []).filter((_, itemIndex) => itemIndex !== index) }));
 
-  const emptyAndLoading = libraryLoading && assets.length === 0;
-  const categoriesEmptyAndLoading = libraryLoading && categories.length === 0;
+  const libraryLoading = assetsLoading || categoriesLoading;
+  const emptyAndLoading = assetsLoading && assets.length === 0;
+  const categoriesEmptyAndLoading = categoriesLoading && categories.length === 0;
 
   return <div className="admin-library" dir="rtl">
     <header className="admin-header"><div className="admin-brand"><span>B</span><div><strong>BioPlot Admin</strong><small>Supabase Library Manager</small></div></div><nav><div className="admin-header-user"><small>{email}</small><button onClick={() => void signOutAdmin().then(() => location.reload())}>خروج</button></div><a href="/">داشبورد</a><a className="primary" href="/editor">ویرایشگر</a></nav></header>
