@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { sanitizeSvg } from './assets';
 import type { AssetStylePresetConfig } from './assetStyling';
+import { AssetPreviewImage } from './AssetPreviewImage';
 import { claimAdmin, getAdminSessionState, signInAdmin, signOutAdmin, signUpAdmin } from './adminAuth';
 import {
   CloudAsset,
@@ -13,6 +14,7 @@ import {
   loadCachedAdminCloudAssets,
   loadCachedCloudCategories,
   loadCloudCategories,
+  hydrateAdminCloudAssetsFromIndexedDb,
   patchCloudAsset,
   saveCloudAsset,
   updateCloudCategory,
@@ -31,6 +33,11 @@ const freshDraft = (): Draft => ({
   stylePresets: undefined,
 });
 const split = (value: string) => value.split(/[,،\n]/).map(item => item.trim()).filter(Boolean);
+
+const initialAdminLibraryHydration =
+  typeof window !== 'undefined'
+    ? hydrateAdminCloudAssetsFromIndexedDb().catch(() => [])
+    : Promise.resolve([]);
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -148,7 +155,19 @@ export function AdminLibraryPage() {
   };
 
   useEffect(() => { void checkAccess(); }, []);
-  useEffect(() => { if (gate === 'admin') void refresh().catch(error => setMessage(error instanceof Error ? error.message : 'خطا در دریافت اطلاعات')); }, [gate]);
+  useEffect(() => {
+    if (gate !== 'admin') return;
+    let alive = true;
+    void initialAdminLibraryHydration
+      .then(cached => {
+        if (alive && cached.length) setAssets(cached);
+      })
+      .finally(() => {
+        if (!alive) return;
+        void refresh().catch(error => setMessage(error instanceof Error ? error.message : 'خطا در دریافت اطلاعات'));
+      });
+    return () => { alive = false; };
+  }, [gate]);
 
   const visible = useMemo(() => assets.filter(asset => {
     if (filterCategory && asset.category !== filterCategory) return false;
@@ -216,7 +235,7 @@ export function AdminLibraryPage() {
         <section className="admin-preset-editor"><div className="admin-preset-head"><div><strong>رنگ‌های قابل انتخاب در Editor</strong><span>می‌توانی پالت را اتوماتیک به BioPlot بسپاری یا رنگ‌ها را دستی تعیین کنی.</span></div>{draft.stylePresets===undefined?<><b>اتوماتیک</b><button type="button" onClick={customizePresets}>حالت دستی</button></>:<><button type="button" onClick={useAutomaticPresets}>حالت اتوماتیک</button><b>{draft.stylePresets.length} گزینه دستی</b></>}</div>{draft.stylePresets===undefined?<div className="admin-preset-legacy">حالت اتوماتیک فعال است؛ Editor همان پالت رنگی پیش‌فرض BioPlot را برای این شکل می‌سازد.
 هر زمان خواستی «حالت دستی» را بزن و رنگ‌ها را خودت کنترل کن.</div>:<><label className="admin-original-toggle"><input type="checkbox" checked={draft.stylePresets.some(item=>item.kind==='original')} onChange={e=>toggleOriginalPreset(e.target.checked)}/><span>نمایش رنگ اصلی تصویر (Original)</span></label><div className="admin-preset-list">{draft.stylePresets.map((preset,index)=>preset.kind==='tint'?<div className="admin-preset-row" key={preset.id}><input type="color" value={preset.color??'#087f79'} onChange={e=>updatePreset(index,{color:e.target.value})}/><label>نام انگلیسی<input value={preset.label} onChange={e=>updatePreset(index,{label:e.target.value})}/></label><label>نام فارسی<input value={preset.labelFa??''} onChange={e=>updatePreset(index,{labelFa:e.target.value})}/></label><button type="button" className="danger" onClick={()=>removePreset(index)}>حذف</button></div>:null)}</div><button type="button" className="add-preset" onClick={addColorPreset}><StudioIcon name="plus"/> افزودن رنگ</button><small className="admin-preset-tip">مثال: برای Mouse می‌توانی Original را خاموش کنی و فقط Black #000000 و White #FFFFFF بسازی.</small></>}</section>
         <div className="asset-switches"><label><input type="checkbox" checked={draft.active} onChange={e => setDraft({ ...draft, active: e.target.checked })} /><span>منتشر در Library</span></label><label><input type="checkbox" checked={draft.featured} onChange={e => setDraft({ ...draft, featured: e.target.checked })} /><span>Featured</span></label><label><input type="checkbox" checked={draft.premium} onChange={e => setDraft({ ...draft, premium: e.target.checked })} /><span>Premium</span></label></div><div className="asset-form-actions"><button type="submit" className="save" disabled={busy}>{editing ? 'ذخیره تغییرات' : 'انتشار در Library'}</button><button type="button" onClick={reset}>پاک کردن فرم</button>{message && <span>{message}</span>}</div></div></form></section>
-        <section className="admin-assets-card"><div className="admin-assets-toolbar"><div><strong>المان‌های Supabase</strong><span>{emptyAndLoading ? 'در حال دریافت…' : `${visible.length} مورد`}</span></div><input placeholder="جستجو…" value={query} onChange={e => setQuery(e.target.value)} /><button onClick={exportBackup}>خروجی JSON</button></div><div className="admin-asset-grid">{visible.map(asset => <article className="admin-asset-card" key={asset.id}><div className="admin-asset-preview" dangerouslySetInnerHTML={{ __html: asset.svg }} /><div className="admin-asset-info"><strong>{asset.nameFa || asset.name}</strong><span>{asset.nameFa ? asset.name : asset.category}</span><small>{asset.category} · {asset.reviewStatus}</small></div><div className="admin-asset-flags"><button className={asset.active ? 'on' : ''} onClick={() => void toggle(asset, 'active')}>{asset.active ? 'منتشر' : 'مخفی'}</button><button className={asset.featured ? 'on' : ''} onClick={() => void toggle(asset, 'featured')}>Featured</button><button className={asset.premium ? 'on' : ''} onClick={() => void toggle(asset, 'premium')}>Premium</button></div><div className="admin-asset-actions"><button onClick={() => editAsset(asset)}>ویرایش</button><button className="danger" onClick={() => void removeAsset(asset)}>حذف</button></div></article>)}</div>{!visible.length && <p className="asset-empty">{libraryLoading ? 'در حال دریافت کتابخانه…' : 'هنوز المانی در این بخش وجود ندارد.'}</p>}</section>
+        <section className="admin-assets-card"><div className="admin-assets-toolbar"><div><strong>المان‌های Supabase</strong><span>{emptyAndLoading ? 'در حال دریافت…' : `${visible.length} مورد`}</span></div><input placeholder="جستجو…" value={query} onChange={e => setQuery(e.target.value)} /><button onClick={exportBackup}>خروجی JSON</button></div><div className="admin-asset-grid">{visible.map(asset => <article className="admin-asset-card" key={asset.id}><div className="admin-asset-preview"><AssetPreviewImage svg={asset.svg} cacheKey={`admin:${asset.id}:${asset.version}`} alt={asset.nameFa || asset.name} /></div><div className="admin-asset-info"><strong>{asset.nameFa || asset.name}</strong><span>{asset.nameFa ? asset.name : asset.category}</span><small>{asset.category} · {asset.reviewStatus}</small></div><div className="admin-asset-flags"><button className={asset.active ? 'on' : ''} onClick={() => void toggle(asset, 'active')}>{asset.active ? 'منتشر' : 'مخفی'}</button><button className={asset.featured ? 'on' : ''} onClick={() => void toggle(asset, 'featured')}>Featured</button><button className={asset.premium ? 'on' : ''} onClick={() => void toggle(asset, 'premium')}>Premium</button></div><div className="admin-asset-actions"><button onClick={() => editAsset(asset)}>ویرایش</button><button className="danger" onClick={() => void removeAsset(asset)}>حذف</button></div></article>)}</div>{!visible.length && <p className="asset-empty">{libraryLoading ? 'در حال دریافت کتابخانه…' : 'هنوز المانی در این بخش وجود ندارد.'}</p>}</section>
       </section>
     </main>
   </div>;
