@@ -5,28 +5,13 @@
   height:var(--bioplot-tight-height)!important;
 }
 
-/* The solid selection box is enough. The object's old dashed outline causes the
-   second dotted rectangle visible around scientific assets. */
-.studio-shell .studio-object.is-selected{
+/*
+  The teal .studio-selection box is the real resize/rotate selection UI.
+  Scientific assets also inherit the editor's legacy dashed outline on the
+  original object box, which creates the second dotted rectangle.
+  Remove only that legacy outline for selected scientific assets.
+*/
+.studio-shell .studio-object.studio-asset.is-selected{
   outline:none!important;
-}
-
-/* Keep the artboard centered while it fits, but let it grow from a stable origin
-   once it overflows. This prevents the center/scrollbar layout from jumping while
-   zoom changes. */
-.studio-shell .studio-canvas-scroll{
-  display:flex!important;
-  align-items:flex-start!important;
-  justify-content:flex-start!important;
-  scrollbar-gutter:stable both-edges;
-}
-
-.studio-shell .studio-artboard-scale{
-  flex:0 0 auto;
-  margin:auto;
-  transition:none!important;
-}
-
-.studio-shell .studio-artboard{
-  will-change:transform;
+  outline-offset:0!important;
 }
