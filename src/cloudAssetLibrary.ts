@@ -48,6 +48,11 @@ let memoryPublishedCloudAssets: CloudAsset[] | null = null;
 let memoryAdminCloudAssets: CloudAsset[] | null = null;
 let cloudDbPromise: Promise<IDBDatabase | null> | null = null;
 
+function notifyAssetLibraryChanged() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event('bioplot:asset-library-changed'));
+}
+
 function sourceType(value: unknown): CloudAsset['sourceType'] {
   return value === 'png' || value === 'jpeg' || value === 'webp' ? value : 'svg';
 }
@@ -247,6 +252,7 @@ function writePublishedCloudAssetsCache(assets: CloudAsset[]) {
 
   // Runtime is refreshed first so an already-open editor updates immediately.
   setRuntimeCloudAssets(published);
+  notifyAssetLibraryChanged();
 
   // Keep the old localStorage cache when it fits. Large raster libraries can
   // exceed localStorage quota; IndexedDB below is the authoritative browser cache.
@@ -311,6 +317,7 @@ function removeAdminCloudAssetCache(id: string) {
 export function reloadRuntimeCloudAssetsFromBrowserCache() {
   const cached = loadCachedPublishedCloudAssets();
   setRuntimeCloudAssets(cached);
+  notifyAssetLibraryChanged();
   return cached;
 }
 
@@ -327,6 +334,7 @@ export async function hydratePublishedCloudAssetsFromIndexedDb() {
     asset => asset.active !== false && Boolean(asset.svg),
   );
   setRuntimeCloudAssets(memoryPublishedCloudAssets);
+  notifyAssetLibraryChanged();
   return sortCloudAssets(memoryPublishedCloudAssets);
 }
 
@@ -340,6 +348,7 @@ export async function hydrateAdminCloudAssetsFromIndexedDb() {
     asset => asset.active !== false && Boolean(asset.svg),
   );
   setRuntimeCloudAssets(memoryPublishedCloudAssets);
+  notifyAssetLibraryChanged();
   return sortCloudAssets(memoryAdminCloudAssets);
 }
 
@@ -493,8 +502,9 @@ export async function loadAdminCloudAssets(): Promise<CloudAsset[]> {
   if (error) throw error;
 
   const assets = sortCloudAssets((data ?? []).map(rowToAsset));
+  // Make fresh network data visible immediately. Browser-cache persistence is
+  // already scheduled by writeAdminCloudAssetCache and must not block the UI.
   writeAdminCloudAssetCache(assets);
-  await writeCloudCacheToIndexedDb(CLOUD_IDB_ADMIN_KEY, assets);
   return assets;
 }
 
@@ -513,11 +523,9 @@ export async function loadPublishedCloudAssets(): Promise<CloudAsset[]> {
 
 export async function syncPublishedCloudAssetsToBrowserCache() {
   const cloud = await loadPublishedCloudAssets();
+  // Runtime + UI update synchronously here; IndexedDB persistence runs in the
+  // background from writePublishedCloudAssetsCache. Do not await a second write.
   writePublishedCloudAssetsCache(cloud);
-  await writeCloudCacheToIndexedDb(
-    CLOUD_IDB_PUBLISHED_KEY,
-    cloud.filter(asset => asset.active !== false && Boolean(asset.svg)),
-  );
   return cloud;
 }
 
