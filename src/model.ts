@@ -29,4 +29,24 @@ export const defaultPlotSpec=():PlotSpec=>({kind:'bar',title:'Experimental resul
 export function createBlankDocument(title='Untitled scientific figure'):BioPlotDocument { const now=new Date().toISOString(); const pageId=makeId('page'); return {schemaVersion:DOCUMENT_SCHEMA_VERSION,id:makeId('doc'),title,createdAt:now,updatedAt:now,activePageId:pageId,pages:[{id:pageId,name:'Figure 1',width:960,height:620,background:'#ffffff',objects:[]}],metadata:{locale:'en',tags:[],lastExportDpi:300,lastExportWidthMm:160}}; }
 export function cloneDocument(document:BioPlotDocument):BioPlotDocument{return structuredClone(document);}
 export function activePage(document:BioPlotDocument):BioPlotPage{return document.pages.find(page=>page.id===document.activePageId)??document.pages[0];}
-export function migrateDocument(input:unknown):BioPlotDocument { if(!input||typeof input!=='object') return createBlankDocument(); const candidate=input as Record<string,unknown>; if(candidate.schemaVersion===DOCUMENT_SCHEMA_VERSION) return candidate as unknown as BioPlotDocument; return createBlankDocument(typeof candidate.title==='string'?candidate.title:undefined); }
+
+function cleanObjects(objects: unknown): BioPlotObject[] {
+ if(!Array.isArray(objects)) return [];
+ return objects.filter((item)=>{
+   if(!item || typeof item!=='object') return false;
+   const obj=item as Record<string,unknown>;
+   return typeof obj.id==='string' && typeof obj.type==='string';
+ });
+}
+
+export function migrateDocument(input:unknown):BioPlotDocument {
+ if(!input||typeof input!=='object') return createBlankDocument();
+ const candidate=input as Record<string,unknown>;
+ if(candidate.schemaVersion===DOCUMENT_SCHEMA_VERSION){
+   const document=candidate as unknown as BioPlotDocument;
+   document.pages=document.pages?.map(page=>({...page,objects:cleanObjects(page.objects)})) ?? [];
+   if(!document.pages.length) return createBlankDocument(document.title);
+   return document;
+ }
+ return createBlankDocument(typeof candidate.title==='string'?candidate.title:undefined);
+}
