@@ -9,8 +9,6 @@ import { AdminTemplateHeroPortal } from './AdminTemplateHeroPortal';
 import { AccountPage } from './AccountPage';
 import { isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
 import { installTightAssetSelection } from './tightAssetSelection';
-import { installCanvasWheelZoomV2 } from './canvasWheelZoomV2';
-import { installZoomLimit250 } from './zoomLimit250';
 import './styles-v3.css';
 import './home-top-nav.css';
 import './editor-pro.css';
@@ -27,7 +25,6 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/vazirmatn';
 import './precision-studio.css';
 import './persian-typography.css';
-
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
 
@@ -38,10 +35,7 @@ const isEditor = isEditorPath(window.location.pathname);
 
 if (isEditor) {
   installTightAssetSelection();
-  installZoomLimit250();
-  installCanvasWheelZoomV2();
 }
-
 createRoot(root).render(
   <StrictMode>
     {isAdminLibrary ? <AdminLibraryPage /> : isAdminShowcase ? <><AdminShowcasePage/><AdminTemplateHeroPortal/></> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
