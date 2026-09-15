@@ -7,14 +7,6 @@ import './admin-access.css';
 
 const LIBRARY_REFRESH_COOLDOWN_MS = 30_000;
 
-// Start local-disk hydration as soon as this route module is evaluated. This is
-// deliberately separate from the network refresh, so cached images can appear
-// before React's first post-paint effect runs.
-const initialLibraryHydration =
-  typeof window !== 'undefined'
-    ? hydratePublishedCloudAssetsFromIndexedDb().catch(() => [])
-    : Promise.resolve([]);
-
 
 export function EditorRoute() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -40,12 +32,12 @@ export function EditorRoute() {
       }
     };
 
-    // IndexedDB is local and usually resolves within a frame or two. Refresh
-    // Supabase only after local hydration so stale network timing can never delay
-    // (or overwrite) the fast cached first view.
-    void initialLibraryHydration.finally(() => {
-      void refreshLibrary();
-    });
+    // Race local disk and network instead of serializing them. If IndexedDB has
+    // a warm cache it can paint first; if it is empty/blocked, Supabase is already
+    // in flight and is never delayed by browser-storage startup. Both paths emit
+    // the library-changed event when they have usable data.
+    void hydratePublishedCloudAssetsFromIndexedDb().catch(() => []);
+    void refreshLibrary();
 
     const onFocus = () => { void refreshLibrary(); };
     const onVisibilityChange = () => {
