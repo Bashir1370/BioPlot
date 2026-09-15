@@ -1,69 +1,68 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { EditorStudio } from './EditorStudio';
 import { StudioIcon } from './StudioIcon';
 import { getAdminSessionState, subscribeAdminState } from './adminAuth';
-import type { ScientificAsset } from './assets';
 import { syncPublishedCloudAssetsToBrowserCache } from './cloudAssetLibrary';
 import './admin-access.css';
 
-function cloudLibrarySignature(assets: ScientificAsset[]) {
-  return JSON.stringify(
-    assets
-      .map(asset => [
-        asset.id,
-        asset.version,
-        asset.active,
-        asset.featured,
-        asset.premium,
-        asset.reviewStatus,
-        asset.sortOrder,
-        asset.name,
-        asset.nameFa,
-        asset.category,
-        asset.svg.length,
-      ])
-      .sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
-  );
-}
+const LIBRARY_REFRESH_COOLDOWN_MS = 30_000;
+
+type IdleCapableWindow = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+  cancelIdleCallback?: (handle: number) => void;
+};
 
 export function EditorRoute() {
-  const [libraryReady, setLibraryReady] = useState(false);
-  const [libraryEpoch, setLibraryEpoch] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
-  const librarySignatureRef = useRef('');
 
   useEffect(() => {
     let alive = true;
     let syncing = false;
+    let lastSyncStartedAt = 0;
+    let fallbackTimer: number | undefined;
+    let idleHandle: number | undefined;
+    const idleWindow = window as IdleCapableWindow;
 
-    const refreshLibrary = async (initial = false) => {
-      if (syncing) return;
+    const refreshLibrary = async () => {
+      if (!alive || syncing) return;
+      const now = Date.now();
+      if (now - lastSyncStartedAt < LIBRARY_REFRESH_COOLDOWN_MS) return;
+
       syncing = true;
+      lastSyncStartedAt = now;
       try {
-        const cloud = await syncPublishedCloudAssetsToBrowserCache();
-        if (!alive) return;
-        const nextSignature = cloudLibrarySignature(cloud);
-        if (librarySignatureRef.current && librarySignatureRef.current !== nextSignature) {
-          setLibraryEpoch(value => value + 1);
-        }
-        librarySignatureRef.current = nextSignature;
+        await syncPublishedCloudAssetsToBrowserCache();
       } catch {
-        // Keep the current in-memory/cached library available when the network is temporarily unavailable.
+        // The editor and the local/cached asset catalog stay usable if the cloud is slow or offline.
       } finally {
         syncing = false;
-        if (initial && alive) setLibraryReady(true);
       }
     };
 
-    void refreshLibrary(true);
+    // Do not hold the editor behind the cloud library request. Let React paint the
+    // workspace first, then start the heavier network/SVG work when the browser is idle.
+    if (idleWindow.requestIdleCallback) {
+      idleHandle = idleWindow.requestIdleCallback(() => {
+        void refreshLibrary();
+      }, { timeout: 1200 });
+    } else {
+      fallbackTimer = window.setTimeout(() => {
+        void refreshLibrary();
+      }, 250);
+    }
+
     const onFocus = () => { void refreshLibrary(); };
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') void refreshLibrary();
     };
+
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibilityChange);
+
     return () => {
       alive = false;
+      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
+      if (idleHandle !== undefined) idleWindow.cancelIdleCallback?.(idleHandle);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
@@ -76,12 +75,8 @@ export function EditorRoute() {
     return () => { alive = false; unsubscribe(); };
   }, []);
 
-  if (!libraryReady) {
-    return <div className="editor-cloud-loading"><span>B</span><strong>BioPlot</strong><small>در حال همگام‌سازی کتابخانه علمی…</small></div>;
-  }
-
   return <>
-    <EditorStudio key={libraryEpoch} />
+    <EditorStudio />
     {isAdmin && <a className="editor-admin-shortcut" href="/admin/library" title="مدیریت کتابخانه" aria-label="مدیریت کتابخانه">
       <StudioIcon name="settings" />
       <span>مدیریت</span>
