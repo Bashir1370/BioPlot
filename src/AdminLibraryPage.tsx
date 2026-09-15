@@ -10,6 +10,8 @@ import {
   deleteCloudAsset,
   deleteCloudCategory,
   loadAdminCloudAssets,
+  loadCachedAdminCloudAssets,
+  loadCachedCloudCategories,
   loadCloudCategories,
   patchCloudAsset,
   saveCloudAsset,
@@ -21,7 +23,6 @@ import './admin-access.css';
 
 type Gate = 'loading' | 'signed-out' | 'claim' | 'admin';
 type Draft = CloudAssetDraft & { tagsEn: string; tagsFa: string };
-
 const originalPreset: AssetStylePresetConfig = { id: 'original', label: 'Original', labelFa: 'اصلی', kind: 'original' };
 const freshDraft = (): Draft => ({
   name: '', nameFa: '', category: '', description: '', descriptionFa: '',
@@ -39,6 +40,7 @@ function readAsDataUrl(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
 function imageSize(src: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -47,6 +49,7 @@ function imageSize(src: string): Promise<{ width: number; height: number }> {
     image.src = src;
   });
 }
+
 async function fileToRender(file: File): Promise<{ renderSvg: string; sourceType: Draft['sourceType'] }> {
   if (file.size > 2_500_000) throw new Error('حداکثر حجم فایل ۲.۵ مگابایت است.');
   if (file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')) {
@@ -59,6 +62,7 @@ async function fileToRender(file: File): Promise<{ renderSvg: string; sourceType
   const sourceType: Draft['sourceType'] = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpeg';
   return { sourceType, renderSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><image href="${data}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet"/></svg>` };
 }
+
 function assetToDraft(asset: CloudAsset): Draft {
   return {
     name: asset.name, nameFa: asset.nameFa ?? '', category: asset.category,
@@ -77,7 +81,6 @@ function AuthCard({ gate, onReady }: { gate: Exclude<Gate, 'loading' | 'admin'>;
   const [token, setToken] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-
   const submitAuth = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setMessage('');
     try {
@@ -97,7 +100,6 @@ function AuthCard({ gate, onReady }: { gate: Exclude<Gate, 'loading' | 'admin'>;
     } catch (error) { setMessage(error instanceof Error ? error.message : 'فعال‌سازی انجام نشد.'); }
     finally { setBusy(false); }
   };
-
   return <div className="admin-auth-shell" dir="rtl"><section className="admin-auth-card">
     <div className="admin-auth-brand"><span>B</span><div><strong>BioPlot Admin</strong><small>دسترسی امن مدیریت کتابخانه</small></div></div>
     {gate === 'signed-out' ? <>
@@ -116,8 +118,8 @@ function AuthCard({ gate, onReady }: { gate: Exclude<Gate, 'loading' | 'admin'>;
 export function AdminLibraryPage() {
   const [gate, setGate] = useState<Gate>('loading');
   const [email, setEmail] = useState('');
-  const [assets, setAssets] = useState<CloudAsset[]>([]);
-  const [categories, setCategories] = useState<CloudCategory[]>([]);
+  const [assets, setAssets] = useState<CloudAsset[]>(() => loadCachedAdminCloudAssets());
+  const [categories, setCategories] = useState<CloudCategory[]>(() => loadCachedCloudCategories());
   const [draft, setDraft] = useState<Draft>(() => freshDraft());
   const [file, setFile] = useState<File | null>(null);
   const [editing, setEditing] = useState<CloudAsset | null>(null);
@@ -127,16 +129,24 @@ export function AdminLibraryPage() {
   const [newCategoryFa, setNewCategoryFa] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [libraryLoading, setLibraryLoading] = useState(false);
 
   const checkAccess = async () => {
     const state = await getAdminSessionState();
     setEmail(state.user?.email ?? '');
     setGate(!state.user ? 'signed-out' : state.isAdmin ? 'admin' : 'claim');
   };
+
   const refresh = async () => {
-    const [nextAssets, nextCategories] = await Promise.all([loadAdminCloudAssets(), loadCloudCategories()]);
-    setAssets(nextAssets); setCategories(nextCategories);
+    setLibraryLoading(true);
+    try {
+      const [nextAssets, nextCategories] = await Promise.all([loadAdminCloudAssets(), loadCloudCategories()]);
+      setAssets(nextAssets); setCategories(nextCategories);
+    } finally {
+      setLibraryLoading(false);
+    }
   };
+
   useEffect(() => { void checkAccess(); }, []);
   useEffect(() => { if (gate === 'admin') void refresh().catch(error => setMessage(error instanceof Error ? error.message : 'خطا در دریافت اطلاعات')); }, [gate]);
 
@@ -164,16 +174,17 @@ export function AdminLibraryPage() {
     setBusy(true); setMessage('');
     try {
       await saveCloudAsset({ ...draft, synonyms: { en: split(draft.tagsEn), fa: split(draft.tagsFa) } }, file, editing ?? undefined);
-      await refresh(); reset(); setMessage(editing ? 'تغییرات روی Supabase ذخیره شد.' : 'المان منتشر شد و برای کاربران Library قابل دریافت است.');
+      setAssets(loadCachedAdminCloudAssets());
+      reset(); setMessage(editing ? 'تغییرات روی Supabase ذخیره شد.' : 'المان منتشر شد و برای کاربران Library قابل دریافت است.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'ذخیره انجام نشد.'); }
     finally { setBusy(false); }
   };
   const editAsset = (asset: CloudAsset) => { setEditing(asset); setFile(null); setDraft(assetToDraft(asset)); setMessage(''); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const removeAsset = async (asset: CloudAsset) => { if (!confirm(`«${asset.name}» حذف شود؟`)) return; setBusy(true); try { await deleteCloudAsset(asset); await refresh(); if (editing?.id === asset.id) reset(); } finally { setBusy(false); } };
-  const toggle = async (asset: CloudAsset, key: 'active' | 'featured' | 'premium') => { await patchCloudAsset(asset, { [key]: !asset[key] }); await refresh(); };
-  const addCategory = async (event: FormEvent) => { event.preventDefault(); if (!newCategory.trim()) return; await createCloudCategory(newCategory, newCategoryFa); setNewCategory(''); setNewCategoryFa(''); await refresh(); };
-  const renameCategory = async (category: CloudCategory) => { const en = prompt('نام انگلیسی دسته', category.nameEn); if (!en) return; const fa = prompt('نام فارسی دسته', category.nameFa ?? '') ?? ''; await updateCloudCategory(category.slug, en, fa); if (filterCategory === category.slug) setFilterCategory(en.trim()); await refresh(); };
-  const removeCategory = async (category: CloudCategory) => { if (!confirm(`دسته «${category.nameEn}» حذف شود؟`)) return; await deleteCloudCategory(category.slug); if (filterCategory === category.slug) setFilterCategory(''); await refresh(); };
+  const removeAsset = async (asset: CloudAsset) => { if (!confirm(`«${asset.name}» حذف شود؟`)) return; setBusy(true); try { await deleteCloudAsset(asset); setAssets(loadCachedAdminCloudAssets()); if (editing?.id === asset.id) reset(); } finally { setBusy(false); } };
+  const toggle = async (asset: CloudAsset, key: 'active' | 'featured' | 'premium') => { await patchCloudAsset(asset, { [key]: !asset[key] }); setAssets(loadCachedAdminCloudAssets()); };
+  const addCategory = async (event: FormEvent) => { event.preventDefault(); if (!newCategory.trim()) return; await createCloudCategory(newCategory, newCategoryFa); setNewCategory(''); setNewCategoryFa(''); setCategories(loadCachedCloudCategories()); };
+  const renameCategory = async (category: CloudCategory) => { const en = prompt('نام انگلیسی دسته', category.nameEn); if (!en) return; const fa = prompt('نام فارسی دسته', category.nameFa ?? '') ?? ''; await updateCloudCategory(category.slug, en, fa); if (filterCategory === category.slug) setFilterCategory(en.trim()); setCategories(loadCachedCloudCategories()); setAssets(loadCachedAdminCloudAssets()); };
+  const removeCategory = async (category: CloudCategory) => { if (!confirm(`دسته «${category.nameEn}» حذف شود؟`)) return; await deleteCloudCategory(category.slug); if (filterCategory === category.slug) setFilterCategory(''); setCategories(loadCachedCloudCategories()); setAssets(loadCachedAdminCloudAssets()); };
   const exportBackup = () => { const blob = new Blob([JSON.stringify({ version: 2, exportedAt: new Date().toISOString(), categories, assets }, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `bioplot-cloud-library-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); };
   const customizePresets = () => setDraft(current => ({ ...current, stylePresets: [{ ...originalPreset }] }));
   const useAutomaticPresets = () => setDraft(current => ({ ...current, stylePresets: undefined }));
@@ -191,17 +202,21 @@ export function AdminLibraryPage() {
   const updatePreset = (index: number, changes: Partial<AssetStylePresetConfig>) => setDraft(current => ({ ...current, stylePresets: (current.stylePresets ?? []).map((item, itemIndex) => itemIndex === index ? { ...item, ...changes } : item) }));
   const removePreset = (index: number) => setDraft(current => ({ ...current, stylePresets: (current.stylePresets ?? []).filter((_, itemIndex) => itemIndex !== index) }));
 
+  const emptyAndLoading = libraryLoading && assets.length === 0;
+  const categoriesEmptyAndLoading = libraryLoading && categories.length === 0;
+
   return <div className="admin-library" dir="rtl">
     <header className="admin-header"><div className="admin-brand"><span>B</span><div><strong>BioPlot Admin</strong><small>Supabase Library Manager</small></div></div><nav><div className="admin-header-user"><small>{email}</small><button onClick={() => void signOutAdmin().then(() => location.reload())}>خروج</button></div><a href="/">داشبورد</a><a className="primary" href="/editor">ویرایشگر</a></nav></header>
     <main className="admin-layout">
-      <aside className="admin-sidebar"><div className="admin-sidebar-title"><div><strong>دسته‌بندی‌ها</strong><small>{categories.length} دسته ابری</small></div></div><button className={!filterCategory ? 'active' : ''} onClick={() => setFilterCategory('')}>همه المان‌ها <span>{assets.length}</span></button>{categories.map(category => <div className={`admin-category-row ${filterCategory === category.slug ? 'active' : ''}`} key={category.slug}><button onClick={() => setFilterCategory(category.slug)}>{category.nameFa || category.nameEn}<span>{assets.filter(a => a.category === category.slug).length}</span></button><details><summary>•••</summary><div className="category-menu"><button onClick={() => void renameCategory(category)}>تغییر نام</button>{category.slug !== 'Uncategorized' && <button className="danger" onClick={() => void removeCategory(category)}>حذف دسته</button>}</div></details></div>)}<form className="new-category" onSubmit={e => void addCategory(e)}><strong>دسته جدید</strong><input placeholder="نام انگلیسی" value={newCategory} onChange={e => setNewCategory(e.target.value)} /><input placeholder="نام فارسی" value={newCategoryFa} onChange={e => setNewCategoryFa(e.target.value)} /><button><StudioIcon name="plus" /> افزودن دسته</button></form></aside>
+      <aside className="admin-sidebar"><div className="admin-sidebar-title"><div><strong>دسته‌بندی‌ها</strong><small>{categoriesEmptyAndLoading ? 'در حال دریافت…' : `${categories.length} دسته ابری`}</small></div></div><button className={!filterCategory ? 'active' : ''} onClick={() => setFilterCategory('')}>همه المان‌ها <span>{emptyAndLoading ? '…' : assets.length}</span></button>{categories.map(category => <div className={`admin-category-row ${filterCategory === category.slug ? 'active' : ''}`} key={category.slug}><button onClick={() => setFilterCategory(category.slug)}>{category.nameFa || category.nameEn}<span>{assets.filter(a => a.category === category.slug).length}</span></button><details><summary>•••</summary><div className="category-menu"><button onClick={() => void renameCategory(category)}>تغییر نام</button>{category.slug !== 'Uncategorized' && <button className="danger" onClick={() => void removeCategory(category)}>حذف دسته</button>}</div></details></div>)}<form className="new-category" onSubmit={e => void addCategory(e)}><strong>دسته جدید</strong><input placeholder="نام انگلیسی" value={newCategory} onChange={e => setNewCategory(e.target.value)} /><input placeholder="نام فارسی" value={newCategoryFa} onChange={e => setNewCategoryFa(e.target.value)} /><button><StudioIcon name="plus" /> افزودن دسته</button></form></aside>
       <section className="admin-content">
-        <div className="admin-page-title"><div><p>SUPABASE LIBRARY MANAGER</p><h1>مدیریت مرکزی المان‌های علمی</h1><span>هر چیزی که اینجا منتشر کنی، از Supabase برای کاربران BioPlot بارگذاری می‌شود.</span></div><div className="admin-stat"><strong>{assets.length}</strong><span>المان ابری</span></div><div className="admin-stat"><strong>{assets.filter(a => a.active).length}</strong><span>منتشرشده</span></div></div>
-        <div className="admin-cloud-note"><StudioIcon name="check" /><div><strong>Supabase Database + Storage فعال است</strong><span>اطلاعات در Database و فایل اصلی در public-assets ذخیره می‌شود. RLS نوشتن و حذف را فقط برای حساب Admin مجاز می‌کند.</span></div></div>
+        <div className="admin-page-title"><div><p>SUPABASE LIBRARY MANAGER</p><h1>مدیریت مرکزی المان‌های علمی</h1><span>هر چیزی که اینجا منتشر کنی، از Supabase برای کاربران BioPlot بارگذاری می‌شود.</span></div><div className="admin-stat"><strong>{emptyAndLoading ? '…' : assets.length}</strong><span>المان ابری</span></div><div className="admin-stat"><strong>{emptyAndLoading ? '…' : assets.filter(a => a.active).length}</strong><span>منتشرشده</span></div></div>
+        <div className="admin-cloud-note"><StudioIcon name="check" /><div><strong>{libraryLoading ? 'کتابخانه محلی آماده است؛ Supabase در حال همگام‌سازی است' : 'Supabase Database + Storage فعال است'}</strong><span>اطلاعات در Database و فایل اصلی در public-assets ذخیره می‌شود. RLS نوشتن و حذف را فقط برای حساب Admin مجاز می‌کند.</span></div></div>
         <section className="admin-editor-card"><div className="admin-editor-head"><div><strong>{editing ? 'ویرایش المان' : 'افزودن المان جدید'}</strong><span>{editing ? 'فایل جدید اختیاری است.' : 'SVG، PNG، JPG یا WebP تا ۲.۵MB'}</span></div>{editing && <button onClick={reset}>لغو ویرایش</button>}</div><form className="asset-editor-form" onSubmit={e => void submitAsset(e)}><label className={`asset-drop ${draft.renderSvg ? 'has-preview' : ''}`}><input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg" onChange={e => void pickFile(e)} />{draft.renderSvg ? <span className="asset-upload-preview" dangerouslySetInnerHTML={{ __html: draft.renderSvg }} /> : <><StudioIcon name="upload" /><strong>{busy ? 'در حال پردازش…' : 'تصویر را انتخاب کن'}</strong><small>SVG / PNG / JPG / WebP</small></>}</label><div className="asset-fields"><div className="field-pair"><label>نام انگلیسی<input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} required /></label><label>نام فارسی<input value={draft.nameFa ?? ''} onChange={e => setDraft({ ...draft, nameFa: e.target.value })} /></label></div><div className="field-pair"><label>دسته‌بندی<select value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value })} required><option value="">انتخاب دسته</option>{categories.map(c => <option value={c.slug} key={c.slug}>{c.nameEn}{c.nameFa ? ` — ${c.nameFa}` : ''}</option>)}</select></label><label>وضعیت علمی<select value={draft.reviewStatus} onChange={e => setDraft({ ...draft, reviewStatus: e.target.value as Draft['reviewStatus'] })}><option value="draft">Draft</option><option value="reviewed">Reviewed</option></select></label></div><div className="field-pair"><label>کلیدواژه انگلیسی<input value={draft.tagsEn} onChange={e => setDraft({ ...draft, tagsEn: e.target.value })} /></label><label>کلیدواژه فارسی<input value={draft.tagsFa} onChange={e => setDraft({ ...draft, tagsFa: e.target.value })} /></label></div><div className="field-pair"><label>توضیح انگلیسی<textarea rows={2} value={draft.description ?? ''} onChange={e => setDraft({ ...draft, description: e.target.value })} /></label><label>توضیح فارسی<textarea rows={2} value={draft.descriptionFa ?? ''} onChange={e => setDraft({ ...draft, descriptionFa: e.target.value })} /></label></div>
-        <section className="admin-preset-editor"><div className="admin-preset-head"><div><strong>رنگ‌های قابل انتخاب در Editor</strong><span>می‌توانی پالت را اتوماتیک به BioPlot بسپاری یا رنگ‌ها را دستی تعیین کنی.</span></div>{draft.stylePresets===undefined?<><b>اتوماتیک</b><button type="button" onClick={customizePresets}>حالت دستی</button></>:<><button type="button" onClick={useAutomaticPresets}>حالت اتوماتیک</button><b>{draft.stylePresets.length} گزینه دستی</b></>}</div>{draft.stylePresets===undefined?<div className="admin-preset-legacy">حالت اتوماتیک فعال است؛ Editor همان پالت رنگی پیش‌فرض BioPlot را برای این شکل می‌سازد. هر زمان خواستی «حالت دستی» را بزن و رنگ‌ها را خودت کنترل کن.</div>:<><label className="admin-original-toggle"><input type="checkbox" checked={draft.stylePresets.some(item=>item.kind==='original')} onChange={e=>toggleOriginalPreset(e.target.checked)}/><span>نمایش رنگ اصلی تصویر (Original)</span></label><div className="admin-preset-list">{draft.stylePresets.map((preset,index)=>preset.kind==='tint'?<div className="admin-preset-row" key={preset.id}><input type="color" value={preset.color??'#087f79'} onChange={e=>updatePreset(index,{color:e.target.value})}/><label>نام انگلیسی<input value={preset.label} onChange={e=>updatePreset(index,{label:e.target.value})}/></label><label>نام فارسی<input value={preset.labelFa??''} onChange={e=>updatePreset(index,{labelFa:e.target.value})}/></label><button type="button" className="danger" onClick={()=>removePreset(index)}>حذف</button></div>:null)}</div><button type="button" className="add-preset" onClick={addColorPreset}><StudioIcon name="plus"/> افزودن رنگ</button><small className="admin-preset-tip">مثال: برای Mouse می‌توانی Original را خاموش کنی و فقط Black #000000 و White #FFFFFF بسازی.</small></>}</section>
+        <section className="admin-preset-editor"><div className="admin-preset-head"><div><strong>رنگ‌های قابل انتخاب در Editor</strong><span>می‌توانی پالت را اتوماتیک به BioPlot بسپاری یا رنگ‌ها را دستی تعیین کنی.</span></div>{draft.stylePresets===undefined?<><b>اتوماتیک</b><button type="button" onClick={customizePresets}>حالت دستی</button></>:<><button type="button" onClick={useAutomaticPresets}>حالت اتوماتیک</button><b>{draft.stylePresets.length} گزینه دستی</b></>}</div>{draft.stylePresets===undefined?<div className="admin-preset-legacy">حالت اتوماتیک فعال است؛ Editor همان پالت رنگی پیش‌فرض BioPlot را برای این شکل می‌سازد.
+هر زمان خواستی «حالت دستی» را بزن و رنگ‌ها را خودت کنترل کن.</div>:<><label className="admin-original-toggle"><input type="checkbox" checked={draft.stylePresets.some(item=>item.kind==='original')} onChange={e=>toggleOriginalPreset(e.target.checked)}/><span>نمایش رنگ اصلی تصویر (Original)</span></label><div className="admin-preset-list">{draft.stylePresets.map((preset,index)=>preset.kind==='tint'?<div className="admin-preset-row" key={preset.id}><input type="color" value={preset.color??'#087f79'} onChange={e=>updatePreset(index,{color:e.target.value})}/><label>نام انگلیسی<input value={preset.label} onChange={e=>updatePreset(index,{label:e.target.value})}/></label><label>نام فارسی<input value={preset.labelFa??''} onChange={e=>updatePreset(index,{labelFa:e.target.value})}/></label><button type="button" className="danger" onClick={()=>removePreset(index)}>حذف</button></div>:null)}</div><button type="button" className="add-preset" onClick={addColorPreset}><StudioIcon name="plus"/> افزودن رنگ</button><small className="admin-preset-tip">مثال: برای Mouse می‌توانی Original را خاموش کنی و فقط Black #000000 و White #FFFFFF بسازی.</small></>}</section>
         <div className="asset-switches"><label><input type="checkbox" checked={draft.active} onChange={e => setDraft({ ...draft, active: e.target.checked })} /><span>منتشر در Library</span></label><label><input type="checkbox" checked={draft.featured} onChange={e => setDraft({ ...draft, featured: e.target.checked })} /><span>Featured</span></label><label><input type="checkbox" checked={draft.premium} onChange={e => setDraft({ ...draft, premium: e.target.checked })} /><span>Premium</span></label></div><div className="asset-form-actions"><button type="submit" className="save" disabled={busy}>{editing ? 'ذخیره تغییرات' : 'انتشار در Library'}</button><button type="button" onClick={reset}>پاک کردن فرم</button>{message && <span>{message}</span>}</div></div></form></section>
-        <section className="admin-assets-card"><div className="admin-assets-toolbar"><div><strong>المان‌های Supabase</strong><span>{visible.length} مورد</span></div><input placeholder="جستجو…" value={query} onChange={e => setQuery(e.target.value)} /><button onClick={exportBackup}>خروجی JSON</button></div><div className="admin-asset-grid">{visible.map(asset => <article className="admin-asset-card" key={asset.id}><div className="admin-asset-preview" dangerouslySetInnerHTML={{ __html: asset.svg }} /><div className="admin-asset-info"><strong>{asset.nameFa || asset.name}</strong><span>{asset.nameFa ? asset.name : asset.category}</span><small>{asset.category} · {asset.reviewStatus}</small></div><div className="admin-asset-flags"><button className={asset.active ? 'on' : ''} onClick={() => void toggle(asset, 'active')}>{asset.active ? 'منتشر' : 'مخفی'}</button><button className={asset.featured ? 'on' : ''} onClick={() => void toggle(asset, 'featured')}>Featured</button><button className={asset.premium ? 'on' : ''} onClick={() => void toggle(asset, 'premium')}>Premium</button></div><div className="admin-asset-actions"><button onClick={() => editAsset(asset)}>ویرایش</button><button className="danger" onClick={() => void removeAsset(asset)}>حذف</button></div></article>)}</div>{!visible.length && <p className="asset-empty">هنوز المانی در این بخش وجود ندارد.</p>}</section>
+        <section className="admin-assets-card"><div className="admin-assets-toolbar"><div><strong>المان‌های Supabase</strong><span>{emptyAndLoading ? 'در حال دریافت…' : `${visible.length} مورد`}</span></div><input placeholder="جستجو…" value={query} onChange={e => setQuery(e.target.value)} /><button onClick={exportBackup}>خروجی JSON</button></div><div className="admin-asset-grid">{visible.map(asset => <article className="admin-asset-card" key={asset.id}><div className="admin-asset-preview" dangerouslySetInnerHTML={{ __html: asset.svg }} /><div className="admin-asset-info"><strong>{asset.nameFa || asset.name}</strong><span>{asset.nameFa ? asset.name : asset.category}</span><small>{asset.category} · {asset.reviewStatus}</small></div><div className="admin-asset-flags"><button className={asset.active ? 'on' : ''} onClick={() => void toggle(asset, 'active')}>{asset.active ? 'منتشر' : 'مخفی'}</button><button className={asset.featured ? 'on' : ''} onClick={() => void toggle(asset, 'featured')}>Featured</button><button className={asset.premium ? 'on' : ''} onClick={() => void toggle(asset, 'premium')}>Premium</button></div><div className="admin-asset-actions"><button onClick={() => editAsset(asset)}>ویرایش</button><button className="danger" onClick={() => void removeAsset(asset)}>حذف</button></div></article>)}</div>{!visible.length && <p className="asset-empty">{libraryLoading ? 'در حال دریافت کتابخانه…' : 'هنوز المانی در این بخش وجود ندارد.'}</p>}</section>
       </section>
     </main>
   </div>;
