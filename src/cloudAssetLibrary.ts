@@ -36,6 +36,18 @@ export type CloudAssetDraft = {
 const CLOUD_CATEGORY_CACHE_KEY = 'bioplot_cloud_categories_v1';
 const CLOUD_DRAFT_CACHE_KEY = 'bioplot_cloud_draft_assets_v1';
 
+// localStorage is intentionally kept as a small/backward-compatible fast path,
+// but it is not reliable for image-heavy libraries because its quota is small.
+// IndexedDB is the durable browser cache for the complete cloud library.
+const CLOUD_IDB_NAME = 'bioplot-cloud-library-cache-v1';
+const CLOUD_IDB_STORE = 'library';
+const CLOUD_IDB_PUBLISHED_KEY = 'published-assets';
+const CLOUD_IDB_ADMIN_KEY = 'admin-assets';
+
+let memoryPublishedCloudAssets: CloudAsset[] | null = null;
+let memoryAdminCloudAssets: CloudAsset[] | null = null;
+let cloudDbPromise: Promise<IDBDatabase | null> | null = null;
+
 function sourceType(value: unknown): CloudAsset['sourceType'] {
   return value === 'png' || value === 'jpeg' || value === 'webp' ? value : 'svg';
 }
@@ -140,12 +152,90 @@ function safeLocalStorageSet(key: string, value: unknown) {
   }
 }
 
+function openCloudCacheDb(): Promise<IDBDatabase | null> {
+  if (typeof indexedDB === 'undefined') return Promise.resolve(null);
+  if (cloudDbPromise) return cloudDbPromise;
+
+  cloudDbPromise = new Promise(resolve => {
+    let request: IDBOpenDBRequest;
+    try {
+      request = indexedDB.open(CLOUD_IDB_NAME, 1);
+    } catch {
+      resolve(null);
+      return;
+    }
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(CLOUD_IDB_STORE)) {
+        db.createObjectStore(CLOUD_IDB_STORE);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => resolve(null);
+    request.onblocked = () => resolve(null);
+  });
+
+  return cloudDbPromise;
+}
+
+async function readCloudCacheFromIndexedDb(key: string): Promise<CloudAsset[]> {
+  const db = await openCloudCacheDb();
+  if (!db) return [];
+
+  return new Promise(resolve => {
+    try {
+      const transaction = db.transaction(CLOUD_IDB_STORE, 'readonly');
+      const request = transaction.objectStore(CLOUD_IDB_STORE).get(key);
+      request.onsuccess = () => {
+        const value = request.result;
+        if (!Array.isArray(value)) {
+          resolve([]);
+          return;
+        }
+        resolve(
+          sortCloudAssets(
+            value
+              .filter(item => item && typeof item === 'object')
+              .map(item => ({ ...(item as CloudAsset), cloudManaged: true as const }))
+              .filter(asset => Boolean(asset.id)),
+          ),
+        );
+      };
+      request.onerror = () => resolve([]);
+    } catch {
+      resolve([]);
+    }
+  });
+}
+
+async function writeCloudCacheToIndexedDb(key: string, assets: CloudAsset[]) {
+  const db = await openCloudCacheDb();
+  if (!db) return;
+
+  await new Promise<void>(resolve => {
+    try {
+      const transaction = db.transaction(CLOUD_IDB_STORE, 'readwrite');
+      transaction.objectStore(CLOUD_IDB_STORE).put(sortCloudAssets(assets), key);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => resolve();
+      transaction.onabort = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
 export function loadCachedPublishedCloudAssets(): CloudAsset[] {
-  return sortCloudAssets(
+  if (memoryPublishedCloudAssets) return sortCloudAssets(memoryPublishedCloudAssets);
+
+  const cached = sortCloudAssets(
     loadCustomAssets()
       .filter(isCloudManagedAsset)
       .filter(asset => asset.active !== false && Boolean(asset.svg)),
   );
+  memoryPublishedCloudAssets = cached;
+  return cached;
 }
 
 function writePublishedCloudAssetsCache(assets: CloudAsset[]) {
@@ -153,15 +243,21 @@ function writePublishedCloudAssetsCache(assets: CloudAsset[]) {
     assets.filter(asset => asset.active !== false && Boolean(asset.svg)),
   );
 
+  memoryPublishedCloudAssets = published;
+
   // Runtime is refreshed first so an already-open editor updates immediately.
   setRuntimeCloudAssets(published);
 
+  // Keep the old localStorage cache when it fits. Large raster libraries can
+  // exceed localStorage quota; IndexedDB below is the authoritative browser cache.
   try {
     const localOnly = loadCustomAssets().filter(asset => !isCloudManagedAsset(asset));
     replaceCustomAssets([...published, ...localOnly]);
   } catch {
-    // If localStorage is full (large raster assets), runtime still stays current.
+    // Runtime + IndexedDB still keep the library usable.
   }
+
+  void writeCloudCacheToIndexedDb(CLOUD_IDB_PUBLISHED_KEY, published);
 }
 
 function readCachedDraftCloudAssets(): CloudAsset[] {
@@ -176,8 +272,6 @@ function readCachedDraftCloudAssets(): CloudAsset[] {
 }
 
 function writeCachedDraftCloudAssets(assets: CloudAsset[]) {
-  // Published assets are already cached by assets.ts. Keep only unpublished
-  // admin rows here so large SVG/raster payloads are not duplicated twice.
   safeLocalStorageSet(
     CLOUD_DRAFT_CACHE_KEY,
     sortCloudAssets(assets.filter(asset => asset.active === false)),
@@ -185,16 +279,23 @@ function writeCachedDraftCloudAssets(assets: CloudAsset[]) {
 }
 
 export function loadCachedAdminCloudAssets(): CloudAsset[] {
+  if (memoryAdminCloudAssets) return sortCloudAssets(memoryAdminCloudAssets);
+
   const merged = new Map<string, CloudAsset>();
   [...loadCachedPublishedCloudAssets(), ...readCachedDraftCloudAssets()].forEach(asset => {
     merged.set(asset.id, asset);
   });
-  return sortCloudAssets([...merged.values()]);
+  const cached = sortCloudAssets([...merged.values()]);
+  memoryAdminCloudAssets = cached;
+  return cached;
 }
 
 function writeAdminCloudAssetCache(assets: CloudAsset[]) {
-  writeCachedDraftCloudAssets(assets);
-  writePublishedCloudAssetsCache(assets);
+  const sorted = sortCloudAssets(assets);
+  memoryAdminCloudAssets = sorted;
+  writeCachedDraftCloudAssets(sorted);
+  writePublishedCloudAssetsCache(sorted);
+  void writeCloudCacheToIndexedDb(CLOUD_IDB_ADMIN_KEY, sorted);
 }
 
 function upsertAdminCloudAssetCache(asset: CloudAsset) {
@@ -211,6 +312,35 @@ export function reloadRuntimeCloudAssetsFromBrowserCache() {
   const cached = loadCachedPublishedCloudAssets();
   setRuntimeCloudAssets(cached);
   return cached;
+}
+
+/**
+ * Hydrate the complete published library from IndexedDB. This is local disk I/O,
+ * not a network request, so it is normally available within a frame or two even
+ * when the SVG/raster payload is too large for localStorage.
+ */
+export async function hydratePublishedCloudAssetsFromIndexedDb() {
+  const cached = await readCloudCacheFromIndexedDb(CLOUD_IDB_PUBLISHED_KEY);
+  if (!cached.length) return loadCachedPublishedCloudAssets();
+
+  memoryPublishedCloudAssets = cached.filter(
+    asset => asset.active !== false && Boolean(asset.svg),
+  );
+  setRuntimeCloudAssets(memoryPublishedCloudAssets);
+  return sortCloudAssets(memoryPublishedCloudAssets);
+}
+
+/** Hydrate Admin's complete library (published + drafts) from local IndexedDB. */
+export async function hydrateAdminCloudAssetsFromIndexedDb() {
+  const cached = await readCloudCacheFromIndexedDb(CLOUD_IDB_ADMIN_KEY);
+  if (!cached.length) return loadCachedAdminCloudAssets();
+
+  memoryAdminCloudAssets = sortCloudAssets(cached);
+  memoryPublishedCloudAssets = memoryAdminCloudAssets.filter(
+    asset => asset.active !== false && Boolean(asset.svg),
+  );
+  setRuntimeCloudAssets(memoryPublishedCloudAssets);
+  return sortCloudAssets(memoryAdminCloudAssets);
 }
 
 export function loadCachedCloudCategories(): CloudCategory[] {
@@ -364,6 +494,7 @@ export async function loadAdminCloudAssets(): Promise<CloudAsset[]> {
 
   const assets = sortCloudAssets((data ?? []).map(rowToAsset));
   writeAdminCloudAssetCache(assets);
+  await writeCloudCacheToIndexedDb(CLOUD_IDB_ADMIN_KEY, assets);
   return assets;
 }
 
@@ -383,6 +514,10 @@ export async function loadPublishedCloudAssets(): Promise<CloudAsset[]> {
 export async function syncPublishedCloudAssetsToBrowserCache() {
   const cloud = await loadPublishedCloudAssets();
   writePublishedCloudAssetsCache(cloud);
+  await writeCloudCacheToIndexedDb(
+    CLOUD_IDB_PUBLISHED_KEY,
+    cloud.filter(asset => asset.active !== false && Boolean(asset.svg)),
+  );
   return cloud;
 }
 
