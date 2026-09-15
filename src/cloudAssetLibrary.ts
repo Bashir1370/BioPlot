@@ -33,6 +33,9 @@ export type CloudAssetDraft = {
   stylePresets?: AssetStylePresetConfig[];
 };
 
+const CLOUD_CATEGORY_CACHE_KEY = 'bioplot_cloud_categories_v1';
+const CLOUD_DRAFT_CACHE_KEY = 'bioplot_cloud_draft_assets_v1';
+
 function sourceType(value: unknown): CloudAsset['sourceType'] {
   return value === 'png' || value === 'jpeg' || value === 'webp' ? value : 'svg';
 }
@@ -106,7 +109,7 @@ function rowToAsset(row: Record<string, any>): CloudAsset {
 }
 
 function sortCloudAssets(assets: CloudAsset[]) {
-  return assets.sort((a, b) => {
+  return [...assets].sort((a, b) => {
     if (Boolean(a.featured) !== Boolean(b.featured)) return a.featured ? -1 : 1;
     const order = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
     if (order !== 0) return order;
@@ -114,16 +117,136 @@ function sortCloudAssets(assets: CloudAsset[]) {
   });
 }
 
-/**
- * Read categories without coupling the frontend to a fixed list of columns.
- * This makes older/newer Supabase schemas compatible with the same frontend.
- */
+function isCloudManagedAsset(asset: ScientificAsset): asset is CloudAsset {
+  return Boolean((asset as ScientificAsset & { cloudManaged?: boolean }).cloudManaged);
+}
+
+function safeLocalStorageGet<T>(key: string, fallback: T): T {
+  if (typeof localStorage === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function safeLocalStorageSet(key: string, value: unknown) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Browser storage is only a fast cache. Supabase remains the source of truth.
+  }
+}
+
+export function loadCachedPublishedCloudAssets(): CloudAsset[] {
+  return sortCloudAssets(
+    loadCustomAssets()
+      .filter(isCloudManagedAsset)
+      .filter(asset => asset.active !== false && Boolean(asset.svg)),
+  );
+}
+
+function writePublishedCloudAssetsCache(assets: CloudAsset[]) {
+  const published = sortCloudAssets(
+    assets.filter(asset => asset.active !== false && Boolean(asset.svg)),
+  );
+
+  // Runtime is refreshed first so an already-open editor updates immediately.
+  setRuntimeCloudAssets(published);
+
+  try {
+    const localOnly = loadCustomAssets().filter(asset => !isCloudManagedAsset(asset));
+    replaceCustomAssets([...published, ...localOnly]);
+  } catch {
+    // If localStorage is full (large raster assets), runtime still stays current.
+  }
+}
+
+function readCachedDraftCloudAssets(): CloudAsset[] {
+  const parsed = safeLocalStorageGet<unknown>(CLOUD_DRAFT_CACHE_KEY, []);
+  if (!Array.isArray(parsed)) return [];
+  return sortCloudAssets(
+    parsed
+      .filter(item => item && typeof item === 'object')
+      .map(item => ({ ...(item as CloudAsset), cloudManaged: true as const }))
+      .filter(asset => asset.active === false && Boolean(asset.id)),
+  );
+}
+
+function writeCachedDraftCloudAssets(assets: CloudAsset[]) {
+  // Published assets are already cached by assets.ts. Keep only unpublished
+  // admin rows here so large SVG/raster payloads are not duplicated twice.
+  safeLocalStorageSet(
+    CLOUD_DRAFT_CACHE_KEY,
+    sortCloudAssets(assets.filter(asset => asset.active === false)),
+  );
+}
+
+export function loadCachedAdminCloudAssets(): CloudAsset[] {
+  const merged = new Map<string, CloudAsset>();
+  [...loadCachedPublishedCloudAssets(), ...readCachedDraftCloudAssets()].forEach(asset => {
+    merged.set(asset.id, asset);
+  });
+  return sortCloudAssets([...merged.values()]);
+}
+
+function writeAdminCloudAssetCache(assets: CloudAsset[]) {
+  writeCachedDraftCloudAssets(assets);
+  writePublishedCloudAssetsCache(assets);
+}
+
+function upsertAdminCloudAssetCache(asset: CloudAsset) {
+  const next = loadCachedAdminCloudAssets().filter(item => item.id !== asset.id);
+  next.push(asset);
+  writeAdminCloudAssetCache(next);
+}
+
+function removeAdminCloudAssetCache(id: string) {
+  writeAdminCloudAssetCache(loadCachedAdminCloudAssets().filter(asset => asset.id !== id));
+}
+
+export function reloadRuntimeCloudAssetsFromBrowserCache() {
+  const cached = loadCachedPublishedCloudAssets();
+  setRuntimeCloudAssets(cached);
+  return cached;
+}
+
+export function loadCachedCloudCategories(): CloudCategory[] {
+  const parsed = safeLocalStorageGet<unknown>(CLOUD_CATEGORY_CACHE_KEY, []);
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .filter(item => item && typeof item === 'object')
+    .map((item, index) => {
+      const row = item as Partial<CloudCategory>;
+      return {
+        slug: String(row.slug ?? ''),
+        nameEn: String(row.nameEn ?? row.slug ?? ''),
+        nameFa: row.nameFa ? String(row.nameFa) : undefined,
+        active: row.active !== false,
+        sortOrder: Number.isFinite(row.sortOrder) ? Number(row.sortOrder) : index * 10,
+      } satisfies CloudCategory;
+    })
+    .filter(category => Boolean(category.slug))
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.nameEn.localeCompare(b.nameEn));
+}
+
+function writeCloudCategoryCache(categories: CloudCategory[]) {
+  safeLocalStorageSet(
+    CLOUD_CATEGORY_CACHE_KEY,
+    [...categories].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.nameEn.localeCompare(b.nameEn),
+    ),
+  );
+}
+
 export async function loadCloudCategories(): Promise<CloudCategory[]> {
   const { data, error } = await supabase.from('asset_categories').select('*');
 
   if (error) throw error;
 
-  return (data ?? [])
+  const categories = (data ?? [])
     .map(row => ({
       slug: String(row.slug),
       nameEn: String(row.name_en ?? row.slug ?? ''),
@@ -132,6 +255,9 @@ export async function loadCloudCategories(): Promise<CloudCategory[]> {
       sortOrder: Number(row.sort_order ?? 0),
     }))
     .sort((a, b) => a.sortOrder - b.sortOrder || a.nameEn.localeCompare(b.nameEn));
+
+  writeCloudCategoryCache(categories);
+  return categories;
 }
 
 export async function createCloudCategory(nameEn: string, nameFa?: string) {
@@ -140,16 +266,24 @@ export async function createCloudCategory(nameEn: string, nameFa?: string) {
 
   const existing = await loadCloudCategories();
   const maxOrder = existing.reduce((max, item) => Math.max(max, item.sortOrder), 0);
+  const category: CloudCategory = {
+    slug,
+    nameEn: slug,
+    nameFa: nameFa?.trim() || undefined,
+    sortOrder: maxOrder + 10,
+    active: true,
+  };
 
   const { error } = await supabase.from('asset_categories').insert({
-    slug,
-    name_en: slug,
-    name_fa: nameFa?.trim() || null,
-    sort_order: maxOrder + 10,
+    slug: category.slug,
+    name_en: category.nameEn,
+    name_fa: category.nameFa ?? null,
+    sort_order: category.sortOrder,
     active: true,
   });
 
   if (error) throw error;
+  writeCloudCategoryCache([...existing.filter(item => item.slug !== slug), category]);
 }
 
 export async function updateCloudCategory(
@@ -180,6 +314,21 @@ export async function updateCloudCategory(
     .eq('slug', previousSlug);
 
   if (error) throw error;
+
+  const categories = loadCachedCloudCategories().map(category =>
+    category.slug === previousSlug
+      ? { ...category, slug: nextSlug, nameEn: nextSlug, nameFa: nameFa?.trim() || undefined }
+      : category,
+  );
+  writeCloudCategoryCache(categories);
+
+  if (previousSlug !== nextSlug) {
+    writeAdminCloudAssetCache(
+      loadCachedAdminCloudAssets().map(asset =>
+        asset.category === previousSlug ? { ...asset, category: nextSlug } : asset,
+      ),
+    );
+  }
 }
 
 export async function deleteCloudCategory(slug: string) {
@@ -194,23 +343,28 @@ export async function deleteCloudCategory(slug: string) {
 
   const { error } = await supabase.from('asset_categories').delete().eq('slug', slug);
   if (error) throw error;
+
+  writeCloudCategoryCache(loadCachedCloudCategories().filter(category => category.slug !== slug));
+  writeAdminCloudAssetCache(
+    loadCachedAdminCloudAssets().map(asset =>
+      asset.category === slug ? { ...asset, category: 'Uncategorized' } : asset,
+    ),
+  );
 }
 
 /**
- * IMPORTANT:
- * Do not enumerate optional columns here. If the browser bundle is newer than
- * the Supabase migration, selecting one not-yet-created column makes the whole
- * request fail and AdminLibraryPage shows an empty library.
- *
- * `select('*')` + tolerant rowToAsset() keeps existing data readable while the
- * database and frontend are rolled out independently.
+ * Admin always refreshes from Supabase in the background, but every successful
+ * response also primes the browser cache. The next Admin/Editor route can render
+ * the library immediately instead of waiting on the network.
  */
 export async function loadAdminCloudAssets(): Promise<CloudAsset[]> {
   const { data, error } = await supabase.from('assets').select('*');
 
   if (error) throw error;
 
-  return sortCloudAssets((data ?? []).map(rowToAsset));
+  const assets = sortCloudAssets((data ?? []).map(rowToAsset));
+  writeAdminCloudAssetCache(assets);
+  return assets;
 }
 
 export async function loadPublishedCloudAssets(): Promise<CloudAsset[]> {
@@ -226,35 +380,9 @@ export async function loadPublishedCloudAssets(): Promise<CloudAsset[]> {
   );
 }
 
-/**
- * Keep runtime assets fresh and keep the last successful cloud library cached
- * in localStorage. The previous implementation removed cloud-managed cached
- * assets after every sync, so a later transient Supabase/RLS problem could make
- * the library appear to have vanished.
- */
 export async function syncPublishedCloudAssetsToBrowserCache() {
   const cloud = await loadPublishedCloudAssets();
-  setRuntimeCloudAssets(cloud);
-
-  const stored = loadCustomAssets();
-  const localOnly = stored.filter(
-    asset => !(asset as ScientificAsset & { cloudManaged?: boolean }).cloudManaged,
-  );
-  const cachedCloud = stored.filter(
-    asset => Boolean((asset as ScientificAsset & { cloudManaged?: boolean }).cloudManaged),
-  );
-
-  try {
-    // If Supabase unexpectedly returns an empty set while an existing cloud
-    // cache exists, keep the last known-good cache instead of destroying it.
-    // Runtime still reflects the current response for this session.
-    if (cloud.length > 0 || cachedCloud.length === 0) {
-      replaceCustomAssets([...cloud, ...localOnly]);
-    }
-  } catch {
-    // Runtime cloud assets are already available. Persistence is best-effort.
-  }
-
+  writePublishedCloudAssetsCache(cloud);
   return cloud;
 }
 
@@ -305,7 +433,9 @@ export async function saveCloudAsset(
     storagePath = uploadedPath;
   }
 
-  const currentAssets = existing ? [] : await loadAdminCloudAssets();
+  // Prefer the already-warm admin cache for ordering. If this is the first ever
+  // asset on this browser, the default 10 is fine and avoids another full query.
+  const currentAssets = loadCachedAdminCloudAssets();
   const maxOrder = currentAssets.reduce(
     (max, item) => Math.max(max, item.sortOrder ?? 0),
     0,
@@ -338,11 +468,15 @@ export async function saveCloudAsset(
     metadata,
   };
 
+  let savedRow: Record<string, any> | null = null;
+
   if (existing) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('assets')
       .update(payload)
-      .eq('id', existing.id);
+      .eq('id', existing.id)
+      .select('*')
+      .single();
 
     if (error) {
       if (uploadedPath) {
@@ -350,6 +484,7 @@ export async function saveCloudAsset(
       }
       throw error;
     }
+    savedRow = data;
 
     if (
       uploadedPath &&
@@ -359,7 +494,11 @@ export async function saveCloudAsset(
       await supabase.storage.from('public-assets').remove([existing.storagePath]);
     }
   } else {
-    const { error } = await supabase.from('assets').insert(payload);
+    const { data, error } = await supabase
+      .from('assets')
+      .insert(payload)
+      .select('*')
+      .single();
 
     if (error) {
       if (uploadedPath) {
@@ -367,7 +506,12 @@ export async function saveCloudAsset(
       }
       throw error;
     }
+    savedRow = data;
   }
+
+  const saved = rowToAsset(savedRow ?? { ...payload, id: existing?.id ?? crypto.randomUUID() });
+  upsertAdminCloudAssetCache(saved);
+  return saved;
 }
 
 export async function patchCloudAsset(
@@ -387,18 +531,26 @@ export async function patchCloudAsset(
     payload.is_reviewed = changes.reviewStatus === 'reviewed';
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('assets')
     .update(payload)
-    .eq('id', asset.id);
+    .eq('id', asset.id)
+    .select('*')
+    .single();
 
   if (error) throw error;
+
+  const updated = rowToAsset(data);
+  upsertAdminCloudAssetCache(updated);
+  return updated;
 }
 
 export async function deleteCloudAsset(asset: CloudAsset) {
   const { error } = await supabase.from('assets').delete().eq('id', asset.id);
 
   if (error) throw error;
+
+  removeAdminCloudAssetCache(asset.id);
 
   if (asset.storagePath) {
     await supabase.storage.from('public-assets').remove([asset.storagePath]);
