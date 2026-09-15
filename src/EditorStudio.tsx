@@ -14,6 +14,7 @@ import { EditorObjectView } from './EditorObjectView';
 import { activePage, BioPlotDocument, BioPlotObject, cloneDocument, createBlankDocument, makeId, migrateDocument } from './model';
 import { projects } from './persistence';
 import { saveRecoverySnapshot } from './recovery';
+import { reloadRuntimeCloudAssetsFromBrowserCache } from './cloudAssetLibrary';
 import './editor-studio.css';
 
 type Panel = 'assets'|'elements'|'upload'|'text'|'lines'|'shapes';
@@ -184,8 +185,16 @@ export function EditorStudio(){
   useEffect(()=>storeRef.current.subscribe(setDocumentState),[]);
   useEffect(()=>{
     const onLibraryChanged=()=>setLibraryVersion(value=>value+1);
+    const onStorage=(event:StorageEvent)=>{
+      if(event.key!=='bioplot_v3_custom_assets')return;
+      reloadRuntimeCloudAssetsFromBrowserCache();
+    };
     window.addEventListener('bioplot:asset-library-changed',onLibraryChanged);
-    return()=>window.removeEventListener('bioplot:asset-library-changed',onLibraryChanged);
+    window.addEventListener('storage',onStorage);
+    return()=>{
+      window.removeEventListener('bioplot:asset-library-changed',onLibraryChanged);
+      window.removeEventListener('storage',onStorage);
+    };
   },[]);
   useEffect(()=>{
     if(assetCategory&&!categories.includes(assetCategory))setAssetCategory('');
