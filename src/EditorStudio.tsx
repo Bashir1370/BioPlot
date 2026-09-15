@@ -57,6 +57,7 @@ export function EditorStudio(){
   const [assetCategory,setAssetCategory]=useState('');
   const [assetMode,setAssetMode]=useState<AssetMode>('all');
   const [favoriteVersion,setFavoriteVersion]=useState(0);
+  const [libraryVersion,setLibraryVersion]=useState(0);
   const [saveState,setSaveState]=useState('Saved');
   const [shareState,setShareState]=useState('Share');
   const [libraryWidth,setLibraryWidth]=useState(276);
@@ -174,15 +175,23 @@ export function EditorStudio(){
   const selectedAsset=selectedObjects.length===1&&selectedObjects[0].type==='asset'?selectedObjects[0] as StyledAssetObject:null;
   const bounds=selectionBounds(selectedObjects);
   const fa=documentState.metadata.locale==='fa';
-  const categories=useMemo(()=>getAssetCategories(),[documentState.updatedAt]);
+  const categories=useMemo(()=>getAssetCategories(),[documentState.updatedAt,libraryVersion]);
   const assets=useMemo(()=>{
     if(assetMode==='favorites')return favoriteAssets().filter(asset=>!assetCategory||asset.category===assetCategory).filter(asset=>!assetQuery||searchAssets(assetQuery,documentState.metadata.locale,assetCategory).some(found=>found.id===asset.id));
     if(assetMode==='recent')return recentAssets().filter(asset=>!assetCategory||asset.category===assetCategory).filter(asset=>!assetQuery||searchAssets(assetQuery,documentState.metadata.locale,assetCategory).some(found=>found.id===asset.id));
     return searchAssets(assetQuery,documentState.metadata.locale,assetCategory||undefined);
-  },[assetQuery,assetCategory,assetMode,documentState.metadata.locale,documentState.updatedAt,favoriteVersion]);
+  },[assetQuery,assetCategory,assetMode,documentState.metadata.locale,documentState.updatedAt,favoriteVersion,libraryVersion]);
   const favoriteIds=useMemo(()=>new Set(favoriteAssetIds()),[favoriteVersion]);
   const grouped=selectedObjects.length>1&&selectedObjects.every(object=>object.groupId)&&new Set(selectedObjects.map(object=>object.groupId)).size===1;
   useEffect(()=>storeRef.current.subscribe(setDocumentState),[]);
+  useEffect(()=>{
+    const onLibraryChanged=()=>setLibraryVersion(value=>value+1);
+    window.addEventListener('bioplot:asset-library-changed',onLibraryChanged);
+    return()=>window.removeEventListener('bioplot:asset-library-changed',onLibraryChanged);
+  },[]);
+  useEffect(()=>{
+    if(assetCategory&&!categories.includes(assetCategory))setAssetCategory('');
+  },[assetCategory,categories]);
   useEffect(()=>{
     const id=new URLSearchParams(window.location.search).get('id');
     void (async()=>{
