@@ -7,7 +7,7 @@ import { createBlankDocument, type BioPlotObject } from './model';
 import { selectionBounds } from './engine';
 
 const shape:BioPlotObject={id:'test-shape',type:'shape',name:'Cell frame',shape:'rect',x:12,y:24,width:150,height:90,rotation:0,opacity:.8,fill:'#123456',stroke:'#345678',strokeWidth:1,radius:4};
-// Inspect React output and call the actual control handlers without requiring a browser.
+// Inspect React output and call actual handlers without a browser.
 function elements(node:ReactNode):ReactElement<Record<string,any>>[]{
   if(!isValidElement<Record<string,any>>(node))return [];
   return [node,...Children.toArray(node.props.children).flatMap(elements)];
@@ -31,12 +31,17 @@ describe('drawing ribbon integration',()=>{
     expect(side).not.toContain('type="number"');
     expect(side).not.toContain('type="range"');
   });
-  it('connects X, Y, width and height to the correct geometry commands',()=>{
+  it('connects compact size and popover geometry to the correct commands',()=>{
     const p=properties([shape]);
     const inputs=p.nodes.filter(n=>n.type==='input'&&n.props.type==='number');
-    expect(inputs.map(n=>n.props.value)).toEqual([12,24,150,90]);
-    inputs.forEach((node,index)=>node.props.onChange({target:{value:String(100+index)}}));
+    const sizeInputs=inputs.filter(n=>n.props['aria-label']==='Selection width'||n.props['aria-label']==='Selection height');
+    const transformInputs=inputs.filter(n=>!n.props['aria-label']);
+    expect(sizeInputs.map(n=>n.props.value)).toEqual([150,90]);
+    expect(transformInputs.map(n=>n.props.value)).toEqual([12,24,150,90]);
+    transformInputs.forEach((node,index)=>node.props.onChange({target:{value:String(100+index)}}));
     expect(p.onBounds.mock.calls).toEqual([['x',100],['y',101],['width',102],['height',103]]);
+    sizeInputs.forEach((node,index)=>node.props.onChange({target:{value:String(250+index)}}));
+    expect(p.onBounds.mock.calls.slice(4)).toEqual([['width',250],['height',251]]);
   });
   it('preserves opacity, color, lock and hide callbacks after moving the controls',()=>{
     const p=properties([shape]);
