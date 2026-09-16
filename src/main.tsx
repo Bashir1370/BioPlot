@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { HomeRoute } from './HomeRoute';
 import { EditorRoute } from './EditorRoute';
 import { AdminLibraryPage } from './AdminLibraryPage';
+import { AdminLinesPage } from './AdminLinesPage';
+import { AdminLinesShortcut } from './AdminLinesShortcut';
 import { AdminShowcasePage } from './AdminShowcasePage';
 import { AdminShowcaseAccountPortal } from './AdminShowcaseAccountPortal';
 import { AdminTemplateHeroPortal } from './AdminTemplateHeroPortal';
@@ -29,6 +31,7 @@ import './admin-library-redesign.css';
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
 
+const isAdminLines = /^\/admin\/lines\/?$/.test(window.location.pathname);
 const isAdminLibrary = isAdminLibraryPath(window.location.pathname);
 const isAdminShowcase = isAdminShowcasePath(window.location.pathname);
 const isAccount = isAccountPath(window.location.pathname);
@@ -39,6 +42,6 @@ if (isEditor) {
 }
 createRoot(root).render(
   <StrictMode>
-    {isAdminLibrary ? <AdminLibraryPage /> : isAdminShowcase ? <><AdminShowcasePage/><AdminTemplateHeroPortal/></> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
+    {isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/><AdminTemplateHeroPortal/></> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
   </StrictMode>
 );
