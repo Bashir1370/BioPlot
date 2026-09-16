@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getAssetCatalog } from './assets';
 import type { ScientificAsset } from './assets';
+import type { DrawLineSettings } from './lineGeometry';
 import { LINE_CATEGORY } from './AdminLinesPage';
 import './vector-studio.css';
 
@@ -97,17 +98,23 @@ export function VectorStudio() {
     lines.click();
   };
 
+  const armNative=(preset:Preset)=>{
+    const kind=preset.id==='double'?'both':preset.id==='inhibition'?'bar':preset.id==='straight'?'none':'end';
+    const settings:DrawLineSettings={stroke:color,strokeWidth:width,lineStyle:preset.style==='dashed'?'dashed':preset.style==='dotted'?'dotted':'solid',startHead:kind==='both'?'arrow':'none',endHead:kind==='none'?'none':kind==='bar'?'bar':'arrow',axis:preset.id==='horizontal'?'horizontal':preset.id==='vertical'?'vertical':undefined};
+    window.dispatchEvent(new CustomEvent('bioplot:activate-line',{detail:settings}));
+    setMessage(fa?'ابزار فعال است؛ روی بوم بکشید.':'Tool active; drag on canvas.');
+  };
   const insert = async (preset: Preset) => {
     if (busy) return;
     setBusy(true); setMessage('');
     try {
-      if (preset.native) {
+      if (preset.native==='straight'||preset.native==='arrow') { armNative(preset); } else if (preset.native) {
         const buttons = document.querySelectorAll<HTMLButtonElement>('.element-group-lines section:nth-child(3) > div > button');
         const index = ({ arrow: 0, straight: 1, elbow: 2, curved: 3 } as const)[preset.native];
         const button = buttons[index];
         if (!button) throw new Error('ابزار اصلی ادیتور در دسترس نیست.');
         button.click();
-      } else await importAsCanvasImage(svgFor(preset, color, width), `BioPlot-${preset.id}.svg`);
+      } else if (['horizontal','vertical','dashed','dotted','double','activation','inhibition'].includes(preset.id)) armNative(preset); else await importAsCanvasImage(svgFor(preset, color, width), `BioPlot-${preset.id}.svg`);
     } catch (error) { setMessage(error instanceof Error ? error.message : 'افزودن خط ناموفق بود.'); railButton(/Lines|خطوط/i)?.click(); }
     finally { setBusy(false); }
   };

@@ -104,7 +104,7 @@ function TextProperties({ fa, single, onCommit }: { fa: boolean; single: TextObj
 }
 
 function LineProperties({ fa, single, objects, onCommit }: { fa: boolean; single: Extract<BioPlotObject, { type: 'arrow' | 'connector' }>; objects: BioPlotObject[]; onCommit: Commit }) {
-  const change = (patch: Partial<ConnectorObject>, label: string) => onCommit(label, object => {
+  const change = (patch: Partial<ConnectorObject> | Partial<Extract<BioPlotObject,{type:'arrow'}>>, label: string) => onCommit(label, object => {
     if (object.id !== single.id) return object;
     if (object.type === 'arrow') {
       const arrowPatch = patch as Partial<Extract<BioPlotObject, { type: 'arrow' }>>;
@@ -118,6 +118,7 @@ function LineProperties({ fa, single, objects, onCommit }: { fa: boolean; single
   return <section>
     <h3>{fa ? 'خط و اتصال' : 'Line & connector'}</h3>
     <div className="property-grid"><label><span>{fa ? 'ضخامت' : 'Width'}</span><input type="number" min="1" max="12" step="0.5" value={single.strokeWidth} onChange={event => change({ strokeWidth: Number(event.target.value) }, 'Stroke width')} /></label><label><span>{fa ? 'نوع خط' : 'Style'}</span><select value={single.lineStyle ?? 'solid'} onChange={event => change({ lineStyle: event.target.value as ConnectorObject['lineStyle'] }, 'Line style')}><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></label></div>
+    {single.type==='arrow'&&<><label className="property-stack"><span>{fa?'رنگ خط':'Line color'}</span><input type="color" value={single.stroke} onChange={e=>change({stroke:e.target.value},'Line color')}/></label><div className="property-grid">{(['startHead','endHead'] as const).map(field=><label key={field}><span>{field==='startHead'?(fa?'ابتدای خط':'Start'):(fa?'انتهای خط':'End')}</span><select value={single[field]??(field==='startHead'?(single.arrowHead==='both'?'arrow':'none'):(single.arrowHead==='none'?'none':'arrow'))} onChange={e=>change({[field]:e.target.value as 'none'|'arrow'|'circle'|'bar'|'diamond'},'Line endpoint style')}>{(['none','arrow','circle','bar','diamond'] as const).map(head=><option key={head} value={head}>{head}</option>)}</select></label>)}</div></>}
     <label className="property-stack"><span>{fa ? 'سر فلش' : 'Arrow head'}</span><select value={single.arrowHead} onChange={event => change({ arrowHead: event.target.value as ConnectorObject['arrowHead'] }, 'Arrow head')}><option value="end">End</option><option value="both">Both</option><option value="none">None</option>{single.type === 'connector' && <option value="inhibition">Inhibition</option>}</select></label>
     {single.type === 'connector' && <>
       <label className="property-stack"><span>{fa ? 'مسیر' : 'Route'}</span><select value={single.route} onChange={event => change({ route: event.target.value as ConnectorObject['route'] }, 'Connector route')}><option value="straight">Straight</option><option value="elbow">Elbow</option><option value="curved">Curved</option></select></label>

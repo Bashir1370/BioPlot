@@ -2,6 +2,7 @@ import { PointerEvent as ReactPointerEvent } from 'react';
 import { assetCssFilter, StyledAssetObject } from './assetStyling';
 import { connectorPath, resolveConnector } from './connectors';
 import { BioPlotObject } from './model';
+import { lineSvgBody } from './lineGeometry';
 import { plotToSvg } from './plots';
 import { fontStackForText } from './typography';
 
@@ -42,6 +43,6 @@ export function EditorObjectView({ object, objects, selected, onPointerDown, onC
   }
   if (rendered.type === 'image') return <div {...common} className={`${common.className} studio-image`}><img src={rendered.src} alt={rendered.alt??rendered.name} style={{objectFit:rendered.fit}}/></div>;
   if (rendered.type === 'plot') return <div {...common} className={`${common.className} studio-plot`}><svg width="100%" height="100%" viewBox={`0 0 ${rendered.width} ${rendered.height}`} dangerouslySetInnerHTML={{__html:plotToSvg(rendered.spec,rendered.width,rendered.height)}}/></div>;
-  if (rendered.type === 'arrow') return <div {...common}><svg width="100%" height="100%" viewBox={`0 0 ${rendered.width} ${rendered.height}`}><Markers object={rendered}/><line x1="4" y1={rendered.height/2} x2={rendered.width-9} y2={rendered.height/2} stroke={rendered.stroke} strokeWidth={rendered.strokeWidth} strokeDasharray={dash(rendered.lineStyle)} markerStart={rendered.arrowHead==='both'?`url(#start-${rendered.id})`:undefined} markerEnd={rendered.arrowHead==='none'?undefined:`url(#end-${rendered.id})`}/></svg></div>;
+  if (rendered.type === 'arrow') return <div {...common}><svg width="100%" height="100%" viewBox={`0 0 ${rendered.width} ${rendered.height}`} style={{overflow:'visible'}}>{rendered.startPoint&&rendered.endPoint?<g dangerouslySetInnerHTML={{__html:lineSvgBody(rendered)}}/>:<><Markers object={rendered}/><line x1="4" y1={rendered.height/2} x2={rendered.width-9} y2={rendered.height/2} stroke={rendered.stroke} strokeWidth={rendered.strokeWidth} strokeDasharray={dash(rendered.lineStyle)} markerStart={rendered.arrowHead==='both'?`url(#start-${rendered.id})`:undefined} markerEnd={rendered.arrowHead==='none'?undefined:`url(#end-${rendered.id})`}/></>}</svg></div>;
   return <div {...common}><svg width="100%" height="100%" viewBox={`0 0 ${rendered.width} ${rendered.height}`}><Markers object={rendered} inhibition/><path d={connectorPath(rendered)} fill="none" stroke={rendered.stroke} strokeWidth={rendered.strokeWidth} strokeDasharray={dash(rendered.lineStyle)} markerStart={rendered.arrowHead==='both'?`url(#start-${rendered.id})`:undefined} markerEnd={rendered.arrowHead==='none'?undefined:rendered.arrowHead==='inhibition'?`url(#inhibit-${rendered.id})`:`url(#end-${rendered.id})`}/>{rendered.label&&<text x={rendered.width/2} y={Math.max(12,rendered.height/2-8)} textAnchor="middle" fontSize="11" fontFamily={fontStackForText(rendered.label)} fill="#526e7a">{rendered.label}</text>}</svg></div>;
 }
