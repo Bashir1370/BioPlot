@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { StudioIcon } from './StudioIcon';
+import { NativePathControls } from './NativePathControls';
 import { Bounds, selectionBounds } from './engine';
 import { downloadPng, downloadSvg, EXPORT_DPI_PRESETS, JOURNAL_WIDTH_PRESETS } from './export';
 import { BioPlotDocument, BioPlotObject, ConnectorObject, ConnectorPort, LabelObject, TextObject } from './model';
@@ -103,28 +104,18 @@ function TextProperties({ fa, single, onCommit }: { fa: boolean; single: TextObj
   </section>;
 }
 
-function LineProperties({ fa, single, objects, onCommit }: { fa: boolean; single: Extract<BioPlotObject, { type: 'arrow' | 'connector' }>; objects: BioPlotObject[]; onCommit: Commit }) {
-  const change = (patch: Partial<ConnectorObject> | Partial<Extract<BioPlotObject,{type:'arrow'}>>, label: string) => onCommit(label, object => {
-    if (object.id !== single.id) return object;
-    if (object.type === 'arrow') {
-      const arrowPatch = patch as Partial<Extract<BioPlotObject, { type: 'arrow' }>>;
-      return { ...object, ...arrowPatch, type: 'arrow' };
-    }
-    if (object.type === 'connector') return { ...object, ...patch, type: 'connector' };
-    return object;
-  });
-  const candidates = objects.filter(object => object.id !== single.id && object.type !== 'connector' && !object.hidden);
-
-  return <section>
-    <h3>{fa ? 'خط و اتصال' : 'Line & connector'}</h3>
-    <div className="property-grid"><label><span>{fa ? 'ضخامت' : 'Width'}</span><input type="number" min="1" max="12" step="0.5" value={single.strokeWidth} onChange={event => change({ strokeWidth: Number(event.target.value) }, 'Stroke width')} /></label><label><span>{fa ? 'نوع خط' : 'Style'}</span><select value={single.lineStyle ?? 'solid'} onChange={event => change({ lineStyle: event.target.value as ConnectorObject['lineStyle'] }, 'Line style')}><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></label></div>
-    {single.type==='arrow'&&<><label className="property-stack"><span>{fa?'رنگ خط':'Line color'}</span><input type="color" value={single.stroke} onChange={e=>change({stroke:e.target.value},'Line color')}/></label><div className="property-grid">{(['startHead','endHead'] as const).map(field=><label key={field}><span>{field==='startHead'?(fa?'ابتدای خط':'Start'):(fa?'انتهای خط':'End')}</span><select value={single[field]??(field==='startHead'?(single.arrowHead==='both'?'arrow':'none'):(single.arrowHead==='none'?'none':'arrow'))} onChange={e=>change({[field]:e.target.value as 'none'|'arrow'|'circle'|'bar'|'diamond'},'Line endpoint style')}>{(['none','arrow','circle','bar','diamond'] as const).map(head=><option key={head} value={head}>{head}</option>)}</select></label>)}</div></>}
-    <label className="property-stack"><span>{fa ? 'سر فلش' : 'Arrow head'}</span><select value={single.arrowHead} onChange={event => change({ arrowHead: event.target.value as ConnectorObject['arrowHead'] }, 'Arrow head')}><option value="end">End</option><option value="both">Both</option><option value="none">None</option>{single.type === 'connector' && <option value="inhibition">Inhibition</option>}</select></label>
-    {single.type === 'connector' && <>
-      <label className="property-stack"><span>{fa ? 'مسیر' : 'Route'}</span><select value={single.route} onChange={event => change({ route: event.target.value as ConnectorObject['route'] }, 'Connector route')}><option value="straight">Straight</option><option value="elbow">Elbow</option><option value="curved">Curved</option></select></label>
-      <label className="property-stack"><span>{fa ? 'برچسب اتصال' : 'Connector label'}</span><input value={single.label ?? ''} onChange={event => change({ label: event.target.value }, 'Connector label')} /></label>
-      <div className="connector-bindings"><label><span>{fa ? 'شروع از' : 'From object'}</span><select value={single.fromObjectId ?? ''} onChange={event => change({ fromObjectId: event.target.value || undefined }, 'Attach connector start')}><option value="">Free</option>{candidates.map(object => <option key={object.id} value={object.id}>{object.name}</option>)}</select></label><label><span>{fa ? 'پایان به' : 'To object'}</span><select value={single.toObjectId ?? ''} onChange={event => change({ toObjectId: event.target.value || undefined }, 'Attach connector end')}><option value="">Free</option>{candidates.map(object => <option key={object.id} value={object.id}>{object.name}</option>)}</select></label></div>
-      <div className="property-grid">{(['fromPort', 'toPort'] as const).map(field => <label key={field}><span>{field === 'fromPort' ? 'From port' : 'To port'}</span><select value={single[field] ?? 'auto'} onChange={event => change({ [field]: event.target.value as ConnectorPort }, 'Connector port')}>{['auto', 'top', 'right', 'bottom', 'left', 'center'].map(port => <option key={port}>{port}</option>)}</select></label>)}</div>
+function LineProperties({ fa, single, objects, onCommit }: { fa:boolean; single:Extract<BioPlotObject,{type:'arrow'|'connector'}>; objects:BioPlotObject[]; onCommit:Commit }) {
+  const change=(patch:Partial<ConnectorObject>,label:string)=>onCommit(label,object=>object.id===single.id&&object.type==='connector'&&!object.locked?{...object,...patch}:object);
+  const candidates=objects.filter(object=>object.id!==single.id&&object.type!=='connector'&&!object.hidden);
+  return <section className="bp-contextual-line">
+    <h3>{fa?'طراحی خط':'Line design'}</h3>
+    {single.type==='arrow'?<NativePathControls fa={fa} line={single} onCommit={onCommit}/>:<>
+      <div className="property-grid"><label><span>{fa?'ضخامت':'Width'}</span><input type="number" min="0.5" max="40" step="0.5" value={single.strokeWidth} onChange={event=>change({strokeWidth:Math.max(.5,Math.min(40,Number(event.target.value)||.5))},'Connector width')}/></label><label><span>{fa?'نوع خط':'Style'}</span><select value={single.lineStyle} onChange={event=>change({lineStyle:event.target.value as ConnectorObject['lineStyle']},'Connector style')}><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></label></div>
+      <label className="property-stack"><span>{fa?'سر فلش':'Arrow head'}</span><select value={single.arrowHead} onChange={event=>change({arrowHead:event.target.value as ConnectorObject['arrowHead']},'Connector head')}><option value="end">End</option><option value="both">Both</option><option value="none">None</option><option value="inhibition">Inhibition</option></select></label>
+      <label className="property-stack"><span>{fa?'مسیر':'Route'}</span><select value={single.route} onChange={event=>change({route:event.target.value as ConnectorObject['route']},'Connector route')}><option value="straight">Straight</option><option value="elbow">Elbow</option><option value="curved">Curved</option></select></label>
+      <label className="property-stack"><span>{fa?'برچسب':'Label'}</span><input value={single.label??''} onChange={event=>change({label:event.target.value},'Connector label')}/></label>
+      <div className="connector-bindings"><label><span>{fa?'شروع از':'From object'}</span><select value={single.fromObjectId??''} onChange={event=>change({fromObjectId:event.target.value||undefined},'Attach start')}><option value="">Free</option>{candidates.map(object=><option key={object.id} value={object.id}>{object.name}</option>)}</select></label><label><span>{fa?'پایان به':'To object'}</span><select value={single.toObjectId??''} onChange={event=>change({toObjectId:event.target.value||undefined},'Attach end')}><option value="">Free</option>{candidates.map(object=><option key={object.id} value={object.id}>{object.name}</option>)}</select></label></div>
+      <div className="property-grid">{(['fromPort','toPort'] as const).map(field=><label key={field}><span>{field==='fromPort'?'From port':'To port'}</span><select value={single[field]??'auto'} onChange={event=>change({[field]:event.target.value as ConnectorPort},'Connector port')}>{['auto','top','right','bottom','left','center'].map(port=><option key={port}>{port}</option>)}</select></label>)}</div>
     </>}
   </section>;
 }

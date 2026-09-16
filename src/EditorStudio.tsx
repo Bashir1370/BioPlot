@@ -11,7 +11,8 @@ import { StudioIcon, StudioIconName } from './StudioIcon';
 import { AssetCatalogView, StudioPagesPanel, CanvasSettingsForm } from './StudioReferencePanels';
 import { AddStudioPageCommand, CanvasSettingsCommand, CanvasSettings } from './studioPages';
 import { EditorObjectView } from './EditorObjectView';
-import { createDrawnLine, updateLineEndpoint, type DrawLineSettings } from './lineGeometry';
+import { createDrawnLine, insertLineNode, removeLineNode, updateLineNode, worldLineNodes, lineSvgBody, type DrawLineSettings } from './lineGeometry';
+import type { ScientificAsset } from './assets';
 import { activePage, BioPlotDocument, BioPlotObject, cloneDocument, createBlankDocument, makeId, migrateDocument } from './model';
 import { projects } from './persistence';
 import { saveRecoverySnapshot } from './recovery';
@@ -78,7 +79,19 @@ export function EditorStudio(){
   const autoFitRef=useRef(true);
   const pendingZoomAnchorRef=useRef<PendingZoomAnchor|null>(null);
   const page=activePage(documentState);
-  useEffect(()=>{const activate=(event:Event)=>{setLineTool((event as CustomEvent<DrawLineSettings>).detail);setSelected(new Set());setAssetEditOpen(false);setPanel('lines');setLibraryCollapsed(false);};window.addEventListener('bioplot:activate-line',activate);return()=>window.removeEventListener('bioplot:activate-line',activate);},[]);
+  useEffect(()=>{
+    const activate=(event:Event)=>{setLineTool((event as CustomEvent<DrawLineSettings>).detail);setSelected(new Set());setAssetEditOpen(false);setPanel('lines');setLibraryCollapsed(false);};
+    const insert=(event:Event)=>{
+      const asset=(event as CustomEvent<ScientificAsset>).detail;
+      if(!asset?.svg)return;
+      const object=assetToObject(asset);
+      storeRef.current.dispatch(new AddObjectsCommand('Add library line',[object]));
+      setSelected(new Set([object.id]));setAssetEditOpen(false);setPanel('lines');setInspectorCollapsed(false);setInspectorTab('properties');
+    };
+    window.addEventListener('bioplot:activate-line',activate);
+    window.addEventListener('bioplot:insert-line-asset',insert);
+    return()=>{window.removeEventListener('bioplot:activate-line',activate);window.removeEventListener('bioplot:insert-line-asset',insert);};
+  },[]);
 
   const viewportCenter=():ZoomPointer|undefined=>{
     const viewport=canvasViewportRef.current;
@@ -176,6 +189,9 @@ export function EditorStudio(){
   const objects=page.objects;
   const renderObjects=useMemo(()=>objects.map(object=>object.type==='connector'?resolveConnector(object,objects):object),[objects]);
   const selectedObjects=renderObjects.filter(object=>selected.has(object.id));
+  const selectedLine=selectedObjects.length===1&&selectedObjects[0].type==='arrow'&&selectedObjects[0].startPoint&&selectedObjects[0].endPoint?selectedObjects[0]:null;
+  const selectedLineNodes=selectedLine?worldLineNodes(selectedLine):[];
+  const previewLine=linePreview&&lineTool?createDrawnLine({x:linePreview.sx,y:linePreview.sy},{x:linePreview.ex,y:linePreview.ey},lineTool):null;
   const selectedAsset=selectedObjects.length===1&&selectedObjects[0].type==='asset'?selectedObjects[0] as StyledAssetObject:null;
   const bounds=selectionBounds(selectedObjects);
   const fa=documentState.metadata.locale==='fa';
@@ -266,7 +282,7 @@ export function EditorStudio(){
     window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);
   });
   function idsFor(object:BioPlotObject,additive=false){const ids=object.groupId?objects.filter(item=>item.groupId===object.groupId).map(item=>item.id):[object.id];if(!additive)return new Set(ids);const next=new Set(selected);ids.forEach(id=>next.has(id)?next.delete(id):next.add(id));return next;}
-  function addObject(object:BioPlotObject){storeRef.current.dispatch(new AddObjectsCommand('Add object',[object]));setSelected(new Set([object.id]));setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);setInspectorTab('properties');}
+  function addObject(object:BioPlotObject){storeRef.current.dispatch(new AddObjectsCommand('Add object',[object]));setSelected(new Set([object.id]));setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);setInspectorTab('properties');if(object.type==='arrow')setInspectorCollapsed(false);}
   function commitSelected(label:string,transform:(object:BioPlotObject)=>BioPlotObject){const before=cloneObjects(selectedObjects);if(before.length)storeRef.current.dispatch(new ObjectStateCommand(label,before,before.map(transform)));}
   function commitAssetStyle(label:string,next:StyledAssetObject){const current=objects.find(object=>object.id===next.id);if(!current||current.type!=='asset'||current.locked)return;storeRef.current.dispatch(new ObjectStateCommand(label,[structuredClone(current)],[next]));}
   function copySelection(){clipboardRef.current=cloneObjects(selectedObjects);}
@@ -284,7 +300,7 @@ export function EditorStudio(){
   function zOrder(action:ZOrderAction){if(selected.size)zOrderFor(selected,action);}
   function reorderLayer(draggedId:string,targetId:string){const before=cloneObjects(objects),dragged=before.find(object=>object.id===draggedId),targetIndex=before.findIndex(object=>object.id===targetId);if(!dragged||targetIndex<0)return;const after=before.filter(object=>object.id!==draggedId);after.splice(Math.min(targetIndex,after.length),0,dragged);storeRef.current.dispatch(new PageObjectsCommand('Reorder layer',before,after));}
   function changeBounds(field:'x'|'y'|'width'|'height',value:number){if(!bounds||!Number.isFinite(value))return;const before=cloneObjects(selectedObjects.filter(object=>!object.locked));if(!before.length)return;if(field==='x'||field==='y'){const delta=value-bounds[field];storeRef.current.dispatch(new ObjectStateCommand(`Change ${field}`,before,before.map(object=>field==='x'?{...object,x:object.x+delta}:{...object,y:object.y+delta})));}else{const next={x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height,[field]:Math.max(8,value)};storeRef.current.dispatch(new ObjectStateCommand(`Change ${field}`,before,resizeObjects(before,next)));}}
-  function beginMove(event:ReactPointerEvent<HTMLDivElement>,object:BioPlotObject){if(!event.shiftKey){setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);}if(object.locked){setSelected(idsFor(object,event.shiftKey));return;}event.preventDefault();event.stopPropagation();const ids=idsFor(object,event.shiftKey);setSelected(ids);if(event.shiftKey)return;const before=cloneObjects(objects.filter(item=>ids.has(item.id)&&!item.locked));const startBounds=selectionBounds(before);if(!before.length||!startBounds)return;const targets=buildSnapTargets(storeRef.current.snapshot,ids),sx=event.clientX,sy=event.clientY;const move=(pointer:PointerEvent)=>{const snapped=snapDelta(startBounds,(pointer.clientX-sx)/zoom,(pointer.clientY-sy)/zoom,targets);storeRef.current.preview(before.map(item=>({...item,x:item.x+snapped.dx,y:item.y+snapped.dy})));setGuides({x:snapped.guideX,y:snapped.guideY});};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const after=cloneObjects(activePage(storeRef.current.snapshot).objects.filter(item=>ids.has(item.id)&&!item.locked));storeRef.current.commitObjectState(before,after,'Move objects');setGuides({});};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
+  function beginMove(event:ReactPointerEvent<HTMLDivElement>,object:BioPlotObject){if(!event.shiftKey){if(object.type==='arrow'){setInspectorCollapsed(false);setInspectorTab('properties');}setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);}if(object.locked){setSelected(idsFor(object,event.shiftKey));return;}event.preventDefault();event.stopPropagation();const ids=idsFor(object,event.shiftKey);setSelected(ids);if(event.shiftKey)return;const before=cloneObjects(objects.filter(item=>ids.has(item.id)&&!item.locked));const startBounds=selectionBounds(before);if(!before.length||!startBounds)return;const targets=buildSnapTargets(storeRef.current.snapshot,ids),sx=event.clientX,sy=event.clientY;const move=(pointer:PointerEvent)=>{const snapped=snapDelta(startBounds,(pointer.clientX-sx)/zoom,(pointer.clientY-sy)/zoom,targets);storeRef.current.preview(before.map(item=>({...item,x:item.x+snapped.dx,y:item.y+snapped.dy})));setGuides({x:snapped.guideX,y:snapped.guideY});};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const after=cloneObjects(activePage(storeRef.current.snapshot).objects.filter(item=>ids.has(item.id)&&!item.locked));storeRef.current.commitObjectState(before,after,'Move objects');setGuides({});};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
 
   function beginResize(event:ReactPointerEvent,handle:string){
     event.preventDefault();
@@ -401,14 +417,38 @@ export function EditorStudio(){
     const up=(pointer:PointerEvent)=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);setLinePreview(null);const end=adjusted(pointer.clientX,pointer.clientY);if(Math.hypot(end.x-start.x,end.y-start.y)>=3)addObject(createDrawnLine(start,end,lineTool));setLineTool(null);};
     window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
   }
-  function beginLineEndpoint(event:ReactPointerEvent,which:'start'|'end'){
+  function beginLineNode(event:ReactPointerEvent,index:number){
+    if(event.button!==0)return;
     event.preventDefault();event.stopPropagation();
-    const line=selectedObjects.length===1&&selectedObjects[0].type==='arrow'?selectedObjects[0]:null;
-    if(!line||!line.startPoint||!line.endPoint||line.locked||!artboardRef.current)return;
-    const before=[structuredClone(line)];const rect=artboardRef.current.getBoundingClientRect();
-    const move=(pointer:PointerEvent)=>{const point={x:(pointer.clientX-rect.left)/zoom,y:(pointer.clientY-rect.top)/zoom};storeRef.current.preview([updateLineEndpoint(line,which,point)]);};
-    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const changed=activePage(storeRef.current.snapshot).objects.find(item=>item.id===line.id);if(changed)storeRef.current.commitObjectState(before,[structuredClone(changed)],'Move line endpoint');};
-    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
+    const line=selectedLine;
+    if(!line||line.locked||!artboardRef.current)return;
+    const before=[structuredClone(line)];
+    const rect=artboardRef.current.getBoundingClientRect();
+    let changed=false;
+    const move=(pointer:PointerEvent)=>{
+      const point={x:Math.max(0,Math.min(page.width,(pointer.clientX-rect.left)/zoom)),y:Math.max(0,Math.min(page.height,(pointer.clientY-rect.top)/zoom))};
+      storeRef.current.preview([updateLineNode(line,index,point)]);changed=true;
+    };
+    const up=()=>{
+      window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);
+      if(!changed)return;
+      const after=activePage(storeRef.current.snapshot).objects.find(item=>item.id===line.id);
+      if(after)storeRef.current.commitObjectState(before,[structuredClone(after)],'Move line node');
+    };
+    window.addEventListener('pointermove',move);
+    window.addEventListener('pointerup',up,{once:true});
+  }
+  function addLineMidpoint(event:React.MouseEvent,index:number){
+    event.preventDefault();event.stopPropagation();
+    if(!selectedLine||selectedLine.locked)return;
+    const after=insertLineNode(selectedLine,index);
+    if(after!==selectedLine)storeRef.current.dispatch(new ObjectStateCommand('Add line node',[structuredClone(selectedLine)],[after]));
+  }
+  function deleteLineNode(event:React.MouseEvent,index:number){
+    event.preventDefault();event.stopPropagation();
+    if(!selectedLine||selectedLine.locked)return;
+    const after=removeLineNode(selectedLine,index);
+    if(after!==selectedLine)storeRef.current.dispatch(new ObjectStateCommand('Remove line node',[structuredClone(selectedLine)],[after]));
   }
   function beginMarquee(event:ReactPointerEvent<HTMLDivElement>){if(lineTool){beginLineDraw(event);return;}if(event.target!==event.currentTarget||!artboardRef.current)return;const art=artboardRef.current.getBoundingClientRect(),sx=(event.clientX-art.left)/zoom,sy=(event.clientY-art.top)/zoom,original=event.shiftKey?new Set(selected):new Set<string>();if(!event.shiftKey){setSelected(new Set());setAssetEditOpen(false);}const move=(pointer:PointerEvent)=>{const rect=rectFromPoints(sx,sy,(pointer.clientX-art.left)/zoom,(pointer.clientY-art.top)/zoom);setSelected(new Set([...original,...objectsInRect(objects,rect).filter(object=>!object.locked).map(object=>object.id)]));};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
   function setTitle(title:string){const next=cloneDocument(documentState);next.title=title;next.updatedAt=new Date().toISOString();storeRef.current.replace(next);}
@@ -428,7 +468,7 @@ export function EditorStudio(){
     storeRef.current.dispatch(new AddStudioPageCommand(newPage,page.id));setSelected(new Set());setAssetEditOpen(false);
   }
   function changeCanvas(settings:CanvasSettings){storeRef.current.dispatch(new CanvasSettingsCommand({width:page.width,height:page.height,background:page.background},settings));}
-  function openTool(tool:Panel){setAssetEditOpen(false);setPanel(tool);setLibraryCollapsed(false);}
+  function openTool(tool:Panel){setLineTool(null);setLinePreview(null);setAssetEditOpen(false);setPanel(tool);setLibraryCollapsed(false);}
   function browseAssets(){setAssetEditOpen(false);setPanel('assets');setLibraryCollapsed(false);}
   const columns=`60px ${libraryCollapsed?0:libraryWidth}px 6px minmax(0,1fr) 6px ${!inspectorCollapsed?inspectorWidth:pagesCollapsed?0:196}px`;
   return <div className={`studio-shell ${libraryCollapsed?'library-closed':'library-open'} ${inspectorCollapsed?'inspector-closed':'inspector-open'} ${pagesCollapsed?'pages-closed':'pages-open'} ${selectedObjects.length?'has-selection':'no-selection'} ${showGrid?'grid-visible':''}`} dir={fa?'rtl':'ltr'}>
@@ -459,12 +499,12 @@ export function EditorStudio(){
         {selectedAsset&&assetEditOpen?<AssetStylePanel fa={fa} object={selectedAsset} onChange={commitAssetStyle} onBrowse={browseAssets}/>:<>
           <div className="studio-panel-heading"><div><small>{fa?'دارایی‌های علمی':'SCIENTIFIC ASSETS'}</small><h2>{panel==='assets'?(fa?'کتابخانه علمی':'Scientific assets'):panel==='upload'?(fa?'آپلود':'Uploads'):panel==='text'?(fa?'متن و برچسب':'Text & labels'):panel==='lines'?(fa?'خطوط و اتصال‌ها':'Lines & connectors'):(fa?'شکل‌ها':'Shapes')}</h2></div><button onClick={()=>setLibraryCollapsed(true)} aria-label={fa?'بستن کتابخانه':'Close library'}><StudioIcon name="close"/></button></div>
           {panel==='assets'&&<><div className="studio-search"><StudioIcon name="search"/><input aria-label={fa?'جستجوی المان علمی':'Search scientific assets'} value={assetQuery} onChange={event=>setAssetQuery(event.target.value)} placeholder={fa?'نورون، سلول، DNA…':'Neuron, cell, DNA…'}/></div><div className="asset-mode-tabs"><button className={assetMode==='all'?'active':''} onClick={()=>setAssetMode('all')}>{fa?'همه':'All'}</button><button className={assetMode==='favorites'?'active':''} onClick={()=>setAssetMode('favorites')}><StudioIcon name="star"/>{fa?'منتخب':'Favorites'}</button><button className={assetMode==='recent'?'active':''} onClick={()=>setAssetMode('recent')}><StudioIcon name="clock"/>{fa?'اخیر':'Recent'}</button></div><select className="asset-category-select" value={assetCategory} onChange={event=>setAssetCategory(event.target.value)}><option value="">{fa?'همه دسته‌ها':'All categories'}</option>{categories.map(category=><option key={category}>{category}</option>)}</select><AssetCatalogView fa={fa} assets={assets} grouped={!assetQuery&&!assetCategory&&assetMode==='all'} favorites={favoriteIds} onAdd={asset=>addObject(assetToObject(asset))} onFavorite={id=>{toggleFavoriteAsset(id);setFavoriteVersion(value=>value+1);}} onCategory={setAssetCategory}/></>}
-          {['elements','text','lines','shapes'].includes(panel)&&<Elements fa={fa} addObject={addObject} group={panel}/>} 
+          {['elements','text','shapes'].includes(panel)&&<Elements fa={fa} addObject={addObject} group={panel}/>} 
           {panel==='upload'&&<div className="studio-upload"><label><span><StudioIcon name="upload"/></span><b>{fa?'SVG علمی':'Scientific SVG'}</b><small>{fa?'فایل برداری با پاک‌سازی امنیتی':'Sanitized vector import'}</small><input hidden type="file" accept=".svg,image/svg+xml" onChange={event=>void importSvg(event.target.files?.[0])}/></label><label><span><StudioIcon name="image"/></span><b>{fa?'تصویر':'Raster image'}</b><small>PNG / JPG / WebP</small><input hidden type="file" accept="image/png,image/jpeg,image/webp" onChange={event=>importImage(event.target.files?.[0])}/></label><p>{fa?`${getAssetCatalog().length} المان علمی در کاتالوگ فعلی`:`${getAssetCatalog().length} scientific assets in the current catalog`}</p></div>}
         </>}
       </aside>
       <div className={`studio-splitter library-splitter ${libraryCollapsed?'disabled':''}`} onPointerDown={event=>!libraryCollapsed&&resizePanel('library',event)}/>
-      <section className={`studio-canvas-zone ${lineTool?'bp-line-drawing':''}`}><div className="studio-canvas-scroll" ref={canvasViewportRef}><div className="studio-artboard-scale" style={{width:page.width*zoom,height:page.height*zoom}}><span className="reference-artboard-label">{page.width} × {page.height} px</span><div ref={artboardRef} className="studio-artboard" style={{width:page.width,height:page.height,background:page.background,transform:`scale(${zoom})`,transformOrigin:'top left'}} onPointerDown={beginMarquee}>{linePreview&&<svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',overflow:'visible',zIndex:200}}><line x1={linePreview.sx} y1={linePreview.sy} x2={linePreview.ex} y2={linePreview.ey} stroke={lineTool?.stroke||'#087f79'} strokeWidth={lineTool?.strokeWidth||2} strokeDasharray="5 4"/></svg>}{renderObjects.map(object=><EditorObjectView key={object.id} object={object} objects={objects} selected={selected.has(object.id)} onPointerDown={beginMove} onContextMenu={objectContext}/>)}{guides.x!==undefined&&<div className="studio-guide vertical" style={{left:guides.x}}/>}{guides.y!==undefined&&<div className="studio-guide horizontal" style={{top:guides.y}}/>}{bounds&&<div className="studio-selection" style={{left:bounds.x,top:bounds.y,width:bounds.width,height:bounds.height}}><span className="studio-rotate-line"/><button className="studio-rotate" onPointerDown={beginRotate}/>{['nw','n','ne','e','se','s','sw','w'].map(handle=><button key={handle} className={`studio-handle ${handle}`} onPointerDown={event=>beginResize(event,handle)}/>)}{selectedObjects.length===1&&selectedObjects[0].type==='arrow'&&(selectedObjects[0] as Extract<BioPlotObject,{type:'arrow'}>).startPoint&&(selectedObjects[0] as Extract<BioPlotObject,{type:'arrow'}>).endPoint&&(['start','end'] as const).map(which=><button key={which} type="button" className="bp-line-endpoint" title={which==='start'?'Drag start point':'Drag end point'} style={{left:`${(which==='start'?(selectedObjects[0] as Extract<BioPlotObject,{type:'arrow'}>).startPoint!.x:(selectedObjects[0] as Extract<BioPlotObject,{type:'arrow'}>).endPoint!.x)*100}%`,top:`${(which==='start'?(selectedObjects[0] as Extract<BioPlotObject,{type:'arrow'}>).startPoint!.y:(selectedObjects[0] as Extract<BioPlotObject,{type:'arrow'}>).endPoint!.y)*100}%`}} onPointerDown={event=>beginLineEndpoint(event,which)}/>)}</div>}</div></div></div></section>
+      <section className={`studio-canvas-zone ${lineTool?'bp-line-drawing':''}`}><div className="studio-canvas-scroll" ref={canvasViewportRef}><div className="studio-artboard-scale" style={{width:page.width*zoom,height:page.height*zoom}}><span className="reference-artboard-label">{page.width} × {page.height} px</span><div ref={artboardRef} className="studio-artboard" style={{width:page.width,height:page.height,background:page.background,transform:`scale(${zoom})`,transformOrigin:'top left'}} onPointerDown={beginMarquee}>{linePreview&&<svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',overflow:'visible',zIndex:200}}><g opacity="0.7" transform={`translate(${previewLine?.x??0} ${previewLine?.y??0})`} dangerouslySetInnerHTML={{__html:previewLine?lineSvgBody(previewLine):''}}/></svg>}{renderObjects.map(object=><EditorObjectView key={object.id} object={object} objects={objects} selected={selected.has(object.id)} onPointerDown={beginMove} onContextMenu={objectContext}/>)}{guides.x!==undefined&&<div className="studio-guide vertical" style={{left:guides.x}}/>}{guides.y!==undefined&&<div className="studio-guide horizontal" style={{top:guides.y}}/>}{bounds&&<div className="studio-selection" style={{left:bounds.x,top:bounds.y,width:bounds.width,height:bounds.height}}><span className="studio-rotate-line"/><button className="studio-rotate" onPointerDown={beginRotate}/>{['nw','n','ne','e','se','s','sw','w'].map(handle=><button key={handle} className={`studio-handle ${handle}`} onPointerDown={event=>beginResize(event,handle)}/>)}{selectedLine&&selectedLineNodes.map((point,index)=><button key={`node-${index}`} type="button" className="bp-line-node" aria-label={index===0?'Drag line start':index===selectedLineNodes.length-1?'Drag line end':`Drag node ${index+1}; double-click to remove`} title={index===0?'Drag start':index===selectedLineNodes.length-1?'Drag end':'Drag node · Double-click to remove'} style={{left:point.x-bounds.x,top:point.y-bounds.y}} onPointerDown={event=>beginLineNode(event,index)} onDoubleClick={event=>deleteLineNode(event,index)}/>)}{selectedLine&&selectedLineNodes.slice(0,-1).map((point,index)=><button key={`insert-${index}`} type="button" className="bp-line-add-node" title={fa?'افزودن گره':'Add node'} aria-label={fa?'افزودن گره':'Add node'} style={{left:(point.x+selectedLineNodes[index+1].x)/2-bounds.x,top:(point.y+selectedLineNodes[index+1].y)/2-bounds.y}} onClick={event=>addLineMidpoint(event,index)}>+</button>)}</div>}</div></div></div></section>
       <div className={`studio-splitter inspector-splitter ${inspectorCollapsed?'disabled':''}`} onPointerDown={event=>!inspectorCollapsed&&resizePanel('inspector',event)}/>
       {inspectorCollapsed&&!pagesCollapsed&&<StudioPagesPanel fa={fa} documentState={documentState} onSelect={selectPage} onAdd={addPage} onClose={()=>setPagesCollapsed(true)}/>} 
       {!inspectorCollapsed&&<EditorInspector fa={fa} tab={inspectorTab} setTab={setInspectorTab} documentState={documentState} bounds={bounds} selectedObjects={selectedObjects} objects={objects} selected={selected} onBounds={changeBounds} onCommit={commitSelected} onLock={setLocked} onHide={()=>setHidden(selected,true)} onSelect={object=>{setSelected(idsFor(object));setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);setInspectorTab('properties');}} onLayerStep={(id,action)=>zOrderFor(new Set([id]),action)} onLayerReorder={reorderLayer} onToggleObjectLock={object=>storeRef.current.dispatch(new ObjectStateCommand(object.locked?'Unlock':'Lock',[structuredClone(object)],[{...object,locked:!object.locked}]))} onToggleObjectHidden={object=>setHidden(new Set([object.id]),!object.hidden)} onCollapse={()=>setInspectorCollapsed(true)}/>} 

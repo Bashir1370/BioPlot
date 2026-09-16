@@ -1,5 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { sanitizeSvg } from './assets';
+import { nativePresetSvg, type DrawLineSettings } from './lineGeometry';
+import './admin-native-lines.css';
 import { getAdminSessionState } from './adminAuth';
 import { CloudAsset, createCloudCategory, deleteCloudAsset, loadAdminCloudAssets, loadCloudCategories, patchCloudAsset, saveCloudAsset } from './cloudAssetLibrary';
 import './admin-lines.css';
@@ -12,9 +14,19 @@ export function AdminLinesPage() {
   const [name, setName] = useState('');
   const [nameFa, setNameFa] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [kind,setKind]=useState<'native'|'svg'>('native');
+  const [presetId,setPresetId]=useState('curved');
+  const [stroke,setStroke]=useState('#087f79');
+  const [strokeWidth,setStrokeWidth]=useState(2);
+  const [lineStyle,setLineStyle]=useState<DrawLineSettings['lineStyle']>('solid');
+  const [startHead,setStartHead]=useState<DrawLineSettings['startHead']>('none');
+  const [endHead,setEndHead]=useState<DrawLineSettings['endHead']>('arrow');
   const [svg, setSvg] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const mode:DrawLineSettings['pathMode']=['curved','arc','s-curve','wave'].includes(presetId)?'curved':['elbow','zigzag','bracket'].includes(presetId)?'polyline':'straight';
+  const nativeSettings:DrawLineSettings={stroke,strokeWidth,lineStyle,startHead,endHead,pathMode:mode,presetId};
+  const nativeSvg=nativePresetSvg(nativeSettings);
 
   const refresh = async () => {
     const assets = await loadAdminCloudAssets();
@@ -37,6 +49,7 @@ export function AdminLinesPage() {
     const candidate = event.target.files?.[0];
     event.target.value = '';
     if (!candidate) return;
+    setKind('svg');
     setNotice('');
     try {
       if (!candidate.name.toLowerCase().endsWith('.svg') || candidate.size > 2_500_000) throw new Error('فقط SVG با حجم حداکثر ۲.۵ مگابایت مجاز است.');
@@ -49,12 +62,15 @@ export function AdminLinesPage() {
 
   const publish = async (event: FormEvent) => {
     event.preventDefault();
-    if (!file || !svg || !name.trim()) return;
+    if (!name.trim() || (kind==='svg'&&(!file||!svg))) return;
+    const content=kind==='native'?nativeSvg:svg;
+    const source=kind==='native'?new File([content],`${name.trim().replace(/[^a-z0-9_-]+/gi,'-')||'line'}.svg`,{type:'image/svg+xml'}):file;
+    if(!source)return;
     setBusy(true); setNotice('');
     try {
       const categories = await loadCloudCategories();
       if (!categories.some(category => category.slug === LINE_CATEGORY)) await createCloudCategory(LINE_CATEGORY, 'خطوط و فلش‌ها');
-      await saveCloudAsset({ name: name.trim(), nameFa: nameFa.trim(), category: LINE_CATEGORY, renderSvg: svg, sourceType: 'svg', synonyms: { en: [], fa: [] }, reviewStatus: 'draft', premium: false, active: true, featured: false }, file);
+      await saveCloudAsset({ name: name.trim(), nameFa: nameFa.trim(), category: LINE_CATEGORY, renderSvg: content, sourceType: 'svg', synonyms: { en: [], fa: [] }, reviewStatus: 'draft', premium: false, active: true, featured: false }, source);
       setName(''); setNameFa(''); setSvg(''); setFile(null);
       await refresh();
       setNotice('خط در کتابخانه ابری منتشر شد؛ پس از همگام‌سازی در پنل Lines دیده می‌شود.');
@@ -82,7 +98,15 @@ export function AdminLinesPage() {
   return <main className="admin-lines-page" dir="rtl">
     <header className="admin-lines-header"><div><small>BIOPLOT ADMIN / VECTOR ASSETS</small><h1>مدیریت خطوط و فلش‌ها</h1><p>خطوط دلخواه را با فرمت SVG اضافه و منتشر کن. تصاویر دیگر کتابخانه تغییر نمی‌کنند.</p></div><nav><a href="/admin/library">مدیریت کتابخانه</a><a href="/editor">مشاهده در ادیتور</a></nav></header>
     <div className="admin-lines-body">
-      <form className="admin-lines-upload" onSubmit={event => void publish(event)}><h2>افزودن نمونه جدید</h2><p>فایل برداری مستقل و سبک با نمای قابل تشخیص در کارت انتخاب کنید.</p><label className="admin-lines-file">{svg ? <span dangerouslySetInnerHTML={{ __html: svg }} /> : <span>+ انتخاب فایل SVG</span>}<input type="file" accept=".svg,image/svg+xml" onChange={event => void choose(event)} /></label><label>نام انگلیسی<input required maxLength={100} value={name} onChange={event => setName(event.target.value)} placeholder="e.g. Molecular inhibition" /></label><label>نام فارسی<input maxLength={100} value={nameFa} onChange={event => setNameFa(event.target.value)} placeholder="مثلاً فلش مهاری" /></label><button className="admin-lines-primary" disabled={busy || !file || !name.trim()} type="submit">{busy ? 'در حال ذخیره…' : 'انتشار در Lines'}</button><p className="admin-lines-note">برای تغییر اطلاعات و تصویر نمونه‌های منتشرشده، از «مدیریت کتابخانه» استفاده کن؛ دستهٔ Lines & Arrows را انتخاب کن.</p></form>
+      <form className="admin-lines-upload" onSubmit={event => void publish(event)}><h2>افزودن خط جدید</h2><p>الگوی بومی با گره‌های قابل‌ویرایش بساز یا یک SVG مستقل آپلود کن.</p>
+      <div className="admin-native-tabs"><button type="button" className={kind==='native'?'active':''} onClick={()=>setKind('native')}>الگوی قابل‌ویرایش</button><button type="button" className={kind==='svg'?'active':''} onClick={()=>setKind('svg')}>آپلود SVG</button></div>
+      {kind==='native'?<div className="admin-native-form">
+        <div className="admin-native-preview" aria-label="پیش‌نمایش خط" dangerouslySetInnerHTML={{__html:nativeSvg}}/>
+        <label>نوع خط<select value={presetId} onChange={event=>setPresetId(event.target.value)}>{[['straight','مستقیم'],['arrow','فلش'],['double','فلش دوطرفه'],['curved','منحنی'],['arc','کمان'],['s-curve','منحنی S'],['elbow','زاویه‌دار'],['wave','موجی'],['zigzag','زیگزاگ'],['bracket','براکت'],['inhibition','مهاری'],['dashed','خط‌چین'],['dotted','نقطه‌چین']].map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+        <div className="admin-native-pair"><label>رنگ<input type="color" value={stroke} onChange={event=>setStroke(event.target.value)}/></label><label>ضخامت<input type="number" min="0.5" max="40" step="0.5" value={strokeWidth} onChange={event=>setStrokeWidth(Math.max(.5,Math.min(40,Number(event.target.value)||.5)))}/></label></div>
+        <label>نوع خط<select value={lineStyle} onChange={event=>setLineStyle(event.target.value as DrawLineSettings['lineStyle'])}><option value="solid">پیوسته</option><option value="dashed">خط‌چین</option><option value="dotted">نقطه‌چین</option></select></label>
+        <div className="admin-native-pair">{(['start','end'] as const).map(side=><label key={side}>{side==='start'?'ابتدا':'انتها'}<select value={side==='start'?startHead:endHead} onChange={event=>(side==='start'?setStartHead:setEndHead)(event.target.value as DrawLineSettings['startHead'])}>{[['none','بدون سر'],['arrow','فلش'],['circle','دایره'],['bar','مهاری'],['diamond','لوزی']].map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>)}</div>
+      </div>:<label className="admin-lines-file">{svg ? <span dangerouslySetInnerHTML={{ __html: svg }} /> : <span>+ انتخاب فایل SVG</span>}<input type="file" accept=".svg,image/svg+xml" onChange={event => void choose(event)} /></label>}<label>نام انگلیسی<input required maxLength={100} value={name} onChange={event => setName(event.target.value)} placeholder="e.g. Molecular inhibition" /></label><label>نام فارسی<input maxLength={100} value={nameFa} onChange={event => setNameFa(event.target.value)} placeholder="مثلاً فلش مهاری" /></label><button className="admin-lines-primary" disabled={busy || !name.trim() || (kind==='svg'&&!file)} type="submit">{busy ? 'در حال ذخیره…' : 'انتشار در Lines'}</button><p className="admin-lines-note">الگوهای قابل‌ویرایش با نقاط کنترلی روی بوم رسم می‌شوند. SVGهای معمولی به‌صورت یک شیء برداری باقی می‌مانند. برای ویرایش نام و تصویر، دستهٔ Lines & Arrows را در مدیریت کتابخانه باز کن.</p></form>
       <section className="admin-lines-library"><div className="admin-lines-library-head"><h2>خطوط منتشرشده</h2><span>{items.length} مورد</span></div>{items.length ? <div className="admin-lines-grid">{items.map(item => <article key={item.id} className="admin-lines-item"><div className="admin-lines-preview" dangerouslySetInnerHTML={{ __html: item.svg }} /><strong>{item.nameFa || item.name}</strong><small>{item.name}</small><div><button type="button" disabled={busy} onClick={() => void toggle(item)}>{item.active === false ? 'انتشار' : 'غیرفعال‌کردن'}</button><button type="button" disabled={busy} className="danger" onClick={() => void remove(item)}>حذف</button></div></article>)}</div> : <p className="admin-lines-empty">هنوز خط سفارشی ثبت نشده است.</p>}</section>
     </div>{notice && <p className="admin-lines-message" role="status">{notice}</p>}
   </main>;

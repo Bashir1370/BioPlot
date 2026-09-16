@@ -151,7 +151,7 @@ export function nativePresetSvg(settings: DrawLineSettings): string {
   const end = caps.includes(settings.endHead) ? settings.endHead : 'arrow';
   const mode = modes.includes(settings.pathMode ?? 'straight') ? settings.pathMode ?? 'straight' : 'straight';
   const asset = createDrawnLine({x:24,y:75},{x:276,y:75},{...settings,presetId});
-  const translate = `translate(${fmt(asset.x * -1)} ${fmt(asset.y * -1)})`;
+  const translate = `translate(${fmt(asset.x)} ${fmt(asset.y)})`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150" data-bioplot-native="line" data-bioplot-preset="${presetId}" data-bioplot-mode="${mode}" data-bioplot-start="${start}" data-bioplot-end="${end}" data-bioplot-color="${stroke}" data-bioplot-width="${width}" data-bioplot-style="${styles.includes(settings.lineStyle)?settings.lineStyle:'solid'}"><g transform="${translate}">${lineSvgBody(asset)}</g></svg>`;
 }
 export function parseNativeLinePreset(svg: string): DrawLineSettings | null {
