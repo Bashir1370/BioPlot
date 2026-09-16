@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { EditorStudio } from './EditorStudio';
+import { VectorStudio } from './VectorStudio';
 import { StudioIcon } from './StudioIcon';
 import { getAdminSessionState, subscribeAdminState } from './adminAuth';
 import { hydratePublishedCloudAssetsFromIndexedDb, syncPublishedCloudAssetsToBrowserCache } from './cloudAssetLibrary';
 import './admin-access.css';
 
 const LIBRARY_REFRESH_COOLDOWN_MS = 30_000;
-
 
 export function EditorRoute() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -63,6 +63,7 @@ export function EditorRoute() {
 
   return <>
     <EditorStudio />
+    <VectorStudio />
     {isAdmin && <a className="editor-admin-shortcut" href="/admin/library" title="مدیریت کتابخانه" aria-label="مدیریت کتابخانه">
       <StudioIcon name="settings" />
       <span>مدیریت</span>
