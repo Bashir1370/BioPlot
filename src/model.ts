@@ -32,23 +32,52 @@ export function createBlankDocument(title='Untitled scientific figure'):BioPlotD
 export function cloneDocument(document:BioPlotDocument):BioPlotDocument{return structuredClone(document);}
 export function activePage(document:BioPlotDocument):BioPlotPage{return document.pages.find(page=>page.id===document.activePageId)??document.pages[0];}
 
-function cleanObjects(objects: unknown): BioPlotObject[] {
- if(!Array.isArray(objects)) return [];
- return objects.filter((item)=>{
-   if(!item || typeof item!=='object') return false;
-   const obj=item as Record<string,unknown>;
-   return typeof obj.id==='string' && typeof obj.type==='string';
- });
+function cleanObjects(objects:unknown):BioPlotObject[]{
+  if(!Array.isArray(objects))return [];
+  return objects.filter(item=>item&&typeof item==='object'&&typeof item.id==='string'&&typeof item.type==='string').map(item=>{
+    const object=structuredClone(item) as BioPlotObject;
+    if(object.type==='text')return {...object,fontFamily:object.fontFamily||'Inter',lineHeight:object.lineHeight??1.2,verticalAlign:object.verticalAlign??'middle'};
+    return object;
+  });
 }
 
-export function migrateDocument(input:unknown):BioPlotDocument {
- if(!input||typeof input!=='object') return createBlankDocument();
- const candidate=input as Record<string,unknown>;
- if(candidate.schemaVersion===DOCUMENT_SCHEMA_VERSION){
-   const document=candidate as unknown as BioPlotDocument;
-   document.pages=document.pages?.map(page=>({...page,objects:cleanObjects(page.objects)})) ?? [];
-   if(!document.pages.length) return createBlankDocument(document.title);
-   return document;
- }
- return createBlankDocument(typeof candidate.title==='string'?candidate.title:undefined);
+/** Preserve user-authored pages across schema upgrades; never introduce a sample object into a fresh document. */
+export function migrateDocument(input:unknown):BioPlotDocument{
+  if(!input||typeof input!=='object')return createBlankDocument();
+  const source=input as Record<string,unknown>;
+  const title=typeof source.title==='string'?source.title:'Untitled scientific figure';
+  if(![3,4,DOCUMENT_SCHEMA_VERSION].includes(Number(source.schemaVersion)))return createBlankDocument(title);
+  const fallback=createBlankDocument(title);
+  if(!Array.isArray(source.pages))return fallback;
+  const pages:BioPlotPage[]=source.pages.flatMap((candidate:unknown,index:number)=>{
+    if(!candidate||typeof candidate!=='object')return [];
+    const page=candidate as Record<string,unknown>;
+    return [{
+      id:typeof page.id==='string'&&page.id?page.id:makeId('page'),
+      name:typeof page.name==='string'?page.name:`Figure ${index+1}`,
+      width:typeof page.width==='number'&&Number.isFinite(page.width)&&page.width>0?page.width:960,
+      height:typeof page.height==='number'&&Number.isFinite(page.height)&&page.height>0?page.height:620,
+      background:typeof page.background==='string'?page.background:'#ffffff',
+      objects:cleanObjects(page.objects),
+    }];
+  });
+  if(!pages.length)return fallback;
+  const raw=source.metadata&&typeof source.metadata==='object'?source.metadata as Record<string,unknown>:{};
+  const metadata:BioPlotDocument['metadata']={
+    locale:raw.locale==='fa'?'fa':'en',
+    tags:Array.isArray(raw.tags)?raw.tags.filter((tag):tag is string=>typeof tag==='string'):[],
+    lastExportDpi:typeof raw.lastExportDpi==='number'?raw.lastExportDpi:300,
+    lastExportWidthMm:typeof raw.lastExportWidthMm==='number'?raw.lastExportWidthMm:160,
+    journalPreset:typeof raw.journalPreset==='string'?raw.journalPreset:undefined,
+  };
+  return {
+    schemaVersion:DOCUMENT_SCHEMA_VERSION,
+    id:typeof source.id==='string'&&source.id?source.id:fallback.id,
+    title,
+    createdAt:typeof source.createdAt==='string'?source.createdAt:fallback.createdAt,
+    updatedAt:typeof source.updatedAt==='string'?source.updatedAt:fallback.updatedAt,
+    ownerId:typeof source.ownerId==='string'?source.ownerId:undefined,
+    activePageId:pages.some(page=>page.id===source.activePageId)?source.activePageId as string:pages[0].id,
+    pages,metadata,
+  };
 }
