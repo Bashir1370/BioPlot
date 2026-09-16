@@ -1,21 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { getAssetCatalog } from './assets';
+import type { ScientificAsset } from './assets';
+import { LINE_CATEGORY } from './AdminLinesPage';
 import './vector-studio.css';
 
-// The existing four drawing commands create native editor objects. Additional
-// scientific presets are self-contained SVG images inserted through the editor's
-// existing image-import handler, not through the persistent asset library.
 type NativeLine = 'arrow' | 'straight' | 'elbow' | 'curved';
-type Preset = {
-  id: string;
-  fa: string;
-  en: string;
-  path: string;
-  native?: NativeLine;
-  style?: 'dashed' | 'dotted';
-  head?: 'start' | 'end' | 'both' | 'bar';
-  extras?: string;
-};
+type Preset = { id: string; fa: string; en: string; path: string; native?: NativeLine; style?: 'dashed' | 'dotted'; head?: 'start' | 'end' | 'both' | 'bar'; extras?: string };
 const sections: Array<{ title: string; titleFa: string; presets: Preset[] }> = [
   { title: 'ESSENTIAL LINES', titleFa: 'خطوط پایه', presets: [
     { id: 'straight', en: 'Straight', fa: 'مستقیم', path: 'M20 100H260', native: 'straight' },
@@ -41,7 +32,6 @@ const sections: Array<{ title: string; titleFa: string; presets: Preset[] }> = [
     { id: 's-curve', en: 'S-curve', fa: 'منحنی S', path: 'M20 110C110 0 170 200 260 90', head: 'end' }
   ] }
 ];
-const all = sections.flatMap(section => section.presets);
 
 function svgFor(preset: Preset, color: string, width: number) {
   const dash = preset.style === 'dashed' ? 'stroke-dasharray="16 12"' : preset.style === 'dotted' ? 'stroke-dasharray="1 14"' : '';
@@ -62,6 +52,8 @@ export function VectorStudio() {
   const [message, setMessage] = useState('');
   const [color, setColor] = useState('#087f79');
   const [width, setWidth] = useState(4);
+  const [libraryVersion, setLibraryVersion] = useState(0);
+  const publishedLines = useMemo(() => getAssetCatalog().filter(asset => asset.category === LINE_CATEGORY), [libraryVersion]);
 
   useEffect(() => {
     const sync = () => {
@@ -69,18 +61,45 @@ export function VectorStudio() {
       const heading = panel?.querySelector('.studio-panel-heading h2')?.textContent ?? '';
       const active = panel && /Lines\s*&\s*connectors|خطوط و اتصال‌ها/i.test(heading) ? panel : null;
       setMount(previous => previous === active ? previous : active);
-      setFa(document.documentElement.lang === 'fa');
+      setFa(previous => previous === (document.documentElement.lang === 'fa') ? previous : document.documentElement.lang === 'fa');
     };
     sync();
     const observer = new MutationObserver(sync);
     observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'lang'] });
-    return () => observer.disconnect();
+    const refresh = () => setLibraryVersion(value => value + 1);
+    window.addEventListener('bioplot:asset-library-changed', refresh);
+    return () => { observer.disconnect(); window.removeEventListener('bioplot:asset-library-changed', refresh); };
   }, []);
+
+  const importAsCanvasImage = async (svg: string, filename: string) => {
+    const upload = railButton(/Uploads|آپلود/i);
+    const lines = railButton(/Lines|خطوط/i);
+    if (!upload || !lines) throw new Error('ابزار آپلود در ادیتور پیدا نشد.');
+    const before = document.querySelector('.reference-object-count')?.textContent;
+    upload.click();
+    let input: HTMLInputElement | null = null;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      await nextFrame();
+      input = document.querySelector<HTMLInputElement>('.studio-upload input[type="file"][accept*="image/png"]');
+      if (input) break;
+    }
+    if (!input) { lines.click(); throw new Error('ورودی تصویر ادیتور آماده نشد.'); }
+    // The image-import command embeds the SVG without creating duplicate library assets.
+    // SVG remains resolution-independent; it is a single canvas object, not separate nodes.
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([svg], filename, { type: 'image/svg+xml' }));
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    for (let attempt = 0; attempt < 150; attempt++) {
+      await nextFrame();
+      if (document.querySelector('.reference-object-count')?.textContent !== before) break;
+    }
+    lines.click();
+  };
 
   const insert = async (preset: Preset) => {
     if (busy) return;
-    setBusy(true);
-    setMessage('');
+    setBusy(true); setMessage('');
     try {
       if (preset.native) {
         const buttons = document.querySelectorAll<HTMLButtonElement>('.element-group-lines section:nth-child(3) > div > button');
@@ -88,54 +107,37 @@ export function VectorStudio() {
         const button = buttons[index];
         if (!button) throw new Error('ابزار اصلی ادیتور در دسترس نیست.');
         button.click();
-      } else {
-        // Use the existing image-import command: no dialog, no library entries,
-        // and the SVG remains a selectable, movable, scalable canvas object.
-        const upload = railButton(/Uploads|آپلود/i);
-        const lines = railButton(/Lines|خطوط/i);
-        if (!upload || !lines) throw new Error('ابزارهای ویرایشگر پیدا نشدند.');
-        const image = new File([svgFor(preset, color, width)], `BioPlot-${preset.id}.svg`, { type: 'image/svg+xml' });
-        upload.click();
-        let input: HTMLInputElement | null = null;
-        for (let attempt = 0; attempt < 15; attempt++) {
-          await nextFrame();
-          input = document.querySelector<HTMLInputElement>('.studio-upload input[type="file"][accept*="image/png"]');
-          if (input) break;
-        }
-        if (!input) { lines.click(); throw new Error('افزودن خط آماده نشد؛ دوباره تلاش کنید.'); }
-        const transfer = new DataTransfer();
-        transfer.items.add(image);
-        input.files = transfer.files;
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        lines.click();
-      }
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'افزودن خط ناموفق بود.');
-      railButton(/Lines|خطوط/i)?.click();
-    } finally {
-      setBusy(false);
-    }
+      } else await importAsCanvasImage(svgFor(preset, color, width), `BioPlot-${preset.id}.svg`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'افزودن خط ناموفق بود.'); railButton(/Lines|خطوط/i)?.click(); }
+    finally { setBusy(false); }
+  };
+
+  const insertPublished = async (asset: ScientificAsset) => {
+    if (busy) return;
+    setBusy(true); setMessage('');
+    try { await importAsCanvasImage(asset.svg, `BioPlot-${asset.id}.svg`); }
+    catch (error) { setMessage(error instanceof Error ? error.message : 'افزودن خط ناموفق بود.'); railButton(/Lines|خطوط/i)?.click(); }
+    finally { setBusy(false); }
   };
 
   return mount ? createPortal(
     <div className="bp-line-palette" dir={fa ? 'rtl' : 'ltr'} aria-label={fa ? 'کتابخانه خطوط' : 'Line library'}>
-      <p className="bp-line-intro">{fa ? 'روی هر خط کلیک کن تا مستقیم به بوم اضافه شود.' : 'Click a line to add it directly to the canvas.'}</p>
+      <p className="bp-line-intro">{fa ? 'خط موردنظر را انتخاب کن؛ برای ویرایش خطوط بومی، بخش Edit را باز کن.' : 'Choose a line, then use Edit for native line properties.'}</p>
       <div className="bp-line-options">
-        <label>{fa ? 'رنگ' : 'Color'} <input type="color" aria-label={fa ? 'رنگ خط‌های برداری' : 'Vector line color'} value={color} onChange={event => setColor(event.target.value)} /></label>
-        <label>{fa ? 'ضخامت' : 'Width'} <input type="number" aria-label={fa ? 'ضخامت خط‌های برداری' : 'Vector line width'} min={1} max={16} value={width} onChange={event => setWidth(Math.min(16, Math.max(1, Number(event.target.value) || 1)))} /></label>
+        <label>{fa ? 'رنگ SVG' : 'SVG color'} <input type="color" aria-label={fa ? 'رنگ نمونه‌های SVG' : 'SVG preset color'} value={color} onChange={event => setColor(event.target.value)} /></label>
+        <label>{fa ? 'ضخامت SVG' : 'SVG width'} <input type="number" aria-label={fa ? 'ضخامت نمونه‌های SVG' : 'SVG preset width'} min={1} max={16} value={width} onChange={event => setWidth(Math.min(16, Math.max(1, Number(event.target.value) || 1)))} /></label>
       </div>
       {sections.map(section => <section className="bp-line-section" key={section.title}>
         <h3>{fa ? section.titleFa : section.title}</h3>
-        <div className="bp-line-grid">{section.presets.map(preset => <button
-          type="button" key={preset.id} disabled={busy} className="bp-line-card" title={fa ? `افزودن ${preset.fa} به بوم` : `Add ${preset.en} to canvas`}
-          onClick={() => void insert(preset)}>
-          <span className="bp-line-preview" aria-hidden="true" dangerouslySetInnerHTML={{ __html: svgFor(preset, color, width) }} />
-          <strong>{fa ? preset.fa : preset.en}</strong>
+        <div className="bp-line-grid">{section.presets.map(preset => <button type="button" key={preset.id} disabled={busy} className="bp-line-card" title={fa ? `افزودن ${preset.fa} به بوم` : `Add ${preset.en} to canvas`} onClick={() => void insert(preset)}>
+          <span className="bp-line-preview" aria-hidden="true" dangerouslySetInnerHTML={{ __html: svgFor(preset, color, width) }} /><strong>{fa ? preset.fa : preset.en}</strong>
         </button>)}</div>
       </section>)}
+      <section className="bp-line-section"><h3>{fa ? 'خطوط اختصاصی مدیر' : 'ADMIN-PUBLISHED LINES'}</h3>
+        {publishedLines.length ? <div className="bp-line-grid">{publishedLines.map(asset => <button type="button" key={asset.id} disabled={busy} className="bp-line-card" onClick={() => void insertPublished(asset)} title={fa ? `افزودن ${asset.nameFa || asset.name}` : `Add ${asset.name}`}><span className="bp-line-preview" aria-hidden="true" dangerouslySetInnerHTML={{ __html: asset.svg }} /><strong>{fa ? asset.nameFa || asset.name : asset.name}</strong></button>)}</div> : <p className="bp-line-footnote">{fa ? 'مدیر هنوز خطی منتشر نکرده است.' : 'No custom lines have been published yet.'}</p>}
+      </section>
       {message && <p className="bp-line-error" role="alert">{message}</p>}
-      <p className="bp-line-footnote">{fa ? 'چهار ابزار اصلی، اشیای بومی قابل ویرایش می‌سازند؛ سایر نمونه‌ها SVG برداری هستند.' : 'Four core tools create native editable objects; other presets insert scalable SVGs.'}</p>
-      <span hidden>{all.length}</span>
+      <p className="bp-line-footnote">{fa ? 'چهار ابزار اصلی از مدل قابل ویرایش ادیتور استفاده می‌کنند. فایل‌های SVG اختصاصی به‌صورت یک شیء مقیاس‌پذیر اضافه می‌شوند.' : 'Four core tools use native editable objects. Published SVGs are inserted as single scalable objects.'}</p>
     </div>, mount
   ) : null;
 }
