@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveConnector } from './connectors';
+import { makeText } from './editorObjects';
 import { documentToSvg } from './export';
 import { createHomeTemplateDocument, homeTemplates } from './homeTemplates';
 import { activePage, BioPlotObject, createBlankDocument, makeId, migrateDocument } from './model';
@@ -42,8 +43,10 @@ describe('Figure Studio complete workflow',()=>{
   });
 
   it('finds publication quality problems and calculates a score',()=>{
-    const doc=createBlankDocument();const page=activePage(doc);const text=page.objects[0];
-    if(text.type==='text'){text.fontSize=7;text.color='#ffffff';text.x=-4;}
+    const doc=createBlankDocument();const page=activePage(doc);
+    expect(page.objects).toHaveLength(0);
+    const text=makeText();page.objects.push(text);
+    text.fontSize=7;text.color='#ffffff';text.x=-4;
     const issues=checkPublicationQuality(doc);
     expect(issues.some(issue=>issue.code==='SMALL_TEXT')).toBe(true);
     expect(issues.some(issue=>issue.code==='OUTSIDE_ARTBOARD')).toBe(true);
@@ -52,10 +55,13 @@ describe('Figure Studio complete workflow',()=>{
 
   it('migrates v4 documents to v5 typography defaults',()=>{
     const old=createBlankDocument() as unknown as Record<string,unknown>;old.schemaVersion=4;
-    const pages=old.pages as Array<{objects:Array<Record<string,unknown>>}>;const text=pages[0].objects[0];delete text.fontFamily;delete text.lineHeight;
+    const pages=old.pages as Array<{objects:Array<Record<string,unknown>>}>;
+    const text=makeText();delete text.fontFamily;delete text.lineHeight;
+    pages[0].objects.push(text as unknown as Record<string,unknown>);
     const migrated=migrateDocument(old);const object=activePage(migrated).objects[0];
     expect(migrated.schemaVersion).toBe(5);
     expect(object.type==='text'&&object.fontFamily).toBe('Inter');
+    expect(object.type==='text'&&object.lineHeight).toBe(1.2);
   });
 
   it('handles a 1000-object publication scan deterministically',()=>{
