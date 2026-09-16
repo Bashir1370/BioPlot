@@ -42,6 +42,8 @@ const mitoSvg = `<svg viewBox="0 0 90 60" xmlns="http://www.w3.org/2000/svg"><pa
 const dnaSvg = `<svg viewBox="0 0 80 70" xmlns="http://www.w3.org/2000/svg"><path d="M20 5c28 18 12 43 40 60M60 5C32 23 48 48 20 65" fill="none" stroke="#6c5aa8" stroke-width="4"/><g stroke="#9d91cb" stroke-width="2"><path d="M27 12h26"/><path d="M22 24h36"/><path d="M27 36h26"/><path d="M22 48h36"/><path d="M27 60h26"/></g></svg>`;
 const cellSvg = `<svg viewBox="0 0 80 70" xmlns="http://www.w3.org/2000/svg"><path d="M11 37C8 18 21 7 41 8s31 12 29 30c-2 17-14 25-31 24S14 54 11 37Z" fill="#e8f5ee" stroke="#5d9f80" stroke-width="3"/><circle cx="42" cy="35" r="12" fill="#b9decf" stroke="#5d9f80" stroke-width="2"/></svg>`;
 
+// Keep starter definitions only to retain the existing system category names.
+// They are deliberately excluded from getAssetCatalog so users see only their own assets.
 export const seedAssets: ScientificAsset[] = [
   { id: 'neuron', name: 'Neuron', category: 'Neuroscience', synonyms: { en: ['nerve', 'neuron', 'axon'], fa: ['نورون', 'عصب', 'آکسون'] }, svg: neuronSvg, colorSlots: [{ key: 'primary', label: 'Neuron', defaultValue: '#3d8b86' }], reviewStatus: 'reviewed', premium: false, version: 1 },
   { id: 'mitochondrion', name: 'Mitochondrion', category: 'Cell biology', synonyms: { en: ['mitochondria', 'mitochondrion'], fa: ['میتوکندری', 'میتوکندریوم'] }, svg: mitoSvg, colorSlots: [{ key: 'primary', label: 'Membrane', defaultValue: '#d48d4c' }], reviewStatus: 'reviewed', premium: false, version: 1 },
@@ -213,7 +215,8 @@ export function getAssetCatalog(includeInactive=false) {
   const localOnly=stored.filter(asset=>!isCloudManagedAsset(asset));
   const cachedCloud=stored.filter(isCloudManagedAsset);
   const cloud=runtimeCloudAssets ?? cachedCloud;
-  const combined=[...seedAssets.map((asset,index)=>normalizeAsset(asset,index+10000)),...cloud,...localOnly];
+  // Bundled sample illustrations are not part of the user-managed library.
+  const combined=[...cloud,...localOnly];
   const unique=[...new Map(combined.map(asset=>[asset.id,asset])).values()];
   return unique.filter(asset=>includeInactive||asset.active!==false).sort((a,b)=>{
     if(Boolean(a.featured)!==Boolean(b.featured))return a.featured?-1:1;
@@ -224,7 +227,9 @@ export function getAssetCatalog(includeInactive=false) {
 export function getAssetCategories(){
   const assetCategories=getAssetCatalog().map(asset=>asset.category);
   const customCategories=loadCustomCategories().filter(item=>item.active).map(item=>item.name);
-  return [...new Set([...customCategories,...assetCategories])].sort();
+  // Retain empty starter categories so the admin can populate them with new uploads.
+  const starterCategories=seedAssets.map(asset=>asset.category);
+  return [...new Set([...starterCategories,...customCategories,...assetCategories])].sort();
 }
 
 export function searchAssets(query: string, locale: 'en' | 'fa' = 'en', category?:string) {
