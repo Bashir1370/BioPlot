@@ -10,7 +10,7 @@ export type DrawLineSettings = {
 };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo));
 const fmt = (n: number) => Number((Number.isFinite(n) ? n : 0).toFixed(3));
-const caps: LineCap[] = ['none', 'arrow', 'circle', 'bar', 'diamond'];
+const caps: LineCap[] = ['none', 'arrow', 'open-arrow', 'slim-arrow', 'triangle', 'stealth', 'chevron', 'double-arrow', 'circle', 'filled-circle', 'bar', 'diamond', 'square'];
 const modes: PathMode[] = ['straight', 'polyline', 'curved'];
 const styles: LineStyle[] = ['solid', 'dashed', 'dotted'];
 const safeColor = (s: string) => /^#[0-9a-f]{6}$/i.test(s) ? s : '#087f79';
@@ -125,20 +125,77 @@ export function lineSvgBody(line: ArrowObject): string {
   const dash = line.lineStyle === 'dashed' ? ` stroke-dasharray="${dashLen} ${fmt(dashLen * .7)}"` : line.lineStyle === 'dotted' ? ` stroke-dasharray="${fmt(Math.max(1, width * .5))} ${dashLen}"` : '';
   const startHead = line.startHead ?? (line.arrowHead === 'both' ? 'arrow' : 'none');
   const endHead = line.endHead ?? (line.arrowHead === 'none' ? 'none' : 'arrow');
-  const cap = (kind: LineCap, at: LinePoint, neighbor: LinePoint) => {
+  // The stored endpoints are the EXACT visible tips. The shaft is shortened
+  // inside any closed marker, preventing its rounded stroke from protruding
+  // beyond the arrow tip. Both renderer and exported SVG use this same body.
+  const measure = (kind: LineCap, at: LinePoint, neighbor: LinePoint) => {
+    const segment = Math.hypot(neighbor.x - at.x, neighbor.y - at.y);
+    const large = kind === 'diamond' || kind === 'double-arrow';
+    return Math.max(1, Math.min(Math.max(9, width * 3.2), segment * (large ? .22 : .34)));
+  };
+  const inset = (kind: LineCap, size: number) => {
+    if (kind === 'arrow' || kind === 'slim-arrow' || kind === 'triangle' || kind === 'stealth') return size * .8;
+    if (kind === 'double-arrow') return size * 1.7;
+    if (kind === 'diamond') return size * 1.88;
+    if (kind === 'circle' || kind === 'filled-circle') return size * .9;
+    if (kind === 'square') return size * .92;
+    return 0;
+  };
+  const towards = (at: LinePoint, neighbor: LinePoint, distance: number): LinePoint => {
+    const length = Math.max(.001, Math.hypot(neighbor.x - at.x, neighbor.y - at.y));
+    return { x: at.x + (neighbor.x - at.x) / length * distance,
+             y: at.y + (neighbor.y - at.y) / length * distance };
+  };
+  const startSize = measure(startHead, first, pts[1]);
+  const endSize = measure(endHead, last, pts[pts.length - 2]);
+  const shaft = pts.map(point => ({ ...point }));
+  shaft[0] = towards(first, pts[1], inset(startHead, startSize));
+  shaft[shaft.length - 1] = towards(last, pts[pts.length - 2], inset(endHead, endSize));
+
+  const cap = (kind: LineCap, at: LinePoint, neighbor: LinePoint, size: number): string => {
     if (kind === 'none') return '';
-    const dx = neighbor.x - at.x, dy = neighbor.y - at.y, length = Math.max(.001, Math.hypot(dx, dy));
+    const dx = neighbor.x - at.x, dy = neighbor.y - at.y;
+    const length = Math.max(.001, Math.hypot(dx, dy));
     const ux = dx / length, uy = dy / length, nx = -uy, ny = ux;
-    const size = Math.max(8, width * 3.2), p = (x: number, y: number) => `${fmt(x)},${fmt(y)}`;
-    const bx = at.x + ux * size, by = at.y + uy * size;
-    if (kind === 'circle') return `<circle cx="${fmt(at.x)}" cy="${fmt(at.y)}" r="${fmt(size * .43)}" fill="white" stroke="${stroke}" stroke-width="${width}"/>`;
-    if (kind === 'bar') return `<path d="M${p(at.x+nx*size*.65,at.y+ny*size*.65)}L${p(at.x-nx*size*.65,at.y-ny*size*.65)}" stroke="${stroke}" stroke-width="${width}"/>`;
-    if (kind === 'diamond') return `<path d="M${p(at.x,at.y)}L${p(bx+nx*size*.4,by+ny*size*.4)}L${p(at.x+ux*size*2,at.y+uy*size*2)}L${p(bx-nx*size*.4,by-ny*size*.4)}Z" fill="${stroke}"/>`;
-    return `<path d="M${p(at.x,at.y)}L${p(bx+nx*size*.45,by+ny*size*.45)}L${p(bx-nx*size*.45,by-ny*size*.45)}Z" fill="${stroke}"/>`;
+    const point = (along: number, across = 0) =>
+      `${fmt(at.x + ux * along + nx * across)},${fmt(at.y + uy * along + ny * across)}`;
+    const tip = point(0);
+    const fillPath = (d: string) => `<path d="${d}" fill="${stroke}"/>`;
+    const v = (distance: number, spread: number) =>
+      `M${point(distance, spread)}L${tip}L${point(distance, -spread)}`;
+    switch (kind) {
+      case 'arrow': return fillPath(`${v(size, size * .48)}Z`);
+      case 'slim-arrow': return fillPath(`${v(size, size * .26)}Z`);
+      case 'triangle': return fillPath(`${v(size, size * .73)}Z`);
+      case 'stealth': return fillPath(`M${tip}L${point(size, size * .5)}L${point(size * .7)}L${point(size, -size * .5)}Z`);
+      case 'open-arrow': return `<path d="${v(size, size * .48)}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linejoin="miter" stroke-linecap="butt"/>`;
+      case 'chevron': return `<path d="${v(size, size * .5)}M${point(size * 1.65, size * .5)}L${point(size * .65)}L${point(size * 1.65, -size * .5)}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linejoin="miter" stroke-linecap="butt"/>`;
+      case 'double-arrow': return fillPath(`${v(size, size * .43)}Z M${point(size * .8)}L${point(size * 1.8, size * .43)}L${point(size * 1.8, -size * .43)}Z`);
+      case 'circle':
+      case 'filled-circle': {
+        const radius = size * .45;
+        const center = towards(at, neighbor, radius);
+        return `<circle cx="${fmt(center.x)}" cy="${fmt(center.y)}" r="${fmt(radius)}" fill="${kind === 'circle' ? 'white' : stroke}" stroke="${stroke}" stroke-width="${width}"/>`;
+      }
+      case 'bar': return `<path d="M${point(0,size * .62)}L${point(0,-size * .62)}" stroke="${stroke}" stroke-width="${width}" stroke-linecap="butt"/>`;
+      case 'diamond': return fillPath(`M${tip}L${point(size, size * .48)}L${point(size * 2)}L${point(size,-size * .48)}Z`);
+      case 'square': return fillPath(`M${point(0,size * .46)}L${point(size,size * .46)}L${point(size,-size * .46)}L${point(0,-size * .46)}Z`);
+      default: return '';
+    }
   };
   const mode = modes.includes(line.pathMode ?? 'straight') ? line.pathMode ?? 'straight' : 'straight';
-  const geometry = pathData(pts, mode);
-  return `<path d="${geometry}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"${dash}/>${cap(startHead,first,pts[1])}${cap(endHead,last,pts[pts.length-2])}`;
+  const geometry = pathData(shaft, mode);
+  const flat = ['bar','open-arrow','chevron'].includes(startHead) || ['bar','open-arrow','chevron'].includes(endHead);
+  return `<path d="${geometry}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="${flat ? 'butt' : 'round'}" stroke-linejoin="round"${dash}/>${cap(startHead,first,pts[1],startSize)}${cap(endHead,last,pts[pts.length-2],endSize)}`;
+}
+
+/** Preview uses the exact production marker geometry, mirrored at the two endpoints. */
+export function lineCapPreviewSvg(kind: LineCap, side: 'start' | 'end'): string {
+  const sample = createDrawnLine({x:14,y:24},{x:106,y:24},{
+    stroke:'#153e4b',strokeWidth:3,lineStyle:'solid',
+    startHead:side==='start'?kind:'none',endHead:side==='end'?kind:'none',
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 48" width="120" height="48" aria-hidden="true"><g transform="translate(${fmt(sample.x)} ${fmt(sample.y)})">${lineSvgBody(sample)}</g></svg>`;
 }
 
 /** Admin-authored native presets carry validated settings in inert SVG attributes. */

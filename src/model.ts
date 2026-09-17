@@ -4,7 +4,7 @@ export type ObjectId = string;
 export type BioPlotObjectType = 'text'|'label'|'shape'|'arrow'|'connector'|'asset'|'image'|'plot'|'container';
 export type LineStyle = 'solid'|'dashed'|'dotted';
 export type ConnectorPort = 'auto'|'top'|'right'|'bottom'|'left'|'center';
-export type LineCap = 'none'|'arrow'|'circle'|'bar'|'diamond';
+export type LineCap = 'none'|'arrow'|'open-arrow'|'slim-arrow'|'triangle'|'stealth'|'chevron'|'double-arrow'|'circle'|'filled-circle'|'bar'|'diamond'|'square';
 
 export interface Transform { x:number; y:number; width:number; height:number; rotation:number; opacity:number; }
 export interface BaseObject extends Transform { id:ObjectId; type:BioPlotObjectType; name:string; groupId?:string; parentId?:string; locked?:boolean; hidden?:boolean; }
