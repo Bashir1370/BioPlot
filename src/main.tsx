@@ -1,3 +1,7 @@
+import textFontCss from './fonts/text-fonts.txt?raw';
+const textFontStyle=document.createElement('style');
+textFontStyle.textContent=textFontCss;
+document.head.appendChild(textFontStyle);
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HomeRoute } from './HomeRoute';

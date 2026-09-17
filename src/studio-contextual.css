@@ -75,3 +75,16 @@
 .studio-shell .compact-asset-tint input:disabled{opacity:.4;cursor:not-allowed}
 .studio-shell .compact-tint-reset{width:100%;padding:7px 10px;border:1px solid #d4e5e0;border-radius:7px;background:#f2f8f6;color:#087f79;font-size:12px;margin-bottom:12px;cursor:pointer}
 .studio-shell .compact-tint-reset:disabled{opacity:.4;cursor:not-allowed}
+
+.floating-text-controls{border:0;border-block-start:1px solid #dce9eb;margin:4px 0 0;padding:8px 3px;display:grid;gap:8px;min-width:0}
+.floating-text-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.floating-text-controls select,.floating-text-controls input,.floating-text-controls button,.floating-text-controls textarea{border:1px solid #d7e6e8;border-radius:7px;background:#fff;color:#244451;min-width:0;font-size:12px}
+.floating-text-controls select{height:32px;padding:0 6px;max-width:155px;flex:1}
+.floating-text-controls input[type=number]{width:52px;height:32px;padding:4px}
+.floating-text-controls input[type=color]{width:30px;height:30px;padding:3px;cursor:pointer}
+.floating-text-controls button{width:30px;height:32px;cursor:pointer}
+.floating-text-controls button[aria-pressed=true]{background:#dff3ee;color:#087f79;border-color:#80c6bc}
+.floating-text-controls textarea{width:100%;resize:vertical;padding:7px 9px;max-height:120px;min-height:48px;box-sizing:border-box}
+.floating-text-row label{display:flex;align-items:center;gap:4px;font-size:11px;color:#5f7880}
+.floating-text-controls :focus-visible{outline:2px solid #09847d;outline-offset:2px}
+.floating-text-controls:disabled{opacity:.55}
