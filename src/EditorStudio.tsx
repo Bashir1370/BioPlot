@@ -22,6 +22,7 @@ import './line-drawing.css';
 import { lineNodeDragPoint } from './linePointer';
 import './line-polish.css';
 import { FloatingSelectionToolbar } from './FloatingSelectionToolbar';
+import { trackSelectionToolbarGesture } from './selectionToolbarGesture';
 
 type Panel = 'assets'|'elements'|'upload'|'text'|'lines'|'shapes';
 type InspectorTab = 'properties'|'layers'|'quality'|'export';
@@ -52,6 +53,7 @@ export function EditorStudio(){
   const storeRef=useRef(new BioPlotStore(createBlankDocument()));
   const [documentState,setDocumentState]=useState(storeRef.current.snapshot);
   const [selected,setSelected]=useState<Set<string>>(new Set());
+  const [selectionToolbarVisible,setSelectionToolbarVisible]=useState(true);
   const [panel,setPanel]=useState<Panel>('assets');
   const [assetEditOpen,setAssetEditOpen]=useState(false);
   const [inspectorTab,setInspectorTab]=useState<InspectorTab>('properties');
@@ -82,6 +84,21 @@ export function EditorStudio(){
   const autoFitRef=useRef(true);
   const pendingZoomAnchorRef=useRef<PendingZoomAnchor|null>(null);
   const page=activePage(documentState);
+  useEffect(()=>{
+    const viewport=canvasViewportRef.current;
+    if(!viewport)return;
+    let stopGesture: (()=>void)|undefined;
+    const pointerDown=(event:PointerEvent)=>{
+      if(event.button!==0)return;
+      stopGesture?.();
+      const object=event.target instanceof Element?event.target.closest('.studio-object'):null;
+      stopGesture=trackSelectionToolbarGesture(window,event,!!object,setSelectionToolbarVisible);
+    };
+    // Capture also sees resize/rotation/node handlers that stop propagation.
+    viewport.addEventListener('pointerdown',pointerDown,true);
+    return()=>{viewport.removeEventListener('pointerdown',pointerDown,true);stopGesture?.();};
+  },[]);
+
   useEffect(()=>{
     const activate=(event:Event)=>{setLineTool((event as CustomEvent<DrawLineSettings>).detail);setSelected(new Set());setAssetEditOpen(false);setPanel('lines');setLibraryCollapsed(false);};
     const insert=(event:Event)=>{
@@ -491,7 +508,7 @@ export function EditorStudio(){
       <details className="canvas-edit-details"><summary aria-label={fa?'ویرایش بوم':'Edit canvas'}><StudioIcon name="canvas"/><span>{fa?'ویرایش بوم':'Edit canvas'}</span></summary><CanvasSettingsForm fa={fa} page={page} onSettings={changeCanvas}/></details>
       <div className="studio-top-actions"><button onClick={toggleLocale}>{fa?'EN':'FA'}</button><button className="reference-check" title={fa?'بررسی کیفیت':'Publication check'} onClick={()=>{setInspectorCollapsed(false);setInspectorTab('quality');}} aria-label={fa?'بررسی کیفیت':'Publication check'}><StudioIcon name="check"/></button><button onClick={share}><StudioIcon name="share"/>{shareState==='Share'&&fa?'اشتراک':shareState}</button><button className="studio-export" onClick={()=>{setInspectorCollapsed(false);setInspectorTab('export');}}><StudioIcon name="download"/>{fa?'خروجی':'Export'}</button></div>
     </header>
-    {bounds&&<FloatingSelectionToolbar viewportRef={canvasViewportRef} artboardRef={artboardRef} label={fa?'ویرایش انتخاب':'Edit selection'}>
+    {bounds&&selectionToolbarVisible&&<FloatingSelectionToolbar viewportRef={canvasViewportRef} artboardRef={artboardRef} label={fa?'ویرایش انتخاب':'Edit selection'}>
       <div className="studio-command-row">
         <SelectionToolbar fa={fa} selectedObjects={selectedObjects} grouped={grouped} onCopy={copySelection} onDuplicate={duplicateSelection} onAlign={align} onDistribute={distribute} onFront={()=>zOrder('front')} onBack={()=>zOrder('back')} onGroup={groupSelection} onUngroup={ungroupSelection} onLock={()=>setLocked(!selectedObjects.every(object=>object.locked))} onDelete={deleteSelection}/>
         <button className="ribbon-inspector-toggle" aria-pressed={!inspectorCollapsed} onClick={()=>setInspectorCollapsed(value=>!value)} title={fa?'پنل‌های ویرایش':'Editor panels'}><StudioIcon name="panel"/><span>{fa?'پنل‌ها':'Panels'}</span></button>
