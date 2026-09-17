@@ -70,3 +70,8 @@
 .studio-shell.grid-visible .studio-canvas-scroll{background-image:radial-gradient(circle,#a5bfbd80 .8px,transparent .8px);background-size:20px 20px}
 .studio-shell .asset-style-panel .studio-panel-heading small,
 .studio-shell .asset-style-section-head>div>small{display:none}
+.studio-shell .compact-asset-tint{width:30px;height:30px;display:grid;place-items:center;flex:none;margin-inline:3px}
+.studio-shell .compact-asset-tint input{width:28px;height:28px;border:1px solid #bfd8d2;border-radius:7px;padding:3px;background:#fff;cursor:pointer}
+.studio-shell .compact-asset-tint input:disabled{opacity:.4;cursor:not-allowed}
+.studio-shell .compact-tint-reset{width:100%;padding:7px 10px;border:1px solid #d4e5e0;border-radius:7px;background:#f2f8f6;color:#087f79;font-size:12px;margin-bottom:12px;cursor:pointer}
+.studio-shell .compact-tint-reset:disabled{opacity:.4;cursor:not-allowed}

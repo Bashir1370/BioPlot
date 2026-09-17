@@ -62,7 +62,25 @@ export function normalizedAssetVisualStyle(object: StyledAssetObject): AssetVisu
   };
 }
 
+/** Flat color for imported arrow silhouettes, preserving source alpha and original bytes. */
+export function assetTintColor(object:AssetObject):string|undefined {
+  return object.tintColor&&/^#[0-9a-f]{6}$/i.test(object.tintColor)?object.tintColor:undefined;
+}
+export function setAssetTint(object:AssetObject,color?:string):AssetObject {
+  if(object.locked||(color!==undefined&&!/^#[0-9a-f]{6}$/i.test(color)))return object;
+  return {...object,tintColor:color};
+}
+export function assetSvgWithTint(object:AssetObject):string {
+  const color=assetTintColor(object);
+  if(!color)return object.svg;
+  // Use only the source alpha: a black PNG and a colored SVG both receive the exact chosen RGB.
+  const id=`bp-tint-${Array.from(object.id).map(char=>char.codePointAt(0)!.toString(16)).join('-')}-${color.slice(1)}`;
+  const filter=`<defs><filter id="${id}" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="140%" height="140%"><feFlood flood-color="${color}" result="tint"/><feComposite in="tint" in2="SourceGraphic" operator="in"/></filter></defs>`;
+  return object.svg.replace(/(<svg\b[^>]*>)/i,`$1${filter}<g filter="url(#${id})">`).replace(/<\/svg>\s*$/i,'</g></svg>');
+}
+
 export function assetCssFilter(object: StyledAssetObject): string {
+  if(assetTintColor(object))return 'none';
   const style = normalizedAssetVisualStyle(object);
   const filters = [
     `saturate(${style.saturation}%)`,
@@ -75,6 +93,7 @@ export function assetCssFilter(object: StyledAssetObject): string {
 }
 
 export function assetSvgFilterMarkup(object: StyledAssetObject, id: string): { definition: string; attribute: string } {
+  if(assetTintColor(object))return {definition:'',attribute:''};
   const style = normalizedAssetVisualStyle(object);
   const isDefault = style.saturation === 100 && style.brightness === 100 && style.contrast === 100 && style.hueRotate === 0 && style.glow === 0;
   if (isDefault) return { definition: '', attribute: '' };
@@ -167,6 +186,7 @@ export function applyConfiguredAssetPreset(object: StyledAssetObject, preset: As
   if (preset.kind === 'original') {
     return {
       ...object,
+      tintColor:undefined,
       svg: source,
       colors: originalColors ? structuredClone(originalColors) : object.colors,
       assetStyle: { ...DEFAULT_ASSET_VISUAL_STYLE },
@@ -175,6 +195,7 @@ export function applyConfiguredAssetPreset(object: StyledAssetObject, preset: As
   const color = preset.color && /^#[0-9a-f]{6}$/i.test(preset.color) ? preset.color : '#087f79';
   return {
     ...object,
+    tintColor:undefined,
     svg: tintAssetSvg(source, color),
     assetStyle: { ...DEFAULT_ASSET_VISUAL_STYLE },
   };
@@ -184,6 +205,7 @@ export function applyAssetPreset(object: StyledAssetObject, presetId: string): S
   const preset = ASSET_STYLE_PRESETS.find(item => item.id === presetId) ?? ASSET_STYLE_PRESETS[0];
   return {
     ...object,
+    tintColor:undefined,
     assetStyle: {
       ...normalizedAssetVisualStyle(object),
       saturation: preset.saturation,
@@ -197,6 +219,7 @@ export function applyAssetPreset(object: StyledAssetObject, presetId: string): S
 export function resetAssetVisualStyle(object: StyledAssetObject, originalSvg?: string, originalColors?: AssetObject['colors']): StyledAssetObject {
   return {
     ...object,
+    tintColor:undefined,
     svg: originalSvg ?? object.svg,
     colors: originalColors ? structuredClone(originalColors) : object.colors,
     opacity: 1,

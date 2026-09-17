@@ -1,5 +1,5 @@
 import { PointerEvent as ReactPointerEvent } from 'react';
-import { assetCssFilter, StyledAssetObject } from './assetStyling';
+import { assetCssFilter, assetSvgWithTint, StyledAssetObject } from './assetStyling';
 import { connectorPath, resolveConnector } from './connectors';
 import { BioPlotObject } from './model';
 import { lineSvgBody } from './lineGeometry';
@@ -39,7 +39,7 @@ export function EditorObjectView({ object, objects, selected, onPointerDown, onC
   if (rendered.type === 'container') return <div {...common} className={`${common.className} studio-container`} style={{...style,background:rendered.fill,border:`${rendered.strokeWidth}px solid ${rendered.stroke}`,borderRadius:rendered.radius}}/>;
   if (rendered.type === 'asset') {
     const asset=rendered as StyledAssetObject;
-    return <div {...common} className={`${common.className} studio-asset`}><div className="studio-asset-visual" style={{filter:assetCssFilter(asset)}} dangerouslySetInnerHTML={{__html:asset.svg}}/></div>;
+    return <div {...common} className={`${common.className} studio-asset`}><div className="studio-asset-visual" style={{filter:assetCssFilter(asset)}} dangerouslySetInnerHTML={{__html:assetSvgWithTint(asset)}}/></div>;
   }
   if (rendered.type === 'image') return <div {...common} className={`${common.className} studio-image`}><img src={rendered.src} alt={rendered.alt??rendered.name} style={{objectFit:rendered.fit}}/></div>;
   if (rendered.type === 'plot') return <div {...common} className={`${common.className} studio-plot`}><svg width="100%" height="100%" viewBox={`0 0 ${rendered.width} ${rendered.height}`} dangerouslySetInnerHTML={{__html:plotToSvg(rendered.spec,rendered.width,rendered.height)}}/></div>;
