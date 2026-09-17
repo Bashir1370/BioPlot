@@ -1,0 +1,37 @@
+name: Restore native line resize corners
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/restore-line-corner-resize.yml
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore four resize corners with verified code anchors
+        run: python3 scripts/restore_line_corner_resize.py
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Run tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Commit only validated editor changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/EditorStudio.tsx src/line-polish.css
+          if ! git diff --cached --quiet; then
+            git commit -m "Restore polished four-corner resize controls for native lines"
+            git push origin HEAD:main
+          fi
