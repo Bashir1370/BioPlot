@@ -1,3 +1,4 @@
+import {HomeHero} from './HomeHero';
 import { FormEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { documentToSvg } from './export';
 import { BioPlotDocument, cloneDocument, makeId } from './model';
@@ -280,10 +281,7 @@ export function DashboardApp() {
       <div className="home-content">
         {loadState === 'error' && <div className="home-error-banner"><span><Icon name="folder"/><b>{t.loadError}</b></span><button onClick={loadProjects}>{t.retry}</button></div>}
 
-        <section className="home-hero" id="home">
-          <div className="home-hero-copy"><span className="home-eyebrow"><i/><span>{t.heroEyebrow}</span></span><h1>{t.heroTitle}<span>{t.heroAccent}</span></h1><p>{t.heroText}</p><div className="home-hero-actions"><button className="home-primary-cta" onClick={() => createFromTemplate('blank')}><Icon name="plus"/>{t.createFigure}</button><a className="home-secondary-cta" href="#templates"><Icon name="templates"/>{t.browseTemplates}</a></div><div className="home-trust-row"><span><Icon name="check" size={14}/>{t.vector}</span><span><Icon name="check" size={14}/>{t.autosave}</span><span><Icon name="check" size={14}/>{t.bilingual}</span></div></div>
-          <div className="home-hero-visual" aria-hidden="true"><img src="/images/scientific-cell-hero.webp" alt="" fetchPriority="high"/></div>
-        </section>
+        <HomeHero locale={locale} title={t.heroTitle} highlight={t.heroAccent} description={t.heroText} primaryText={t.createFigure} secondaryText={t.browseTemplates} onCreate={()=>createFromTemplate('blank')} socialProof={`${t.vector} · ${t.autosave} · ${t.bilingual}`}/>
 
 
         <section className="home-section" id="projects" aria-labelledby="recent-projects-title">
@@ -302,10 +300,7 @@ export function DashboardApp() {
           })}<button className="home-new-project-card" onClick={() => createFromTemplate('blank')}><span className="new-project-icon"><Icon name="plus" size={22}/></span><b>{t.createFigure}</b><small>{homeTemplates[0].description[locale]}</small></button></div>}
         </section>
 
-        <section className="home-section home-quick-section" aria-labelledby="quick-start-title">
-          <div className="home-section-heading"><div><span className="home-section-kicker">FIGURE STUDIO</span><h2 id="quick-start-title">{t.quickStart}</h2><p>{t.quickStartSub}</p></div></div>
-          <div className="home-quick-grid">{homeTemplates.map(template => <button key={template.id} className={`home-quick-card quick-${template.id}`} onClick={() => createFromTemplate(template.id)}><span className="quick-icon"><StudioIcon weight="duotone" size={28} name={template.id === 'blank' ? 'plus' : template.id === 'workflow' ? 'flask' : template.id === 'drug-mechanism' ? 'pill' : template.id === 'cell-interaction' ? 'cell' : template.id === 'mechanism' ? 'figure' : 'templates'}/></span><span className="quick-copy"><small>{template.eyebrow[locale]}</small><b>{template.title[locale]}</b><em>{template.description[locale]}</em></span><span className="quick-arrow"><Icon name="arrow" size={16}/></span></button>)}</div>
-        </section>
+
 
         <section className="home-section home-templates-section" id="templates" aria-labelledby="templates-title">
           <div className="home-section-heading"><div><span className="home-section-kicker">START WITH STRUCTURE</span><h2 id="templates-title">{t.templatesTitle}</h2><p>{t.templatesSub}</p></div></div>

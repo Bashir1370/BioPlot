@@ -1,3 +1,4 @@
+import {AdminHomeHero} from './AdminHomeHero';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { documentToSvg } from './export';
 import { getAdminSessionState, signOutAdmin } from './adminAuth';
@@ -106,6 +107,7 @@ export function AdminShowcasePage() {
     </header>
 
     <main className="admin-showcase-main">
+      <AdminHomeHero/>
       <section className="admin-showcase-title">
         <div><span>PORTFOLIO SHOWCASE</span><h1>مدیریت تصاویر سفارشی</h1><p>این تصاویر حاصل سفارش مشتری هستند و توسط تیم BioPlot خلق شده‌اند. در سایت فقط خود تصویر نمایش داده می‌شود و هیچ عنوان، نوشته یا شماره‌ای روی آن اضافه نمی‌شود.</p></div>
         <div className="admin-showcase-count"><strong>{items.length}</strong><small>از {showcaseLimit} تصویر</small></div>
