@@ -25,7 +25,15 @@
 /* Keep the selection frame visible, light and distinct from the editable path. */
 .studio-object.bp-native-line-object.is-selected{outline:0!important;outline-offset:0!important}
 .studio-selection.bp-path-selected{border:1px solid rgba(8,127,121,.45)!important;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.65) inset!important;outline:0!important;background:rgba(8,127,121,.012)}
-.studio-selection.bp-path-selected .studio-handle{display:none!important}
+/* Four polished corner handles belong to the selection frame, not the path nodes. */
+.studio-selection.bp-path-selected .studio-handle{display:block!important;width:9px;height:9px;padding:0;border:1.5px solid #168e84;border-radius:3px;background:#fff;box-shadow:0 1px 3px #073d3a22;pointer-events:auto;touch-action:none;z-index:18;transition:border-color .12s,background-color .12s,box-shadow .12s}
+.studio-selection.bp-path-selected .studio-handle.nw{left:-5px;top:-5px}
+.studio-selection.bp-path-selected .studio-handle.ne{right:-5px;top:-5px}
+.studio-selection.bp-path-selected .studio-handle.se{right:-5px;bottom:-5px}
+.studio-selection.bp-path-selected .studio-handle.sw{left:-5px;bottom:-5px}
+.studio-selection.bp-path-selected .studio-handle::before{content:'';position:absolute;inset:-5px}
+.studio-selection.bp-path-selected .studio-handle:hover{border-color:#087f79;background:#effbf8;box-shadow:0 0 0 2px #168e8426}
+.studio-selection.bp-path-selected .studio-handle:focus-visible{outline:2px solid #087f79;outline-offset:3px}
 /* A short stem joins the rotation control to the upper frame. */
 .studio-selection.bp-path-selected .studio-rotate-line{top:-8px;height:8px;background:#77b7ae;width:1px;opacity:.9}
 .studio-selection.bp-path-selected .studio-rotate{top:-24px;width:16px;height:16px;left:50%;transform:translateX(-50%);border:1px solid #168e84;border-radius:50%;background:#fff;color:#087f79;display:grid;place-items:center;box-shadow:0 1px 4px #0b424422;cursor:grab}
