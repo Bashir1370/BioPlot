@@ -311,8 +311,8 @@ export function EditorStudio(){
   function duplicateSelection(){if(!selectedObjects.length)return;const copies=duplicateObjects(selectedObjects);storeRef.current.dispatch(new AddObjectsCommand('Duplicate objects',copies));setSelected(new Set(copies.map(object=>object.id)));setAssetEditOpen(copies.length===1&&copies[0].type==='asset');}
   function deleteSelection(){const doomed=cloneObjects(selectedObjects.filter(object=>!object.locked));if(!doomed.length)return;storeRef.current.dispatch(new DeleteObjectsCommand('Delete objects',doomed));setSelected(new Set());setAssetEditOpen(false);}
   function nudge(dx:number,dy:number){commitSelected('Nudge objects',object=>object.locked?object:{...object,x:object.x+dx,y:object.y+dy});}
-  function groupSelection(){if(selectedObjects.length<2)return;const before=cloneObjects(selectedObjects);const groupId=makeId('group');storeRef.current.dispatch(new ObjectStateCommand('Group objects',before,before.map(object=>({...object,groupId}))));setAssetEditOpen(false);}
-  function ungroupSelection(){if(!selectedObjects.some(object=>object.groupId))return;const before=cloneObjects(selectedObjects);storeRef.current.dispatch(new ObjectStateCommand('Ungroup objects',before,before.map(object=>({...object,groupId:undefined}))));}
+  function groupSelection(){if(selectedObjects.length<2||grouped||selectedObjects.some(object=>object.locked))return;const before=cloneObjects(selectedObjects);const groupId=makeId('group');storeRef.current.dispatch(new ObjectStateCommand('Group objects',before,before.map(object=>({...object,groupId}))));setAssetEditOpen(false);}
+  function ungroupSelection(){if(!selectedObjects.some(object=>object.groupId)||selectedObjects.some(object=>object.locked))return;const before=cloneObjects(selectedObjects);storeRef.current.dispatch(new ObjectStateCommand('Ungroup objects',before,before.map(object=>({...object,groupId:undefined}))));}
   function setLocked(locked:boolean){commitSelected(locked?'Lock objects':'Unlock objects',object=>({...object,locked}));}
   function setHidden(ids:Set<string>,hidden:boolean){const before=cloneObjects(objects.filter(object=>ids.has(object.id)));if(!before.length)return;storeRef.current.dispatch(new ObjectStateCommand(hidden?'Hide objects':'Show objects',before,before.map(object=>({...object,hidden}))));if(hidden){setSelected(current=>new Set([...current].filter(id=>!ids.has(id))));setAssetEditOpen(false);}}
   function align(mode:AlignMode){const before=cloneObjects(selectedObjects.filter(object=>!object.locked));if(before.length>1)storeRef.current.dispatch(new ObjectStateCommand(`Align ${mode}`,before,alignObjects(before,mode)));}
@@ -321,7 +321,7 @@ export function EditorStudio(){
   function zOrder(action:ZOrderAction){if(selected.size)zOrderFor(selected,action);}
   function reorderLayer(draggedId:string,targetId:string){const before=cloneObjects(objects),dragged=before.find(object=>object.id===draggedId),targetIndex=before.findIndex(object=>object.id===targetId);if(!dragged||targetIndex<0)return;const after=before.filter(object=>object.id!==draggedId);after.splice(Math.min(targetIndex,after.length),0,dragged);storeRef.current.dispatch(new PageObjectsCommand('Reorder layer',before,after));}
   function changeBounds(field:'x'|'y'|'width'|'height',value:number){if(!bounds||!Number.isFinite(value))return;const before=cloneObjects(selectedObjects.filter(object=>!object.locked));if(!before.length)return;if(field==='x'||field==='y'){const delta=value-bounds[field];storeRef.current.dispatch(new ObjectStateCommand(`Change ${field}`,before,before.map(object=>field==='x'?{...object,x:object.x+delta}:{...object,y:object.y+delta})));}else{const next={x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height,[field]:Math.max(8,value)};storeRef.current.dispatch(new ObjectStateCommand(`Change ${field}`,before,resizeObjects(before,next)));}}
-  function beginMove(event:ReactPointerEvent<HTMLDivElement>,object:BioPlotObject){if(!event.shiftKey){if(object.type==='arrow'){setInspectorTab('properties');}setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);}if(object.locked){setSelected(idsFor(object,event.shiftKey));return;}event.preventDefault();event.stopPropagation();const ids=idsFor(object,event.shiftKey);setSelected(ids);if(event.shiftKey)return;const before=cloneObjects(objects.filter(item=>ids.has(item.id)&&!item.locked));const startBounds=selectionBounds(before);if(!before.length||!startBounds)return;const targets=buildSnapTargets(storeRef.current.snapshot,ids),sx=event.clientX,sy=event.clientY;const move=(pointer:PointerEvent)=>{const snapped=snapDelta(startBounds,(pointer.clientX-sx)/zoom,(pointer.clientY-sy)/zoom,targets);storeRef.current.preview(before.map(item=>({...item,x:item.x+snapped.dx,y:item.y+snapped.dy})));setGuides({x:snapped.guideX,y:snapped.guideY});};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const after=cloneObjects(activePage(storeRef.current.snapshot).objects.filter(item=>ids.has(item.id)&&!item.locked));storeRef.current.commitObjectState(before,after,'Move objects');setGuides({});if(object.type==='arrow')setInspectorCollapsed(false);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
+  function beginMove(event:ReactPointerEvent<HTMLDivElement>,object:BioPlotObject){if(!event.shiftKey){if(object.type==='arrow'){setInspectorTab('properties');}setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);}if(object.locked){setSelected(idsFor(object,event.shiftKey));return;}event.preventDefault();event.stopPropagation();const ids=!event.shiftKey&&selected.has(object.id)&&selected.size>1?new Set(selected):idsFor(object,event.shiftKey);setSelected(ids);if(event.shiftKey)return;const before=cloneObjects(objects.filter(item=>ids.has(item.id)&&!item.locked));const startBounds=selectionBounds(before);if(!before.length||!startBounds)return;const targets=buildSnapTargets(storeRef.current.snapshot,ids),sx=event.clientX,sy=event.clientY;const move=(pointer:PointerEvent)=>{const snapped=snapDelta(startBounds,(pointer.clientX-sx)/zoom,(pointer.clientY-sy)/zoom,targets);storeRef.current.preview(before.map(item=>({...item,x:item.x+snapped.dx,y:item.y+snapped.dy})));setGuides({x:snapped.guideX,y:snapped.guideY});};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const after=cloneObjects(activePage(storeRef.current.snapshot).objects.filter(item=>ids.has(item.id)&&!item.locked));storeRef.current.commitObjectState(before,after,'Move objects');setGuides({});if(object.type==='arrow')setInspectorCollapsed(false);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
 
   function beginResize(event:ReactPointerEvent,handle:string){
     event.preventDefault();
@@ -478,7 +478,43 @@ export function EditorStudio(){
     const after=removeLineNode(selectedLine,index);
     if(after!==selectedLine)storeRef.current.dispatch(new ObjectStateCommand('Remove line node',[structuredClone(selectedLine)],[after]));
   }
-  function beginMarquee(event:ReactPointerEvent<HTMLDivElement>){if(lineTool){beginLineDraw(event);return;}if(event.target!==event.currentTarget||!artboardRef.current)return;const art=artboardRef.current.getBoundingClientRect(),sx=(event.clientX-art.left)/zoom,sy=(event.clientY-art.top)/zoom,original=event.shiftKey?new Set(selected):new Set<string>();if(!event.shiftKey){setSelected(new Set());setAssetEditOpen(false);}const move=(pointer:PointerEvent)=>{const rect=rectFromPoints(sx,sy,(pointer.clientX-art.left)/zoom,(pointer.clientY-art.top)/zoom);setSelected(new Set([...original,...objectsInRect(objects,rect).filter(object=>!object.locked).map(object=>object.id)]));};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
+  function beginMarquee(event:ReactPointerEvent<HTMLDivElement>){
+    if(lineTool){beginLineDraw(event);return;}
+    if(event.button!==0||event.target!==event.currentTarget||!artboardRef.current)return;
+    const art=artboardRef.current.getBoundingClientRect();
+    const sx=(event.clientX-art.left)/zoom,sy=(event.clientY-art.top)/zoom;
+    const original=event.shiftKey?new Set(selected):new Set<string>();
+    let marqueeSelection=original;
+    let dragged=false;
+    if(!event.shiftKey){setSelected(new Set());setAssetEditOpen(false);}
+    const update=(pointer:PointerEvent)=>{
+      if(pointer.pointerId!==event.pointerId)return;
+      if(Math.hypot(pointer.clientX-event.clientX,pointer.clientY-event.clientY)>3)dragged=true;
+      if(!dragged)return;
+      const rect=rectFromPoints(sx,sy,(pointer.clientX-art.left)/zoom,(pointer.clientY-art.top)/zoom);
+      marqueeSelection=new Set([...original,...objectsInRect(objects,rect).filter(object=>!object.locked).map(object=>object.id)]);
+      setSelected(marqueeSelection);
+    };
+    const cleanup=()=>{
+      window.removeEventListener('pointermove',update);
+      window.removeEventListener('pointerup',up);
+      window.removeEventListener('pointercancel',cancel);
+      window.removeEventListener('blur',cleanup);
+    };
+    const up=(pointer:PointerEvent)=>{
+      if(pointer.pointerId!==event.pointerId)return;
+      update(pointer);
+      cleanup();
+      // Completing a multi-selection is distinct from moving selected artwork.
+      if(dragged&&marqueeSelection.size>1)setSelectionToolbarVisible(true);
+    };
+    const cancel=(pointer:PointerEvent)=>{if(pointer.pointerId===event.pointerId)cleanup();};
+    window.addEventListener('pointermove',update);
+    window.addEventListener('pointerup',up);
+    window.addEventListener('pointercancel',cancel);
+    window.addEventListener('blur',cleanup);
+  }
+
   function setTitle(title:string){const next=cloneDocument(documentState);next.title=title;next.updatedAt=new Date().toISOString();storeRef.current.replace(next);}
   function toggleLocale(){const next=cloneDocument(documentState);next.metadata.locale=fa?'en':'fa';storeRef.current.replace(next);}
   async function share(){await navigator.clipboard?.writeText(window.location.href);setShareState(fa?'کپی شد':'Copied');setTimeout(()=>setShareState(fa?'اشتراک':'Share'),1500);}
@@ -569,7 +605,10 @@ export function SelectionToolbar({fa,selectedObjects,grouped,onCopy,onDuplicate,
       {action('vertical',fa?'توزیع عمودی':'Distribute vertically',()=>onDistribute('vertical'),editableCount<3)}
     </div>
     <div className="toolbar-group">
-      {action(grouped?'ungroup':'group',grouped?(fa?'بازکردن گروه':'Ungroup'):(fa?'گروه‌بندی':'Group'),grouped?onUngroup:onGroup,selectedObjects.length<2)}
+      {selectedObjects.length>1&&<>
+        {action('group',fa?'گروه‌بندی':'Group',onGroup,grouped||editableCount!==selectedObjects.length)}
+        {action('ungroup',fa?'بازکردن گروه':'Ungroup',onUngroup,!selectedObjects.some(object=>object.groupId)||editableCount!==selectedObjects.length)}
+      </>}
       {action('trash',fa?'حذف':'Delete',onDelete,editableCount===0,true)}
     </div>
   </div>;
