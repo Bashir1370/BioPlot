@@ -17,8 +17,8 @@ function properties(selectedObjects:BioPlotObject[]){
   const tree=SelectionProperties({fa:false,bounds:selectionBounds(selectedObjects),selectedObjects,...callbacks});
   return {nodes:elements(tree),...callbacks};
 }
-function commands(selectedObjects:BioPlotObject[]){
-  return elements(SelectionToolbar({fa:false,selectedObjects,grouped:false,onCopy:vi.fn(),onDuplicate:vi.fn(),onAlign:vi.fn(),onDistribute:vi.fn(),onFront:vi.fn(),onBack:vi.fn(),onGroup:vi.fn(),onUngroup:vi.fn(),onLock:vi.fn(),onDelete:vi.fn()}));
+function commands(selectedObjects:BioPlotObject[],grouped=false,onGroup=vi.fn(),onUngroup=vi.fn()){
+  return elements(SelectionToolbar({fa:false,selectedObjects,grouped,onCopy:vi.fn(),onDuplicate:vi.fn(),onAlign:vi.fn(),onDistribute:vi.fn(),onFront:vi.fn(),onBack:vi.fn(),onGroup,onUngroup,onLock:vi.fn(),onDelete:vi.fn()}));
 }
 afterEach(()=>vi.unstubAllGlobals());
 describe('drawing ribbon integration',()=>{
@@ -73,4 +73,23 @@ describe('drawing ribbon integration',()=>{
     expect(find([locked],'Delete')).toBe(true);
     expect(find([shape,locked],'Delete')).toBe(false);
   });
+  it('shows separate Group and Ungroup actions for multiple objects with correct callbacks',()=>{
+    expect(commands([shape]).some(n=>n.props['aria-label']==='Group')).toBe(false);
+    const onGroup=vi.fn(),onUngroup=vi.fn();
+    const pair=[shape,{...shape,id:'second'}];
+    const group=commands(pair,false,onGroup,onUngroup).find(n=>n.props['aria-label']==='Group')!;
+    const ungroup=commands(pair).find(n=>n.props['aria-label']==='Ungroup')!;
+    expect(group.props.disabled).toBe(false);
+    expect(ungroup.props.disabled).toBe(true);
+    group.props.onClick();expect(onGroup).toHaveBeenCalledOnce();
+    const groupedPair=pair.map(object=>({...object,groupId:'group-1'}));
+    const nodes=commands(groupedPair,true,onGroup,onUngroup);
+    expect(nodes.find(n=>n.props['aria-label']==='Group')!.props.disabled).toBe(true);
+    const undoGroup=nodes.find(n=>n.props['aria-label']==='Ungroup')!;
+    expect(undoGroup.props.disabled).toBe(false);
+    undoGroup.props.onClick();expect(onUngroup).toHaveBeenCalledOnce();
+    const locked=commands([groupedPair[0],{...groupedPair[1],locked:true}],true);
+    expect(locked.filter(n=>['Group','Ungroup'].includes(n.props['aria-label'])).every(n=>n.props.disabled)).toBe(true);
+  });
+
 });
