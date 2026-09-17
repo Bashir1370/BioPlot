@@ -28,6 +28,7 @@ import '@fontsource-variable/vazirmatn';
 import './precision-studio.css';
 import './persian-typography.css';
 import './admin-library-redesign.css';
+import './studio-contextual.css';
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
 

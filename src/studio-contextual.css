@@ -1,0 +1,72 @@
+/* Contextual editor chrome. Screen-space tools leave the document/export untouched. */
+.studio-shell:is(.has-selection,.no-selection){grid-template-rows:52px minmax(0,1fr) 40px!important;background:#eaf0f2}
+.studio-shell .studio-topbar{height:52px;padding:0 16px;gap:12px;background:#fff}
+.studio-shell .studio-brand{gap:8px;padding-inline-end:16px}
+.studio-shell .studio-brand>span{width:29px;height:29px;border-radius:8px;font-size:17px;box-shadow:none}
+.studio-shell .studio-brand strong{font-size:16px;letter-spacing:-.5px}
+.studio-shell .studio-document input{font-size:13px;font-weight:550}
+.studio-shell .studio-document small{font-size:10px;color:#658279}
+.studio-shell .studio-top-actions{gap:6px}
+.studio-shell .studio-top-actions button,.studio-shell .studio-topbar>.canvas-edit-details>summary{height:32px;font-size:12px;border-radius:8px;padding:0 10px}
+.studio-shell .studio-top-actions .studio-export{background:#087f79;border-color:#087f79;box-shadow:0 2px 5px #087f791a}
+.studio-shell .studio-workspace{grid-row:2!important;padding:10px 10px 10px 6px}
+.studio-shell .reference-bottom-bar{grid-row:3!important;height:40px;font-size:12px;color:#607a85}
+.studio-shell .reference-bottom-bar button,.studio-shell .reference-bottom-bar summary{font-size:12px}
+.studio-shell .reference-tool-rail{background:#15373e;border-radius:12px;padding:5px 3px;gap:4px}
+.studio-shell .reference-tool-rail>button{min-height:58px;border-radius:9px;color:#b9cfd1;gap:5px}
+.studio-shell .reference-tool-rail>button>.studio-ui-icon{width:21px;height:21px}
+.studio-shell .reference-tool-rail>button>span{font-size:10px}
+.studio-shell .reference-tool-rail>button.active{background:#087f79;box-shadow:inset 0 0 0 1px #ffffff16}
+.studio-shell :is(.studio-library,.studio-inspector,.reference-pages){border-color:#dce7e7;border-radius:12px;background:#fbfdfd;box-shadow:0 3px 12px #183c4205}
+.studio-shell .studio-panel-heading h2{font-size:14px;letter-spacing:-.2px}
+.studio-shell .studio-search{background:#f0f6f6;border-color:#dae6e6;border-radius:8px}
+.studio-shell .asset-mode-tabs{background:#eaf2f2;border-radius:8px}
+.studio-shell .asset-mode-tabs button.active{color:#087f79;box-shadow:0 1px 4px #15373e0c}
+.studio-shell .asset-category-select{background:#fff;border-color:#dce7e7}
+.studio-shell .studio-assets .asset-main{background:#f1f7f6;border-color:#e0ebea;border-radius:10px}
+.studio-shell .catalog-categories>button{background:#fff;border-color:#e0ebea}
+.studio-shell .studio-canvas-scroll{background:#eaf0f2;padding:38px 30px}
+.studio-shell .studio-artboard{box-shadow:0 4px 24px #17373d0d,0 0 0 1px #d6e1e3}
+.studio-shell .inspector-tabs{height:58px;background:#f1f7f6;border-color:#e0eae8}
+.studio-shell .inspector-tabs>button{height:44px;font-size:10px!important;gap:4px}
+.studio-shell .inspector-tabs>button.active{background:#e0f2ee;border-color:#b9dcd4;color:#087f79}
+.studio-shell .property-selection{padding:10px 12px;background:#eef6f4;border:1px solid #deebe7;border-radius:8px}
+.studio-shell .property-selection h2{font-size:13px;margin:0}
+.studio-shell .studio-properties{padding:14px}
+
+.studio-shell .floating-selection-toolbar{position:fixed;z-index:80;visibility:hidden;display:flex;flex-direction:column;align-items:stretch;width:max-content;box-sizing:border-box;padding:6px;border:1px solid #c7ded9;border-radius:13px;background:#fff;box-shadow:0 8px 28px #143c4026,0 1px 3px #143c4010;color:#27474d}
+.studio-shell .floating-selection-toolbar .studio-command-row{height:auto;min-height:36px;justify-content:space-between;flex-wrap:wrap;gap:3px}
+.studio-shell .floating-selection-toolbar .studio-selection-toolbar{flex-wrap:wrap;gap:2px;flex:1}
+.studio-shell .floating-selection-toolbar .toolbar-group{padding:0 4px;gap:1px}
+.studio-shell .floating-selection-toolbar .toolbar-group[hidden]{display:none!important}
+.studio-shell .floating-selection-toolbar .toolbar-group:not([hidden]){display:flex!important}
+.studio-shell .floating-selection-toolbar .align-group>span{display:flex!important}
+.studio-shell .floating-selection-toolbar .ribbon-inspector-toggle{margin-inline-start:auto!important}
+.studio-shell .floating-selection-toolbar .compact-property-tools{height:auto!important;min-height:36px!important;flex-wrap:wrap;gap:3px;padding:5px 3px 0!important;margin-top:4px!important;border:0!important;border-top:1px solid #e1ece9!important}
+.studio-shell .floating-selection-toolbar .compact-selection-indicator{display:none}
+.studio-shell .floating-selection-toolbar .precision-size-fields{gap:5px;padding:0 5px 0 0}
+.studio-shell .floating-selection-toolbar .precision-size-fields>span{display:none}
+.studio-shell .floating-selection-toolbar .precision-size-fields label{width:69px}
+.studio-shell .floating-selection-toolbar .precision-size-fields input{width:47px}
+.studio-shell .floating-selection-toolbar .studio-ui-icon{width:18px;height:18px}
+.studio-shell .floating-selection-toolbar .compact-property-tool{position:static}
+.studio-shell .floating-selection-toolbar .compact-property-popover{position:absolute;top:calc(100% + 8px);bottom:auto;left:auto;right:0;inset-inline-start:auto;max-width:100%;width:280px;box-sizing:border-box;border-color:#c7ded9;border-radius:12px;box-shadow:0 8px 28px #143c4020}
+.studio-shell .floating-selection-toolbar[data-popover=above] .compact-property-popover{top:auto;bottom:calc(100% + 8px)}
+.studio-shell .floating-selection-toolbar .compact-property-popover:before{display:none}
+.studio-shell .floating-selection-toolbar button.danger:hover:not(:disabled){background:#fff0ef!important;color:#c04c49!important}
+@media(max-width:700px){
+ .studio-shell:is(.has-selection,.no-selection){grid-template-rows:52px minmax(0,1fr) 40px!important}
+ .studio-shell .studio-topbar{height:52px;display:flex;flex-wrap:nowrap;padding:0 8px;gap:6px}
+ .studio-shell .reference-document-card{gap:6px;flex:1;min-width:0}
+ .studio-shell .studio-brand{padding-inline-end:6px}
+ .studio-shell .studio-brand strong,.studio-shell .studio-document small,.studio-shell .studio-topbar>.canvas-edit-details,.studio-shell .reference-check{display:none}
+ .studio-shell .studio-document input{width:100%;font-size:12px}
+ .studio-shell .studio-top-actions button{padding:0 7px;font-size:11px}
+ .studio-shell .studio-top-actions{flex:none}
+ .studio-shell .studio-history{display:none}
+ .studio-shell .reference-canvas-actions{display:none}
+}
+.studio-shell .floating-selection-toolbar .precision-size-fields{display:flex}
+.studio-shell.grid-visible .studio-canvas-scroll{background-image:radial-gradient(circle,#a5bfbd80 .8px,transparent .8px);background-size:20px 20px}
+.studio-shell .asset-style-panel .studio-panel-heading small,
+.studio-shell .asset-style-section-head>div>small{display:none}
