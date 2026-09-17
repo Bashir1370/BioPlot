@@ -1,4 +1,4 @@
-name: Polish line editing UI
+name: Stabilize line node dragging
 on:
   push:
     branches: [main]
@@ -16,22 +16,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply exact-anchor changes without overwriting other editor code
-        run: python3 scripts/polish_line_editor.py
-      - name: Install project dependencies
+      - name: Apply exact-anchor stability fix without overwriting other editor code
+        run: python3 scripts/stabilize_line_drag.py
+      - name: Install dependencies
         run: npm ci
       - name: Typecheck
         run: npm run typecheck
-      - name: Run full unit tests
+      - name: Full unit test suite
         run: npm test
       - name: Production build
         run: npm run build
-      - name: Commit only validated polish changes
+      - name: Commit only validated changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/EditorStudio.tsx src/EditorInspector.tsx src/EditorObjectView.tsx src/NativePathControls.tsx src/line-polish.css src/line-polish.test.tsx
+          git add src/EditorStudio.tsx src/line-polish.css src/linePointer.ts src/linePointer.test.ts
           if ! git diff --cached --quiet; then
-            git commit -m "Polish editable lines: slim controls, orthogonal endpoint drag and rotation"
+            git commit -m "Stabilize line nodes when dragging and moving paths"
             git push origin HEAD:main
           fi
