@@ -5,6 +5,7 @@ import { AssetPreviewImage } from './AssetPreviewImage';
 import { documentToSvg } from './export';
 import type { BioPlotDocument, BioPlotPage } from './model';
 import { StudioIcon } from './StudioIcon';
+import { ShineBorder } from './components/ui/shine-border';
 import type { CanvasSettings } from './studioPages';
 
 export function AssetCatalogView({fa,assets,grouped,favorites,onAdd,onFavorite,onCategory}:{fa:boolean;assets:ScientificAsset[];grouped:boolean;favorites:Set<string>;onAdd:(asset:ScientificAsset)=>void;onFavorite:(id:string)=>void;onCategory:(category:string)=>void}){
@@ -30,7 +31,7 @@ export function AssetCatalogView({fa,assets,grouped,favorites,onAdd,onFavorite,o
 
 export function StudioPagesPanel({fa,documentState,onSelect,onAdd,onClose}:{fa:boolean;documentState:BioPlotDocument;onSelect:(id:string)=>void;onAdd:()=>void;onClose:()=>void}){
   const previews=useMemo(()=>documentState.pages.map(page=>({page,src:`data:image/svg+xml;charset=utf-8,${encodeURIComponent(documentToSvg({...documentState,activePageId:page.id}))}`})),[documentState]);
-  return <aside className="reference-pages" dir={fa?'rtl':'ltr'}><div className="reference-panel-title"><h2>{fa?'صفحه‌ها':'Slides'}</h2><button onClick={onClose} aria-label={fa?'بستن صفحه‌ها':'Close slides'}><StudioIcon name="close"/></button></div><div className="page-actions"><button onClick={onAdd}><StudioIcon name="plus"/><span>{fa?'صفحه جدید':'New slide'}</span></button><span>{documentState.pages.length}</span></div><div className="page-list">{previews.map(({page,src},index)=><button key={page.id} className={`page-card ${page.id===documentState.activePageId?'active':''}`} aria-current={page.id===documentState.activePageId?'page':undefined} onClick={()=>onSelect(page.id)}><span>{index+1}<b>{page.name}</b></span><img src={src} alt={fa?`پیش‌نمایش ${page.name}`:`Preview of ${page.name}`} style={{aspectRatio:`${page.width}/${page.height}`}}/></button>)}</div></aside>;
+  return <ShineBorder as="aside" className="reference-pages" dir={fa?'rtl':'ltr'} borderRadius={12} borderWidth={1.25} duration={20} color={['#d9e9e6','#74beb4','#d9e9e6']}><div className="reference-panel-title"><h2>{fa?'صفحه‌ها':'Slides'}</h2><button onClick={onClose} aria-label={fa?'بستن صفحه‌ها':'Close slides'}><StudioIcon name="close"/></button></div><div className="page-actions"><button onClick={onAdd}><StudioIcon name="plus"/><span>{fa?'صفحه جدید':'New slide'}</span></button><span>{documentState.pages.length}</span></div><div className="page-list">{previews.map(({page,src},index)=><button key={page.id} className={`page-card ${page.id===documentState.activePageId?'active':''}`} aria-current={page.id===documentState.activePageId?'page':undefined} onClick={()=>onSelect(page.id)}><span>{index+1}<b>{page.name}</b></span><img src={src} alt={fa?`پیش‌نمایش ${page.name}`:`Preview of ${page.name}`} style={{aspectRatio:`${page.width}/${page.height}`}}/></button>)}</div></ShineBorder>;
 }
 
 export function CanvasSettingsForm({fa,page,onSettings}:{fa:boolean;page:BioPlotPage;onSettings:(settings:CanvasSettings)=>void}){

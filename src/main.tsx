@@ -29,7 +29,7 @@ import './precision-studio.css';
 import './persian-typography.css';
 import './admin-library-redesign.css';
 import './studio-contextual.css';
-import './editor-panel-beam.css';
+import './components/ui/shine-border.css';
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
 
