@@ -1,5 +1,6 @@
-/* Lightweight Border Beam treatment for the two editor side cards only.
-   No extra motion dependency, layout wrapper, or scrolling overlay is needed. */
+/* Visible, CSS-only travelling border beam on the editor's two side panels.
+   Apply the gradient to each panel's own border rather than an overlay: its
+   contents, native scrolling, close buttons and resize splitters remain usable. */
 @property --bp-panel-beam-angle {
   syntax: '<angle>';
   inherits: false;
@@ -7,37 +8,41 @@
 }
 
 @keyframes bp-panel-beam-orbit {
+  from { --bp-panel-beam-angle: 0deg; }
   to { --bp-panel-beam-angle: 360deg; }
 }
 
 .studio-shell .studio-workspace > .studio-library:not(.collapsed),
 .studio-shell .studio-workspace > .reference-pages {
   --bp-panel-beam-angle: 0deg;
-  /* The white padding-box preserves the panel contents; only the thin border glows. */
-  border: 1.5px solid transparent;
+  /* A 1.5px pale border was effectively invisible on white at 130% zoom.
+     A narrow, high-contrast moving highlight now crosses a 2.5px ring. */
+  border: 2.5px solid transparent;
   border-radius: 12px;
   background:
-    linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(#ffffff, #ffffff) padding-box,
     conic-gradient(
       from var(--bp-panel-beam-angle) at 50% 50%,
-      #dce8e9 0deg,
-      #dce8e9 294deg,
-      #a1dcd5 311deg,
-      #32b9ab 327deg,
-      #09a697 338deg,
-      #b4e5df 350deg,
-      #dce8e9 360deg
+      #c8dedc 0deg,
+      #c8dedc 268deg,
+      #178e83 292deg,
+      #00bda9 311deg,
+      #34f2d7 326deg,
+      #ffffff 333deg,
+      #00ddbd 339deg,
+      #168e82 351deg,
+      #c8dedc 360deg
     ) border-box;
-  box-shadow: 0 3px 8px #263b5010, 0 0 12px #0aa6980b;
-  animation: bp-panel-beam-orbit 10s linear infinite;
+  box-shadow: 0 3px 9px #263b5014, 0 0 0 1px #0b96851a, 0 0 17px #00a99127;
+  animation: bp-panel-beam-orbit 6s linear infinite;
 }
 
-/* Keep the effect purely decorative; the panels retain their native scroll/resize UI. */
+/* Motion preference keeps a clearly visible, non-animated accent border. */
 @media (prefers-reduced-motion: reduce) {
   .studio-shell .studio-workspace > .studio-library:not(.collapsed),
   .studio-shell .studio-workspace > .reference-pages {
     animation: none;
-    border-color: #c8e2df;
+    border-color: #18a995;
     background: #fff;
   }
 }
