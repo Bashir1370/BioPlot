@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+"""One-shot, anchor-checked enhancement of the existing native line editor.
+No full-file replacement or schema migrations; fail before writing if source drifts.
+"""
+from pathlib import Path
+import re
+
+ROOT = Path('src')
+updates = {}
+
+def load(name):
+    return (ROOT / name).read_text(encoding='utf-8')
+
+def once(source, old, new, file):
+    occurrences = source.count(old)
+    if occurrences != 1:
+        raise RuntimeError(f'{file}: expected one occurrence, found {occurrences}: {old[:100]!r}')
+    return source.replace(old, new, 1)
+
+editor = load('EditorStudio.tsx')
+editor = once(editor, "import './line-drawing.css';", "import './line-drawing.css';\nimport './line-polish.css';", 'EditorStudio.tsx')
+editor = once(editor, 'className="studio-selection"', 'className={`studio-selection ${selectedLine?\'bp-path-selected\':\'\'}`}', 'EditorStudio.tsx')
+editor = once(editor, 'className="studio-rotate" onPointerDown={beginRotate}', 'className="studio-rotate" type="button" title={fa?\'چرخاندن انتخاب (Shift: گام ۱۵ درجه)\':\'Rotate selection (Shift: 15° steps)\'} aria-label={fa?\'چرخاندن انتخاب\':\'Rotate selection\'} onPointerDown={beginRotate}', 'EditorStudio.tsx')
+editor = once(editor, "{['nw','n','ne','e','se','s','sw','w'].map(handle=>", "{!selectedLine&&['nw','n','ne','e','se','s','sw','w'].map(handle=>", 'EditorStudio.tsx')
+editor = once(editor, 'className="bp-line-node" aria-label=', "className={`bp-line-node ${index===0||index===selectedLineNodes.length-1?'is-endpoint':''}`} aria-label=", 'EditorStudio.tsx')
+editor = once(editor, 'rotateObjects(before,angle-start,{x:bounds.cx,y:bounds.cy})', 'rotateObjects(before,pointer.shiftKey?Math.round((angle-start)/15)*15:angle-start,{x:bounds.cx,y:bounds.cy})', 'EditorStudio.tsx')
+needle = "      storeRef.current.preview([updateLineNode(line,index,point)]);changed=true;"
+replacement = """      // Shift constrains an endpoint to an exact horizontal or vertical line
+      // through the opposite endpoint, independently of canvas zoom.
+      if(pointer.shiftKey&&(index===0||index===selectedLineNodes.length-1)){
+        const anchor=selectedLineNodes[index===0?selectedLineNodes.length-1:0];
+        if(Math.abs(point.x-anchor.x)>=Math.abs(point.y-anchor.y))point.y=anchor.y;
+        else point.x=anchor.x;
+      }
+      storeRef.current.preview([updateLineNode(line,index,point)]);changed=true;"""
+editor = once(editor, needle, replacement, 'EditorStudio.tsx')
+updates['EditorStudio.tsx'] = editor
+
+inspector = load('EditorInspector.tsx')
+inspector = once(inspector, 'return <div className="studio-properties">', "return <div className={`studio-properties ${single?.type==='arrow'?'bp-line-inspector':''}`}>", 'EditorInspector.tsx')
+updates['EditorInspector.tsx'] = inspector
+
+object_view = load('EditorObjectView.tsx')
+object_view = once(object_view, "if (rendered.type === 'arrow') return <div {...common}><svg", "if (rendered.type === 'arrow') return <div {...common} className={`${common.className} bp-native-line-object`}><svg", 'EditorObjectView.tsx')
+updates['EditorObjectView.tsx'] = object_view
+
+controls = load('NativePathControls.tsx')
+controls, removed = re.subn(r'^\s*<p className="bp-path-help">[^\n]*</p>\n', '\n', controls, flags=re.MULTILINE)
+if removed != 2:
+    raise RuntimeError(f'NativePathControls.tsx: expected two redundant help paragraphs, found {removed}')
+angle = """    <div className="bp-path-angle"><label><span>{fa?'چرخش':'Rotation'}</span><div className="bp-angle-input"><input aria-label={fa?'زاویه چرخش خط':'Line rotation angle'} type="number" min="-360" max="360" step="1" disabled={locked} value={Math.round(line.rotation)} onChange={event=>{const angle=Number(event.target.value);if(Number.isFinite(angle))change({rotation:Math.max(-360,Math.min(360,angle))},'Rotate line');}}/><span aria-hidden="true">°</span></div></label><button type="button" disabled={locked} title={fa?'چرخش ۹۰ درجه':'Rotate 90 degrees'} aria-label={fa?'چرخش ۹۰ درجه':'Rotate line 90 degrees'} onClick={()=>change({rotation:(line.rotation+90)%360},'Rotate line 90 degrees')}>↻ 90°</button></div>
+"""
+controls = once(controls, "    <div className=\"bp-path-caps-title\"><strong>{fa?'ابتدا و انتهای خط':'Arrowheads'}</strong>", angle + "    <div className=\"bp-path-caps-title\"><strong>{fa?'ابتدا و انتهای خط':'Arrowheads'}</strong>", 'NativePathControls.tsx')
+updates['NativePathControls.tsx'] = controls
+
+polish_css = r'''
+/* Context-sensitive line inspector: visual controls only, not the generic object summary. */
+.studio-inspector .studio-properties.bp-line-inspector{padding:15px 14px 22px;background:#fff}
+.bp-line-inspector>.property-selection,.bp-line-inspector>.property-hint,.bp-line-inspector>.bp-contextual-line>h3{display:none!important}
+.studio-inspector .bp-line-inspector>.bp-contextual-line{margin:0;padding:0;border:0}
+.bp-line-inspector .bp-path-controls{gap:12px;padding:0;font-size:13px}
+.bp-line-inspector .bp-path-palette{gap:10px}
+.bp-line-inspector .bp-path-palette:first-child{padding:12px;background:#f5fafa;border:1px solid #dcebe9;border-radius:14px}
+.bp-line-inspector .bp-path-palette label,.bp-line-inspector .bp-path-full{font-size:12px;letter-spacing:0;color:#365a61;gap:6px}
+.bp-line-inspector .bp-path-controls input[type=number],.bp-line-inspector .bp-path-controls select{min-height:39px;border-radius:9px;background:#fff;font-size:13px;font-weight:650}
+.bp-line-inspector .bp-path-controls input[type=color]{height:39px;border-radius:9px}
+.bp-line-inspector .bp-path-caps-title{margin-top:0;padding-top:12px;border-color:#e4eeee;font-size:14px}
+.bp-line-inspector .bp-path-caps-title button{min-height:34px;padding:6px 11px;border-radius:9px}
+.bp-line-inspector .bp-cap-row{gap:10px}
+.bp-line-inspector .bp-cap-label{font-size:12px}
+.bp-line-inspector .bp-cap-picker summary{min-height:49px;border-radius:10px}
+.bp-line-inspector .bp-path-actions{gap:8px}
+.bp-line-inspector .bp-path-actions button{min-height:39px;border-radius:10px;font-size:12px}
+.bp-path-angle{display:grid;grid-template-columns:minmax(0,1fr) 86px;align-items:end;gap:10px;padding:12px;border:1px solid #dcebe9;border-radius:13px;background:#fbfdfd}
+.bp-path-angle>label{min-width:0;display:grid;gap:6px;color:#365a61;font-size:12px;font-weight:750}
+.bp-angle-input{display:flex;align-items:center;position:relative}
+.bp-line-inspector .bp-angle-input input{width:100%;padding-right:24px}
+.bp-angle-input>span{position:absolute;right:10px;color:#5a7980;pointer-events:none;font-weight:800}
+.bp-path-angle>button{min-height:39px;border-radius:9px;border:1px solid #b6dbd5;background:#eaf8f5;color:#076f69;font-weight:850;cursor:pointer}
+.bp-path-angle>button:hover{background:#d9f3ed;border-color:#58b6aa}
+/* Lines are edited by their actual control points rather than an oversized rectangle. */
+.studio-object.bp-native-line-object.is-selected{outline:0!important;outline-offset:0!important}
+.studio-selection.bp-path-selected{border:0!important;box-shadow:none!important;outline:0!important}
+.studio-selection.bp-path-selected .studio-handle{display:none!important}
+.studio-selection.bp-path-selected .studio-rotate-line{top:-24px;height:19px;background:#77b7ae;width:1px;opacity:.85}
+.studio-selection.bp-path-selected .studio-rotate{top:-39px;width:19px;height:19px;left:50%;transform:translateX(-50%);border:1.5px solid #168e84;border-radius:50%;background:#fff;color:#087f79;display:grid;place-items:center;box-shadow:0 1px 6px #0b42442b;cursor:grab}
+.studio-selection.bp-path-selected .studio-rotate::after{content:'↻';font:800 17px/1 Arial,sans-serif;display:block;transform:translateY(-1px)}
+.studio-selection.bp-path-selected .studio-rotate:hover{background:#e9faf5;border-color:#087f79;box-shadow:0 2px 10px #087f7930}
+.studio-selection.bp-path-selected .studio-rotate:active{cursor:grabbing}
+.studio-selection.bp-path-selected .bp-line-node{width:10px;height:10px;border:2px solid #fff;background:#168e84;box-shadow:0 0 0 1px #168e84,0 2px 5px #15383b24;transition:transform .12s,box-shadow .12s}
+.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:12px;height:12px;background:#087f79;box-shadow:0 0 0 1px #087f79,0 2px 6px #143d442b}
+.studio-selection.bp-path-selected .bp-line-node::before{content:'';position:absolute;inset:-7px}
+.studio-selection.bp-path-selected .bp-line-node:hover{transform:translate(-50%,-50%) scale(1.25);box-shadow:0 0 0 2px #4dbdaf,0 3px 10px #087f7925}
+.studio-selection.bp-path-selected .bp-line-add-node{width:13px;height:13px;font-size:11px;opacity:.4;border:1px solid #69b9ae;color:#087f79;box-shadow:none}
+.studio-selection.bp-path-selected:hover .bp-line-add-node,.studio-selection.bp-path-selected .bp-line-add-node:focus-visible{opacity:.9}
+.studio-selection.bp-path-selected .bp-line-add-node::before{content:'';position:absolute;inset:-6px}
+@media(max-width:680px){.studio-selection.bp-path-selected .bp-line-node{width:14px;height:14px}.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:16px;height:16px}.studio-selection.bp-path-selected .bp-line-add-node{width:18px;height:18px}}
+'''.lstrip()
+
+# Regression test ensures the actual engine rotates the path as a single object
+# and that only line-specific hints are removed from the contextual controls.
+polish_test = '''import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
+import { createDrawnLine, worldLineNodes } from './lineGeometry';
+import { rotateObjects } from './engine';
+import { NativePathControls } from './NativePathControls';
+
+const settings = { stroke:'#087f79',strokeWidth:2,lineStyle:'solid' as const,startHead:'none' as const,endHead:'arrow' as const };
+describe('line editor polish', () => {
+  it('rotates both endpoints together around the selection center', () => {
+    const line=createDrawnLine({x:25,y:90},{x:225,y:90},settings);
+    const rotated=rotateObjects([line],90)[0];
+    if(rotated.type!=='arrow')throw new Error('Not an editable line');
+    const [a,b]=worldLineNodes(rotated);
+    expect(a.x).toBeCloseTo(b.x,5);
+    expect(b.y-a.y).toBeCloseTo(200,5);
+  });
+  it('keeps graphical endpoints and adds compact rotation without instructional paragraphs', () => {
+    const line=createDrawnLine({x:20,y:80},{x:220,y:80},settings);
+    const html=renderToStaticMarkup(createElement(NativePathControls,{fa:false,line,onCommit:vi.fn()}));
+    expect(html).toContain('Choose start icon');
+    expect(html).toContain('Choose end icon');
+    expect(html).toContain('Line rotation angle');
+    expect(html).toContain('Rotate line 90 degrees');
+    expect(html).not.toContain('bp-path-help');
+  });
+});
+'''
+
+# Validate every precondition above, then write all files in one local operation.
+for name, contents in updates.items():
+    (ROOT/name).write_text(contents, encoding='utf-8')
+(ROOT/'line-polish.css').write_text(polish_css, encoding='utf-8')
+(ROOT/'line-polish.test.tsx').write_text(polish_test, encoding='utf-8')
+print('Polished inspector, slim path handles, orthogonal Shift drag, and rotation; source anchors validated.')
