@@ -63,12 +63,11 @@ function Properties({ fa, selectedObjects, objects, onCommit }: {
 
   return <div className={`studio-properties ${single?.type==='arrow'?'bp-line-inspector':''}`}>
     <div className="property-selection">
-      <small>{fa?'انتخاب فعلی':'SELECTION'}</small>
+
       <h2>{selectedObjects.length === 0 ? (fa ? 'بدون انتخاب' : 'No selection') : single ? single.name : `${selectedObjects.length} ${fa ? 'آبجکت' : 'objects'}`}</h2>
-      {single && <span>{single.type}</span>}
+
     </div>
 
-    <p className="property-hint">{fa ? 'موقعیت، اندازه و ظاهر در نوار بالای بوم قرار دارند.' : 'Position, size and appearance are in the bar above the canvas.'}</p>
 
     {single && (single.type === 'text' || single.type === 'label') && <TextProperties fa={fa} single={single} onCommit={onCommit} />}
     {single && (single.type === 'arrow' || single.type === 'connector') && <LineProperties fa={fa} single={single} objects={objects} onCommit={onCommit} />}
