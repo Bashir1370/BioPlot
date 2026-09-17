@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { assetTintColor, setAssetTint } from './assetStyling';
 import { StudioIcon } from './StudioIcon';
 import { NativePathControls } from './NativePathControls';
 import { Bounds, selectionBounds } from './engine';
@@ -203,10 +204,18 @@ export function SelectionProperties({fa,bounds,selectedObjects,onBounds,onCommit
     <button className="compact-property-action" disabled={!selectedObjects.length} onClick={()=>onLock(!allLocked)} title={allLocked?(fa?'بازکردن قفل':'Unlock'):(fa?'قفل':'Lock')} aria-label={allLocked?(fa?'بازکردن قفل':'Unlock'):(fa?'قفل':'Lock')}><StudioIcon name={allLocked?'unlock':'lock'}/></button>
     <button className="compact-property-action" disabled={!selectedObjects.length} onClick={onHide} title={fa?'مخفی':'Hide'} aria-label={fa?'مخفی':'Hide'}><StudioIcon name="hide"/></button>
 
+    {single?.type==='asset'&&<label className="compact-asset-tint" title={fa?'رنگ تصویر':'Image color'}>
+      <input type="color" aria-label={fa?'رنگ تصویر':'Image color'} disabled={!!single.locked} value={assetTintColor(single)??'#000000'} onChange={event=>{
+        const color=event.target.value;
+        onCommit('Image color',object=>object.type==='asset'&&object.id===single.id?setAssetTint(object,color):object);
+      }}/>
+    </label>}
+
     <details className="compact-property-tool appearance-tool">
       <summary title={fa?'ظاهر':'Appearance'} aria-label={fa?'ظاهر':'Appearance'}><StudioIcon name="paint"/></summary>
       <div className="compact-property-popover appearance-popover">
         <strong>{fa?'ظاهر':'Appearance'}</strong>
+        {single?.type==='asset'&&<button type="button" className="compact-tint-reset" disabled={!!single.locked||!assetTintColor(single)} onClick={()=>onCommit('Reset image color',object=>object.type==='asset'&&object.id===single.id?setAssetTint(object):object)}>{fa?'بازگشت به رنگ اصلی':'Restore original color'}</button>}
         <label className="compact-opacity"><span>{fa?'شفافیت':'Opacity'}</span><input disabled={!selectedObjects.length} type="range" min="5" max="100" value={Math.round(opacity*100)} onChange={event=>{const value=Number(event.target.value)/100;onCommit('Opacity',object=>({...object,opacity:value}));}}/><em>{Math.round(opacity*100)}%</em></label>
         {single&&!['asset','image','plot'].includes(single.type)&&<label className="compact-color"><span>{fa?'رنگ اصلی':'Primary color'}</span><input type="color" value={primaryColor} onChange={event=>{
           const color=event.target.value;

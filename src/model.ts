@@ -15,7 +15,7 @@ export interface ShapeObject extends BaseObject { type:'shape'; shape:'rect'|'el
 export interface ArrowObject extends BaseObject { type:'arrow'; stroke:string; strokeWidth:number; lineStyle?:LineStyle; arrowHead:'end'|'both'|'none'; startPoint?:{x:number;y:number}; endPoint?:{x:number;y:number}; startHead?:LineCap; endHead?:LineCap; nodes?:Array<{x:number;y:number}>; pathMode?:'straight'|'polyline'|'curved'; dashLength?:number; }
 export interface ConnectorObject extends BaseObject { type:'connector'; stroke:string; strokeWidth:number; lineStyle:LineStyle; route:'straight'|'elbow'|'curved'; arrowHead:'end'|'both'|'none'|'inhibition'; fromObjectId?:string; toObjectId?:string; fromPort?:ConnectorPort; toPort?:ConnectorPort; autoRoute?:boolean; label?:string; }
 export interface AssetColorSlot { key:string; label:string; value:string; }
-export interface AssetObject extends BaseObject { type:'asset'; assetId:string; svg:string; colors:AssetColorSlot[]; }
+export interface AssetObject extends BaseObject { type:'asset'; assetId:string; svg:string; colors:AssetColorSlot[]; tintColor?:string; }
 export interface ImageObject extends BaseObject { type:'image'; src:string; alt?:string; fit:'contain'|'cover'; naturalWidth?:number; naturalHeight?:number; }
 export interface ContainerObject extends BaseObject { type:'container'; fill:string; stroke:string; strokeWidth:number; radius:number; padding:number; }
 export type PlotKind='bar'|'scatter';
