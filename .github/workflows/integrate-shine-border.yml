@@ -1,0 +1,37 @@
+name: Integrate restrained ShineBorder panels
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/integrate-shine-border.yml
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Replace old beam with accessible ShineBorder on original asides
+        run: python3 scripts/integrate_shine_border.py
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Commit only verified editor modifications
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src/EditorStudio.tsx src/StudioReferencePanels.tsx src/main.tsx src/editor-panel-beam.css
+          if ! git diff --cached --quiet; then
+            git commit -m "Replace distracting border beam with subtle ShineBorder panels"
+            git push origin HEAD:main
+          fi
