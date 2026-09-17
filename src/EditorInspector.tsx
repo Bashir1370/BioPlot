@@ -61,7 +61,7 @@ function Properties({ fa, selectedObjects, objects, onCommit }: {
 }) {
   const single = selectedObjects.length === 1 ? selectedObjects[0] : null;
 
-  return <div className="studio-properties">
+  return <div className={`studio-properties ${single?.type==='arrow'?'bp-line-inspector':''}`}>
     <div className="property-selection">
       <small>{fa?'انتخاب فعلی':'SELECTION'}</small>
       <h2>{selectedObjects.length === 0 ? (fa ? 'بدون انتخاب' : 'No selection') : single ? single.name : `${selectedObjects.length} ${fa ? 'آبجکت' : 'objects'}`}</h2>
