@@ -1,0 +1,43 @@
+/* Lightweight Border Beam treatment for the two editor side cards only.
+   No extra motion dependency, layout wrapper, or scrolling overlay is needed. */
+@property --bp-panel-beam-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes bp-panel-beam-orbit {
+  to { --bp-panel-beam-angle: 360deg; }
+}
+
+.studio-shell .studio-workspace > .studio-library:not(.collapsed),
+.studio-shell .studio-workspace > .reference-pages {
+  --bp-panel-beam-angle: 0deg;
+  /* The white padding-box preserves the panel contents; only the thin border glows. */
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    conic-gradient(
+      from var(--bp-panel-beam-angle) at 50% 50%,
+      #dce8e9 0deg,
+      #dce8e9 294deg,
+      #a1dcd5 311deg,
+      #32b9ab 327deg,
+      #09a697 338deg,
+      #b4e5df 350deg,
+      #dce8e9 360deg
+    ) border-box;
+  box-shadow: 0 3px 8px #263b5010, 0 0 12px #0aa6980b;
+  animation: bp-panel-beam-orbit 10s linear infinite;
+}
+
+/* Keep the effect purely decorative; the panels retain their native scroll/resize UI. */
+@media (prefers-reduced-motion: reduce) {
+  .studio-shell .studio-workspace > .studio-library:not(.collapsed),
+  .studio-shell .studio-workspace > .reference-pages {
+    animation: none;
+    border-color: #c8e2df;
+    background: #fff;
+  }
+}
