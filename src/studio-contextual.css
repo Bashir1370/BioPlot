@@ -88,3 +88,11 @@
 .floating-text-row label{display:flex;align-items:center;gap:4px;font-size:11px;color:#5f7880}
 .floating-text-controls :focus-visible{outline:2px solid #09847d;outline-offset:2px}
 .floating-text-controls:disabled{opacity:.55}
+
+.shape-controls{border:0;margin:16px 0 0;padding:0;display:grid;gap:14px;min-width:0}
+.shape-controls>label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#526e7a}
+.shape-controls select,.shape-controls input[type=number]{width:145px;min-width:0;height:34px;border:1px solid #d6e5e7;border-radius:8px;padding:0 8px;background:#fff;color:#244451}
+.shape-controls input[type=color]{width:44px;height:32px;padding:3px;border:1px solid #d6e5e7;border-radius:8px;background:#fff;cursor:pointer}
+.shape-controls .shape-check{justify-content:flex-start}.shape-controls input[type=range]{min-width:0;flex:1;accent-color:#087f79}.shape-controls output{font-size:11px;min-width:32px}
+.shape-controls:disabled{opacity:.55}.shape-controls :focus-visible{outline:2px solid #09847d;outline-offset:2px}
+.element-group-shapes>section>div{grid-template-columns:repeat(3,minmax(0,1fr))}.element-group-shapes>section>div>button{padding:10px 3px;min-height:88px}.element-group-shapes>section>div>button b{font-size:11px;overflow-wrap:anywhere}.element-group-shapes>section>div>button span{height:40px;display:grid;place-items:center}.element-group-shapes>section>div>button span svg{width:48px;height:36px}

@@ -29,8 +29,9 @@ describe('drawing ribbon integration',()=>{
     expect(html).not.toContain('studio-command-deck');
     expect(html).not.toContain('floating-selection-toolbar');
     const side=renderToStaticMarkup(createElement(EditorInspector,{fa:false,tab:'properties',setTab:vi.fn(),documentState:createBlankDocument(),bounds:selectionBounds([shape]),selectedObjects:[shape],objects:[shape],selected:new Set([shape.id]),onBounds:vi.fn(),onCommit:vi.fn(),onLock:vi.fn(),onHide:vi.fn(),onSelect:vi.fn(),onLayerStep:vi.fn(),onLayerReorder:vi.fn(),onToggleObjectLock:vi.fn(),onToggleObjectHidden:vi.fn(),onCollapse:vi.fn()}));
-    expect(side).not.toContain('type="number"');
-    expect(side).not.toContain('type="range"');
+    expect(side).not.toContain('studio-property-bar');
+    expect(side).toContain('Border width');
+    expect(side).toContain('Opacity');
   });
   it('connects compact size and popover geometry to the correct commands',()=>{
     const p=properties([shape]);

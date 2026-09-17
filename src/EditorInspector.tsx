@@ -1,3 +1,4 @@
+import {ShapeControls} from './ShapeControls';
 import { useMemo, useState } from 'react';
 import { assetTintColor, setAssetTint } from './assetStyling';
 import { StudioIcon } from './StudioIcon';
@@ -72,6 +73,7 @@ function Properties({ fa, selectedObjects, objects, onCommit }: {
 
     {single && (single.type === 'text' || single.type === 'label') && <TextProperties fa={fa} single={single} onCommit={onCommit} />}
     {single && (single.type === 'arrow' || single.type === 'connector') && <LineProperties fa={fa} single={single} objects={objects} onCommit={onCommit} />}
+    {single?.type === 'shape' && <ShapeControls fa={fa} object={single} onCommit={onCommit}/> }
     {single?.type === 'image' && <section><h3>{fa ? 'تصویر' : 'Image'}</h3><div className="property-actions"><button className={single.fit === 'contain' ? 'active' : ''} onClick={() => onCommit('Image fit', object => object.id === single.id && object.type === 'image' ? { ...object, fit: 'contain' } : object)}>Contain</button><button className={single.fit === 'cover' ? 'active' : ''} onClick={() => onCommit('Image fit', object => object.id === single.id && object.type === 'image' ? { ...object, fit: 'cover' } : object)}>Cover</button></div>{single.naturalWidth && <p className="property-hint">{single.naturalWidth} × {single.naturalHeight}px source</p>}</section>}
   </div>;
 }
@@ -183,7 +185,7 @@ export function SelectionProperties({fa,bounds,selectedObjects,onBounds,onCommit
   const allLocked=selectedObjects.length>0&&selectedObjects.every(object=>object.locked);
   let primaryColor = '#0b7a75';
   if (single?.type === 'text' || single?.type === 'label') primaryColor = single.color;
-  else if (single?.type === 'shape' || single?.type === 'container') primaryColor = single.fill;
+  else if (single?.type === 'shape' || single?.type === 'container') primaryColor = single.fill==='none'?'#ffffff':single.fill;
   else if (single?.type === 'arrow' || single?.type === 'connector') primaryColor = single.stroke;
 
   const title=single?single.name:selectedObjects.length?`${selectedObjects.length} ${fa?'آبجکت':'objects'}`:fa?'بدون انتخاب':'No selection';
