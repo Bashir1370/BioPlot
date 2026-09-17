@@ -4,7 +4,7 @@ export const SCIENTIFIC_SYMBOLS = [
   'α','β','γ','δ','Δ','μ','λ','±','×','→','←','↔','↑','↓','°','°C','≥','≤','≈','≠','∞','✓','✕','•','·','–','—','₂','₃','₄','⁺','⁻','²','³'
 ];
 
-export const SCIENTIFIC_FONTS = ['Inter','B Nazanin','Vazirmatn','Arial','Helvetica','Times New Roman','Georgia'];
+export const SCIENTIFIC_FONTS = ['Inter','B Nazanin','Vazirmatn','Noto Naskh Arabic','Lalezar','Arial','Helvetica','Times New Roman','Georgia'];
 
 const superscriptMap: Record<string,string> = {
   '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','n':'ⁿ','i':'ⁱ'
