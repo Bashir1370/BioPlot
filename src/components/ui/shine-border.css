@@ -1,0 +1,38 @@
+/* Shine Border adapted for BioPlot's existing Vite + React + CSS stack.
+   Animate the border of the ORIGINAL panel element: no overlay obscures
+   controls, no extra grid child changes sizing and scrolling stays native. */
+@keyframes bp-shine-border-pass {
+  0%, 100% { background-position: 0 0, 0% 0%, 0 0; }
+  50% { background-position: 0 0, 100% 100%, 0 0; }
+}
+
+.studio-shell .studio-workspace > .bp-shine-border.studio-library:not(.collapsed),
+.studio-shell .studio-workspace > .bp-shine-border.reference-pages {
+  border: var(--bp-shine-width, 1px) solid transparent;
+  border-radius: var(--bp-shine-radius, 12px);
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    radial-gradient(
+      ellipse at center,
+      transparent 0%,
+      transparent 27%,
+      var(--bp-shine-colors, #d8ebe8, #69b8af, #d8ebe8),
+      transparent 70%,
+      transparent 100%
+    ) border-box,
+    linear-gradient(#dce7e7, #dce7e7) border-box;
+  background-size: 100% 100%, 260% 260%, 100% 100%;
+  background-position: 0 0, 0% 0%, 0 0;
+  box-shadow: 0 3px 10px #263b5010;
+  animation: bp-shine-border-pass var(--bp-shine-duration, 18s) linear infinite;
+}
+
+/* A calm static border for users who prefer less movement. */
+@media (prefers-reduced-motion: reduce) {
+  .studio-shell .studio-workspace > .bp-shine-border.studio-library:not(.collapsed),
+  .studio-shell .studio-workspace > .bp-shine-border.reference-pages {
+    animation: none;
+    border-color: #cadfdb;
+    background: #fff;
+  }
+}
