@@ -107,7 +107,7 @@ describe('editable line drag stability', () => {
   });
   it('aligns a Shift-dragged endpoint horizontally or vertically to the other endpoint', () => {
     const origin={x:100,y:100},down={x:0,y:0},other={x:240,y:100};
-    expect(lineNodeDragPoint(origin,down,{x:0,y:70},1,canvas,other)).toEqual({x:240,y:170});
+    expect(lineNodeDragPoint(origin,down,{x:140,y:220},1,canvas,other)).toEqual({x:240,y:320});
     expect(lineNodeDragPoint(origin,down,{x:90,y:0},1,canvas,other)).toEqual({x:190,y:100});
   });
   it('clamps to the canvas without changing the original node', () => {

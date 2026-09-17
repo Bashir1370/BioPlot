@@ -19,6 +19,7 @@ import { saveRecoverySnapshot } from './recovery';
 import { reloadRuntimeCloudAssetsFromBrowserCache } from './cloudAssetLibrary';
 import './editor-studio.css';
 import './line-drawing.css';
+import { lineNodeDragPoint } from './linePointer';
 import './line-polish.css';
 
 type Panel = 'assets'|'elements'|'upload'|'text'|'lines'|'shapes';
@@ -301,7 +302,7 @@ export function EditorStudio(){
   function zOrder(action:ZOrderAction){if(selected.size)zOrderFor(selected,action);}
   function reorderLayer(draggedId:string,targetId:string){const before=cloneObjects(objects),dragged=before.find(object=>object.id===draggedId),targetIndex=before.findIndex(object=>object.id===targetId);if(!dragged||targetIndex<0)return;const after=before.filter(object=>object.id!==draggedId);after.splice(Math.min(targetIndex,after.length),0,dragged);storeRef.current.dispatch(new PageObjectsCommand('Reorder layer',before,after));}
   function changeBounds(field:'x'|'y'|'width'|'height',value:number){if(!bounds||!Number.isFinite(value))return;const before=cloneObjects(selectedObjects.filter(object=>!object.locked));if(!before.length)return;if(field==='x'||field==='y'){const delta=value-bounds[field];storeRef.current.dispatch(new ObjectStateCommand(`Change ${field}`,before,before.map(object=>field==='x'?{...object,x:object.x+delta}:{...object,y:object.y+delta})));}else{const next={x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height,[field]:Math.max(8,value)};storeRef.current.dispatch(new ObjectStateCommand(`Change ${field}`,before,resizeObjects(before,next)));}}
-  function beginMove(event:ReactPointerEvent<HTMLDivElement>,object:BioPlotObject){if(!event.shiftKey){if(object.type==='arrow'){setInspectorCollapsed(false);setInspectorTab('properties');}setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);}if(object.locked){setSelected(idsFor(object,event.shiftKey));return;}event.preventDefault();event.stopPropagation();const ids=idsFor(object,event.shiftKey);setSelected(ids);if(event.shiftKey)return;const before=cloneObjects(objects.filter(item=>ids.has(item.id)&&!item.locked));const startBounds=selectionBounds(before);if(!before.length||!startBounds)return;const targets=buildSnapTargets(storeRef.current.snapshot,ids),sx=event.clientX,sy=event.clientY;const move=(pointer:PointerEvent)=>{const snapped=snapDelta(startBounds,(pointer.clientX-sx)/zoom,(pointer.clientY-sy)/zoom,targets);storeRef.current.preview(before.map(item=>({...item,x:item.x+snapped.dx,y:item.y+snapped.dy})));setGuides({x:snapped.guideX,y:snapped.guideY});};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const after=cloneObjects(activePage(storeRef.current.snapshot).objects.filter(item=>ids.has(item.id)&&!item.locked));storeRef.current.commitObjectState(before,after,'Move objects');setGuides({});};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
+  function beginMove(event:ReactPointerEvent<HTMLDivElement>,object:BioPlotObject){if(!event.shiftKey){if(object.type==='arrow'){setInspectorTab('properties');}setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);}if(object.locked){setSelected(idsFor(object,event.shiftKey));return;}event.preventDefault();event.stopPropagation();const ids=idsFor(object,event.shiftKey);setSelected(ids);if(event.shiftKey)return;const before=cloneObjects(objects.filter(item=>ids.has(item.id)&&!item.locked));const startBounds=selectionBounds(before);if(!before.length||!startBounds)return;const targets=buildSnapTargets(storeRef.current.snapshot,ids),sx=event.clientX,sy=event.clientY;const move=(pointer:PointerEvent)=>{const snapped=snapDelta(startBounds,(pointer.clientX-sx)/zoom,(pointer.clientY-sy)/zoom,targets);storeRef.current.preview(before.map(item=>({...item,x:item.x+snapped.dx,y:item.y+snapped.dy})));setGuides({x:snapped.guideX,y:snapped.guideY});};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const after=cloneObjects(activePage(storeRef.current.snapshot).objects.filter(item=>ids.has(item.id)&&!item.locked));storeRef.current.commitObjectState(before,after,'Move objects');setGuides({});if(object.type==='arrow')setInspectorCollapsed(false);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
 
   function beginResize(event:ReactPointerEvent,handle:string){
     event.preventDefault();
@@ -423,18 +424,18 @@ export function EditorStudio(){
     event.preventDefault();event.stopPropagation();
     const line=selectedLine;
     if(!line||line.locked||!artboardRef.current)return;
+    const origin=selectedLineNodes[index];
+    if(!origin)return;
+    const opposite=selectedLineNodes[index===0?selectedLineNodes.length-1:0];
+    const endpoint=index===0||index===selectedLineNodes.length-1;
+    const pointerDown={x:event.clientX,y:event.clientY};
     const before=[structuredClone(line)];
-    const rect=artboardRef.current.getBoundingClientRect();
     let changed=false;
     const move=(pointer:PointerEvent)=>{
-      const point={x:Math.max(0,Math.min(page.width,(pointer.clientX-rect.left)/zoom)),y:Math.max(0,Math.min(page.height,(pointer.clientY-rect.top)/zoom))};
-      // Shift constrains an endpoint to an exact horizontal or vertical line
-      // through the opposite endpoint, independently of canvas zoom.
-      if(pointer.shiftKey&&(index===0||index===selectedLineNodes.length-1)){
-        const anchor=selectedLineNodes[index===0?selectedLineNodes.length-1:0];
-        if(Math.abs(point.x-anchor.x)>=Math.abs(point.y-anchor.y))point.y=anchor.y;
-        else point.x=anchor.x;
-      }
+      // Preserve the offset where the node was grabbed. Mapping the pointer
+      // directly to the node made tiny handles jump on the first move.
+      const point=lineNodeDragPoint(origin,pointerDown,{x:pointer.clientX,y:pointer.clientY},zoom,
+        {width:page.width,height:page.height},pointer.shiftKey&&endpoint?opposite:undefined);
       storeRef.current.preview([updateLineNode(line,index,point)]);changed=true;
     };
     const up=()=>{
