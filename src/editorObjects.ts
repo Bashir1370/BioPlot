@@ -1,3 +1,4 @@
+import { SHAPE_CATALOG } from './shapeGeometry';
 import { ArrowObject, ConnectorObject, ContainerObject, ImageObject, LabelObject, makeId, ShapeObject, TextObject } from './model';
 
 export function makeText(x = 360, y = 270): TextObject {
@@ -13,7 +14,7 @@ export function makeNoteLabel(x = 350, y = 260): LabelObject {
   return { id: makeId(), type: 'label', name: 'Scientific note', text: 'Experimental note', variant: 'note', x, y, width: 180, height: 46, rotation: 0, opacity: 1, color: '#5b6570', background: '#fffdf3', borderColor: '#e8ddb0', fontSize: 12, fontWeight: 500, fontFamily: 'Inter', align: 'center' };
 }
 export function makeShape(shape: ShapeObject['shape'] = 'rect', x = 390, y = 280): ShapeObject {
-  return { id: makeId(), type: 'shape', name: shape === 'ellipse' ? 'Ellipse' : 'Rectangle', shape, x, y, width: 150, height: 90, rotation: 0, opacity: 1, fill: '#dff2ef', stroke: '#4c9993', strokeWidth: 2, lineStyle: 'solid', radius: 12 };
+  return { id: makeId(), type: 'shape', name: SHAPE_CATALOG.find(item=>item.shape===shape)?.en??'Shape', shape, x, y, width: 150, height: ['circle','star','pentagon','hexagon','diamond'].includes(shape)?150:90, rotation: 0, opacity: 1, fill: '#dff2ef', stroke: '#4c9993', strokeWidth: 2, lineStyle: 'solid', radius: shape==='rounded'?16:0 };
 }
 export function makeArrow(x = 390, y = 300): ArrowObject {
   return { id: makeId(), type: 'arrow', name: 'Arrow', x, y, width: 140, height: 32, rotation: 0, opacity: 1, stroke: '#607986', strokeWidth: 3, lineStyle: 'solid', arrowHead: 'end' };
