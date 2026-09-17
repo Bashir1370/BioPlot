@@ -8,6 +8,7 @@ import { AddObjectsCommand, AlignMode, BioPlotStore, buildSnapTargets, DeleteObj
 import { makeArrow, makeConnector, makeContainer, makeImage, makeNoteLabel, makePanelLabel, makeShape, makeTagLabel, makeText } from './editorObjects';
 import { EditorInspector, SelectionProperties } from './EditorInspector';
 import { StudioIcon, StudioIconName } from './StudioIcon';
+import { VectorStudio } from './VectorStudio';
 import { AssetCatalogView, StudioPagesPanel, CanvasSettingsForm } from './StudioReferencePanels';
 import { ShineBorder } from './components/ui/shine-border';
 import { AddStudioPageCommand, CanvasSettingsCommand, CanvasSettings } from './studioPages';
@@ -102,16 +103,35 @@ export function EditorStudio(){
 
   useEffect(()=>{
     const activate=(event:Event)=>{setLineTool((event as CustomEvent<DrawLineSettings>).detail);setSelected(new Set());setAssetEditOpen(false);setPanel('lines');setLibraryCollapsed(false);};
+    const finishInsert=(object:BioPlotObject)=>{
+      const current=activePage(storeRef.current.snapshot);
+      const viewport=canvasViewportRef.current?.getBoundingClientRect();
+      const art=artboardRef.current?.getBoundingClientRect();
+      const cx=viewport&&art?(viewport.left+viewport.width/2-art.left)/zoomRef.current:current.width/2;
+      const cy=viewport&&art?(viewport.top+viewport.height/2-art.top)/zoomRef.current:current.height/2;
+      object.x=Math.max(0,Math.min(current.width-object.width,cx-object.width/2));
+      object.y=Math.max(0,Math.min(current.height-object.height,cy-object.height/2));
+      storeRef.current.dispatch(new AddObjectsCommand('Add library line',[object]));
+      setLineTool(null);setLinePreview(null);setSelected(new Set([object.id]));setSelectionToolbarVisible(true);
+      setAssetEditOpen(false);setPanel('lines');setInspectorCollapsed(false);setInspectorTab('properties');
+    };
+    const insertNative=(event:Event)=>{
+      const settings=(event as CustomEvent<DrawLineSettings>).detail;
+      if(!settings)return;
+      const current=activePage(storeRef.current.snapshot);
+      const length=Math.min(220,current.width*.6,current.height*.7);
+      finishInsert(createDrawnLine({x:0,y:0},{x:length,y:0},settings));
+    };
     const insert=(event:Event)=>{
       const asset=(event as CustomEvent<ScientificAsset>).detail;
       if(!asset?.svg)return;
       const object=assetToObject(asset);
-      storeRef.current.dispatch(new AddObjectsCommand('Add library line',[object]));
-      setSelected(new Set([object.id]));setAssetEditOpen(false);setPanel('lines');setInspectorCollapsed(false);setInspectorTab('properties');
+      finishInsert(object);
     };
     window.addEventListener('bioplot:activate-line',activate);
     window.addEventListener('bioplot:insert-line-asset',insert);
-    return()=>{window.removeEventListener('bioplot:activate-line',activate);window.removeEventListener('bioplot:insert-line-asset',insert);};
+    window.addEventListener('bioplot:insert-native-line',insertNative);
+    return()=>{window.removeEventListener('bioplot:activate-line',activate);window.removeEventListener('bioplot:insert-line-asset',insert);window.removeEventListener('bioplot:insert-native-line',insertNative);};
   },[]);
 
   const viewportCenter=():ZoomPointer|undefined=>{
@@ -534,7 +554,7 @@ export function EditorStudio(){
   function changeCanvas(settings:CanvasSettings){storeRef.current.dispatch(new CanvasSettingsCommand({width:page.width,height:page.height,background:page.background},settings));}
   function openTool(tool:Panel){setLineTool(null);setLinePreview(null);setAssetEditOpen(false);setPanel(tool);setLibraryCollapsed(false);}
   function browseAssets(){setAssetEditOpen(false);setPanel('assets');setLibraryCollapsed(false);}
-  const columns=`60px ${libraryCollapsed?0:libraryWidth}px 6px minmax(0,1fr) 6px ${!inspectorCollapsed?inspectorWidth:pagesCollapsed?0:196}px`;
+  const columns=`60px ${libraryCollapsed?0:panel==='lines'?Math.max(360,libraryWidth):libraryWidth}px 6px minmax(0,1fr) 6px ${!inspectorCollapsed?inspectorWidth:pagesCollapsed?0:196}px`;
   return <div className={`studio-shell ${libraryCollapsed?'library-closed':'library-open'} ${inspectorCollapsed?'inspector-closed':'inspector-open'} ${pagesCollapsed?'pages-closed':'pages-open'} ${selectedObjects.length?'has-selection':'no-selection'} ${showGrid?'grid-visible':''}`} dir={fa?'rtl':'ltr'}>
     <header className="studio-topbar">
       <div className="reference-document-card">
@@ -562,6 +582,7 @@ export function EditorStudio(){
         {selectedAsset&&assetEditOpen?<AssetStylePanel fa={fa} object={selectedAsset} onChange={commitAssetStyle} onBrowse={browseAssets}/>:<>
           <div className="studio-panel-heading"><div><h2>{panel==='assets'?(fa?'کتابخانه علمی':'Scientific assets'):panel==='upload'?(fa?'آپلود':'Uploads'):panel==='text'?(fa?'متن و برچسب':'Text & labels'):panel==='lines'?(fa?'خطوط و اتصال‌ها':'Lines & connectors'):(fa?'شکل‌ها':'Shapes')}</h2></div><button onClick={()=>setLibraryCollapsed(true)} aria-label={fa?'بستن کتابخانه':'Close library'}><StudioIcon name="close"/></button></div>
           {panel==='assets'&&<><div className="studio-search"><StudioIcon name="search"/><input aria-label={fa?'جستجوی المان علمی':'Search scientific assets'} value={assetQuery} onChange={event=>setAssetQuery(event.target.value)} placeholder={fa?'نورون، سلول، DNA…':'Neuron, cell, DNA…'}/></div><div className="asset-mode-tabs"><button className={assetMode==='all'?'active':''} onClick={()=>setAssetMode('all')}>{fa?'همه':'All'}</button><button className={assetMode==='favorites'?'active':''} onClick={()=>setAssetMode('favorites')}><StudioIcon name="star"/>{fa?'منتخب':'Favorites'}</button><button className={assetMode==='recent'?'active':''} onClick={()=>setAssetMode('recent')}><StudioIcon name="clock"/>{fa?'اخیر':'Recent'}</button></div><select className="asset-category-select" value={assetCategory} onChange={event=>setAssetCategory(event.target.value)}><option value="">{fa?'همه دسته‌ها':'All categories'}</option>{categories.map(category=><option key={category}>{category}</option>)}</select><AssetCatalogView fa={fa} assets={assets} grouped={!assetQuery&&!assetCategory&&assetMode==='all'} favorites={favoriteIds} onAdd={asset=>addObject(assetToObject(asset))} onFavorite={id=>{toggleFavoriteAsset(id);setFavoriteVersion(value=>value+1);}} onCategory={setAssetCategory}/></>}
+          {panel==='lines'&&<VectorStudio fa={fa}/>}
           {['elements','text','shapes'].includes(panel)&&<Elements fa={fa} addObject={addObject} group={panel}/>} 
           {panel==='upload'&&<div className="studio-upload"><label><span><StudioIcon name="upload"/></span><b>{fa?'SVG علمی':'Scientific SVG'}</b><input hidden type="file" accept=".svg,image/svg+xml" onChange={event=>void importSvg(event.target.files?.[0])}/></label><label><span><StudioIcon name="image"/></span><b>{fa?'تصویر':'Raster image'}</b><small>PNG / JPG / WebP</small><input hidden type="file" accept="image/png,image/jpeg,image/webp" onChange={event=>importImage(event.target.files?.[0])}/></label></div>}
         </>}

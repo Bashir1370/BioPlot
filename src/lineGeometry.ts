@@ -45,6 +45,16 @@ function initialPoints(start: LinePoint, end: LinePoint, settings: DrawLineSetti
   const amplitude = clamp(len * .23, 18, 72);
   const along = (t: number, offset = 0): LinePoint => ({ x: start.x + vx * t + normal.x * offset, y: start.y + vy * t + normal.y * offset });
   switch (settings.presetId) {
+    case 'corner': return [start,along(0,-amplitude),along(1,-amplitude)];
+    case 'rounded-elbow': return [start,along(.05,-amplitude*.7),along(.2,-amplitude),along(1,-amplitude)];
+    case 'semicircle': return Array.from({length:13},(_,i)=>along((1-Math.cos(Math.PI*i/12))/2,-Math.sin(Math.PI*i/12)*len*.45));
+    case 'circular': return Array.from({length:25},(_,i)=>{
+      const angle=-Math.PI*.15+i/24*Math.PI*1.7;
+      return along(.5+Math.cos(angle)*.45,Math.sin(angle)*len*.45);
+    });
+    case 'square-bracket': return [along(.2,-amplitude),along(0,-amplitude),along(0,amplitude),along(.2,amplitude)];
+    case 'brace': return [along(.2,-amplitude),along(.05,-amplitude*.8),along(.05,-amplitude*.25),along(0),along(.05,amplitude*.25),along(.05,amplitude*.8),along(.2,amplitude)];
+
     case 'curved': case 'arc': return [start, along(.5, -amplitude), end];
     case 's-curve': return [start, along(.33, -amplitude), along(.67, amplitude), end];
     case 'wave': return [start, along(.25, -amplitude), along(.5, amplitude), along(.75, -amplitude), end];
@@ -56,8 +66,8 @@ function initialPoints(start: LinePoint, end: LinePoint, settings: DrawLineSetti
 }
 
 export function createDrawnLine(start: LinePoint, end: LinePoint, settings: DrawLineSettings): ArrowObject {
-  const curved = ['curved', 'arc', 's-curve', 'wave'].includes(settings.presetId ?? '');
-  const polygon = ['zigzag', 'elbow', 'bracket'].includes(settings.presetId ?? '');
+  const curved = ['curved', 'arc', 's-curve', 'wave', 'rounded-elbow', 'circular', 'semicircle', 'brace'].includes(settings.presetId ?? '');
+  const polygon = ['zigzag', 'elbow', 'bracket', 'corner', 'square-bracket'].includes(settings.presetId ?? '');
   return lineFromWorldNodes(initialPoints(start, end, settings), {
     ...settings, pathMode: settings.pathMode ?? (curved ? 'curved' : polygon ? 'polyline' : 'straight'),
   });
@@ -201,15 +211,14 @@ export function lineCapPreviewSvg(kind: LineCap, side: 'start' | 'end'): string 
 /** Admin-authored native presets carry validated settings in inert SVG attributes. */
 export function nativePresetSvg(settings: DrawLineSettings): string {
   const id = settings.presetId ?? 'straight';
-  const permitted = ['straight','arrow','horizontal','vertical','dashed','dotted','double','activation','inhibition','curved','arc','s-curve','wave','zigzag','elbow','bracket','dimension'];
+  const permitted = ['straight','arrow','horizontal','vertical','dashed','dotted','double','activation','inhibition','curved','arc','s-curve','wave','zigzag','elbow','bracket','dimension','corner','rounded-elbow','semicircle','circular','square-bracket','brace'];
   const presetId = permitted.includes(id) ? id : 'straight';
   const stroke = safeColor(settings.stroke), width = clamp(settings.strokeWidth, .5, 40);
   const start = caps.includes(settings.startHead) ? settings.startHead : 'none';
   const end = caps.includes(settings.endHead) ? settings.endHead : 'arrow';
   const mode = modes.includes(settings.pathMode ?? 'straight') ? settings.pathMode ?? 'straight' : 'straight';
   const asset = createDrawnLine({x:24,y:75},{x:276,y:75},{...settings,presetId});
-  const translate = `translate(${fmt(asset.x)} ${fmt(asset.y)})`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150" data-bioplot-native="line" data-bioplot-preset="${presetId}" data-bioplot-mode="${mode}" data-bioplot-start="${start}" data-bioplot-end="${end}" data-bioplot-color="${stroke}" data-bioplot-width="${width}" data-bioplot-style="${styles.includes(settings.lineStyle)?settings.lineStyle:'solid'}"><g transform="${translate}">${lineSvgBody(asset)}</g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fmt(asset.width)} ${fmt(asset.height)}" data-bioplot-native="line" data-bioplot-preset="${presetId}" data-bioplot-mode="${mode}" data-bioplot-start="${start}" data-bioplot-end="${end}" data-bioplot-color="${stroke}" data-bioplot-width="${width}" data-bioplot-style="${styles.includes(settings.lineStyle)?settings.lineStyle:'solid'}">${lineSvgBody(asset)}</svg>`;
 }
 export function parseNativeLinePreset(svg: string): DrawLineSettings | null {
   const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml');
