@@ -22,9 +22,9 @@
 .bp-angle-input>span{position:absolute;right:10px;color:#5a7980;pointer-events:none;font-weight:800}
 .bp-path-angle>button{min-height:39px;border-radius:9px;border:1px solid #b6dbd5;background:#eaf8f5;color:#076f69;font-weight:850;cursor:pointer}
 .bp-path-angle>button:hover{background:#d9f3ed;border-color:#58b6aa}
-/* Lines are edited by their actual control points rather than an oversized rectangle. */
+/* Preserve a subtle, visible selection frame around lines; keep their native editing nodes and rotation handle. */
 .studio-object.bp-native-line-object.is-selected{outline:0!important;outline-offset:0!important}
-.studio-selection.bp-path-selected{border:0!important;box-shadow:none!important;outline:0!important}
+.studio-selection.bp-path-selected{border:1px solid rgba(8,127,121,.45)!important;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.65) inset!important;outline:0!important;background:rgba(8,127,121,.012)}
 .studio-selection.bp-path-selected .studio-handle{display:none!important}
 .studio-selection.bp-path-selected .studio-rotate-line{top:-24px;height:19px;background:#77b7ae;width:1px;opacity:.85}
 .studio-selection.bp-path-selected .studio-rotate{top:-39px;width:19px;height:19px;left:50%;transform:translateX(-50%);border:1.5px solid #168e84;border-radius:50%;background:#fff;color:#087f79;display:grid;place-items:center;box-shadow:0 1px 6px #0b42442b;cursor:grab}
