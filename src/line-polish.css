@@ -22,20 +22,22 @@
 .bp-angle-input>span{position:absolute;right:10px;color:#5a7980;pointer-events:none;font-weight:800}
 .bp-path-angle>button{min-height:39px;border-radius:9px;border:1px solid #b6dbd5;background:#eaf8f5;color:#076f69;font-weight:850;cursor:pointer}
 .bp-path-angle>button:hover{background:#d9f3ed;border-color:#58b6aa}
-/* Preserve a subtle, visible selection frame around lines; keep their native editing nodes and rotation handle. */
+/* Keep the selection frame visible, light and distinct from the editable path. */
 .studio-object.bp-native-line-object.is-selected{outline:0!important;outline-offset:0!important}
 .studio-selection.bp-path-selected{border:1px solid rgba(8,127,121,.45)!important;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.65) inset!important;outline:0!important;background:rgba(8,127,121,.012)}
 .studio-selection.bp-path-selected .studio-handle{display:none!important}
-.studio-selection.bp-path-selected .studio-rotate-line{top:-24px;height:19px;background:#77b7ae;width:1px;opacity:.85}
-.studio-selection.bp-path-selected .studio-rotate{top:-39px;width:19px;height:19px;left:50%;transform:translateX(-50%);border:1.5px solid #168e84;border-radius:50%;background:#fff;color:#087f79;display:grid;place-items:center;box-shadow:0 1px 6px #0b42442b;cursor:grab}
-.studio-selection.bp-path-selected .studio-rotate::after{content:'↻';font:800 17px/1 Arial,sans-serif;display:block;transform:translateY(-1px)}
-.studio-selection.bp-path-selected .studio-rotate:hover{background:#e9faf5;border-color:#087f79;box-shadow:0 2px 10px #087f7930}
+/* The rotation control sits immediately above the frame: a short stem joins the circle to its top edge. */
+.studio-selection.bp-path-selected .studio-rotate-line{top:-8px;height:8px;background:#77b7ae;width:1px;opacity:.9}
+.studio-selection.bp-path-selected .studio-rotate{top:-24px;width:16px;height:16px;left:50%;transform:translateX(-50%);border:1px solid #168e84;border-radius:50%;background:#fff;color:#087f79;display:grid;place-items:center;box-shadow:0 1px 4px #0b424422;cursor:grab}
+.studio-selection.bp-path-selected .studio-rotate::after{content:'↻';font:800 14px/1 Arial,sans-serif;display:block;transform:translateY(-.5px)}
+.studio-selection.bp-path-selected .studio-rotate:hover{background:#e9faf5;border-color:#087f79;box-shadow:0 2px 8px #087f7930}
 .studio-selection.bp-path-selected .studio-rotate:active{cursor:grabbing}
-.studio-selection.bp-path-selected .bp-line-node{width:10px;height:10px;border:2px solid #fff;background:#168e84;box-shadow:0 0 0 1px #168e84,0 2px 5px #15383b24;transition:transform .12s,box-shadow .12s}
-.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:12px;height:12px;background:#087f79;box-shadow:0 0 0 1px #087f79,0 2px 6px #143d442b}
-.studio-selection.bp-path-selected .bp-line-node::before{content:'';position:absolute;inset:-7px}
-.studio-selection.bp-path-selected .bp-line-node:hover{transform:translate(-50%,-50%) scale(1.25);box-shadow:0 0 0 2px #4dbdaf,0 3px 10px #087f7925}
-.studio-selection.bp-path-selected .bp-line-add-node{width:13px;height:13px;font-size:11px;opacity:.4;border:1px solid #69b9ae;color:#087f79;box-shadow:none}
+/* Small on-screen dots like vector editors, with a larger invisible hit target to keep dragging usable. */
+.studio-selection.bp-path-selected .bp-line-node{width:7px;height:7px;border:1px solid #fff;background:#168e84;box-shadow:0 0 0 1px #168e84,0 1px 3px #15383b1c;transition:transform .12s,box-shadow .12s}
+.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:9px;height:9px;background:#087f79;box-shadow:0 0 0 1px #087f79,0 1px 3px #143d441d}
+.studio-selection.bp-path-selected .bp-line-node::before{content:'';position:absolute;inset:-8px;border-radius:50%}
+.studio-selection.bp-path-selected .bp-line-node:hover{transform:translate(-50%,-50%) scale(1.2);box-shadow:0 0 0 1.5px #4dbdaf,0 2px 5px #087f7925}
+.studio-selection.bp-path-selected .bp-line-add-node{width:10px;height:10px;font-size:9px;opacity:.45;border:1px solid #69b9ae;color:#087f79;box-shadow:none}
 .studio-selection.bp-path-selected:hover .bp-line-add-node,.studio-selection.bp-path-selected .bp-line-add-node:focus-visible{opacity:.9}
-.studio-selection.bp-path-selected .bp-line-add-node::before{content:'';position:absolute;inset:-6px}
-@media(max-width:680px){.studio-selection.bp-path-selected .bp-line-node{width:14px;height:14px}.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:16px;height:16px}.studio-selection.bp-path-selected .bp-line-add-node{width:18px;height:18px}}
+.studio-selection.bp-path-selected .bp-line-add-node::before{content:'';position:absolute;inset:-8px;border-radius:50%}
+@media(max-width:680px){.studio-selection.bp-path-selected .bp-line-node{width:12px;height:12px}.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:14px;height:14px}.studio-selection.bp-path-selected .bp-line-add-node{width:16px;height:16px}}
