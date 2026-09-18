@@ -1,3 +1,4 @@
+import {AdminHomeText} from './AdminHomeText';
 import {AdminHomeHero} from './AdminHomeHero';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { documentToSvg } from './export';
@@ -107,6 +108,7 @@ export function AdminShowcasePage() {
     </header>
 
     <main className="admin-showcase-main">
+      <AdminHomeText/>
       <AdminHomeHero/>
       <section className="admin-showcase-title">
         <div><span>PORTFOLIO SHOWCASE</span><h1>مدیریت تصاویر سفارشی</h1><p>این تصاویر حاصل سفارش مشتری هستند و توسط تیم BioPlot خلق شده‌اند. در سایت فقط خود تصویر نمایش داده می‌شود و هیچ عنوان، نوشته یا شماره‌ای روی آن اضافه نمی‌شود.</p></div>

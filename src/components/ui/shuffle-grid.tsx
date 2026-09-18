@@ -5,6 +5,9 @@ import './shuffle-grid.css';
 
 export type ShuffleImage = { id: number; src: string; alt: string };
 export type ShuffleHeroProps = {
+  loading?: boolean;
+  loadFailed?: boolean;
+  onRetry?: () => void;
   title?: string;
   highlight?: string;
   description?: string;
@@ -29,6 +32,7 @@ export function shuffleOrder(order: number[], random = Math.random): number[] {
 }
 
 export function ShuffleHero({
+  loading = false, loadFailed = false, onRetry,
   title = 'Your science.', highlight = 'Clearly illustrated.',
   description = 'Turn complex biology into clear, editable, publication-ready figures.',
   eyebrow = 'BIOPLOT FIGURE STUDIO',
@@ -51,7 +55,7 @@ export function ShuffleHero({
   }, []);
 
   useEffect(() => {
-    if (paused || reducedMotion) return;
+    if (paused || reducedMotion || loading) return;
     let visible = true;
     const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; });
     if (grid.current) observer.observe(grid.current);
@@ -59,7 +63,7 @@ export function ShuffleHero({
       if (visible && document.visibilityState === 'visible') setOrder(previous => shuffleOrder(previous));
     }, 4000);
     return () => { window.clearInterval(timer); observer.disconnect(); };
-  }, [paused, reducedMotion]);
+  }, [paused, reducedMotion, loading]);
 
   return <section className="shuffle-hero" id="home" aria-labelledby="shuffle-hero-title">
     <div className="shuffle-hero-copy">
@@ -73,18 +77,17 @@ export function ShuffleHero({
       {socialProof && <small>{socialProof}</small>}
     </div>
     <div className="shuffle-hero-visual">
-      <div ref={grid} className="shuffle-grid" dir="ltr" aria-label={fa ? 'گالری تصاویر BioPlot' : 'BioPlot image gallery'}>
-        {images.slice(0, 16).map((image, i) => {
+      <div ref={grid} className="shuffle-grid" aria-busy={loading && !loadFailed} dir="ltr" aria-label={fa ? 'گالری تصاویر BioPlot' : 'BioPlot image gallery'}>
+        {loading && Array.from({length:16},(_,i)=><div key={i} className="shuffle-tile shuffle-placeholder" aria-hidden="true" style={{'--column':i%4,'--row':Math.floor(i/4)} as CSSProperties}/>)}
+        {!loading && images.slice(0, 16).map((image, i) => {
           const position = order.indexOf(i);
           return <div key={image.id} className="shuffle-tile" data-image-slot={image.id} style={{ '--column': position % 4, '--row': Math.floor(position / 4) } as CSSProperties}>
-            <img src={image.src} alt={image.alt} decoding="async" onError={event => {
-              const fallback = '/images/scientific-cell-hero.webp';
-              if (!event.currentTarget.src.endsWith(fallback)) event.currentTarget.src = fallback;
-            }}/>
+            <img src={image.src} alt={image.alt} decoding="async"/>
           </div>;
         })}
       </div>
-      {!reducedMotion && <button className="shuffle-motion" aria-pressed={paused} onClick={() => setPaused(value => !value)}>
+      {loadFailed && <button className="shuffle-motion" onClick={onRetry}>{fa?'تلاش دوباره برای دریافت تصاویر':'Retry loading images'}</button>}
+      {!loading && !reducedMotion && <button className="shuffle-motion" aria-pressed={paused} onClick={() => setPaused(value => !value)}>
         <StudioIcon name={paused ? 'play' : 'pause'} size={14}/>
         {fa ? (paused ? 'ادامه حرکت تصاویر' : 'توقف حرکت تصاویر') : (paused ? 'Play animation' : 'Pause animation')}
       </button>}
