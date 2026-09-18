@@ -1,7 +1,9 @@
 import { supabase } from './supabaseClient';
+import { HOME_HERO_SLOTS, type HomeHeroSlot } from './homeHeroDefaults';
+export { HOME_HERO_DEFAULTS, HOME_HERO_SLOTS, type HomeHeroSlot } from './homeHeroDefaults';
 
 export type HomeHeroImage = {
-  slot: 1 | 2 | 3;
+  slot: HomeHeroSlot;
   storagePath: string;
   altEn: string;
   altFa: string;
@@ -13,7 +15,7 @@ const MAX_FILE_SIZE = 8_000_000;
 
 function rowToImage(row: Record<string, any>): HomeHeroImage {
   return {
-    slot: Number(row.slot) as 1 | 2 | 3,
+    slot: Number(row.slot) as HomeHeroSlot,
     storagePath: String(row.storage_path ?? ''),
     altEn: String(row.alt_en ?? ''),
     altFa: String(row.alt_fa ?? ''),
@@ -32,14 +34,14 @@ export async function loadHomeHeroImages(): Promise<HomeHeroImage[]> {
     .select('slot,storage_path,alt_en,alt_fa,updated_at')
     .order('slot', { ascending: true });
   if (error) throw error;
-  return (data ?? []).map(rowToImage).filter(item => item.slot >= 1 && item.slot <= 3 && Boolean(item.storagePath));
+  return (data ?? []).map(rowToImage).filter(item => item.slot >= 1 && item.slot <= 16 && Boolean(item.storagePath));
 }
 
 function safeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'hero-image';
 }
 
-async function uploadHomeHeroFile(file: File, slot: 1 | 2 | 3) {
+async function uploadHomeHeroFile(file: File, slot: HomeHeroSlot) {
   if (file.size > MAX_FILE_SIZE) throw new Error('حداکثر حجم تصویر ۸ مگابایت است.');
   const allowed = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
   if (!allowed.includes(file.type)) throw new Error('فقط SVG، PNG، JPG و WebP پشتیبانی می‌شوند.');
@@ -56,8 +58,8 @@ async function uploadHomeHeroFile(file: File, slot: 1 | 2 | 3) {
   return path;
 }
 
-export async function setHomeHeroImage(slot: 1 | 2 | 3, file: File, previous?: HomeHeroImage) {
-  if (![1,2,3].includes(slot)) throw new Error('Invalid image slot.');
+export async function setHomeHeroImage(slot: HomeHeroSlot, file: File, previous?: HomeHeroImage) {
+  if (!HOME_HERO_SLOTS.includes(slot)) throw new Error('Invalid image slot.');
   const path = await uploadHomeHeroFile(file, slot);
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error('Authentication required.');
@@ -83,9 +85,3 @@ export async function removeHomeHeroImage(image: HomeHeroImage) {
   if (error) throw error;
   if (image.storagePath) await supabase.storage.from(BUCKET).remove([image.storagePath]);
 }
-
-export const HOME_HERO_DEFAULTS=[
- 'https://cdn.21st.dev/assets/mirror/2f/2f52f0ddd94c14a93f42a61ff2bb8842b52b78e27051e7e0f6fb579d50a5524f.jpg',
- 'https://cdn.21st.dev/assets/mirror/94/94fe535ff9ce491f4943129b6ff6b4e5c9465bb578892a2447ecdbbca1907d37.jpg',
- 'https://cdn.21st.dev/assets/mirror/ce/ce27c3636cc87ff0803227125972049f68bd4e2c0c5219fa2540549464abc51c.jpg'
-];

@@ -2,6 +2,8 @@ import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { StudioIcon } from './StudioIcon';
 import {
   HOME_HERO_DEFAULTS,
+  HOME_HERO_SLOTS,
+  type HomeHeroSlot,
   loadHomeHeroImages,
   removeHomeHeroImage,
   setHomeHeroImage,
@@ -20,9 +22,9 @@ export function AdminHomeHero() {
 
   useEffect(() => { void refresh().catch(error=>setMessage(error instanceof Error?error.message:'خطا در دریافت تصاویر')); }, []);
 
-  const slots = useMemo(() => ([1, 2, 3] as const).map(slot => ({ slot, image: images.find(item => item.slot === slot) })), [images]);
+  const slots = useMemo(() => HOME_HERO_SLOTS.map(slot => ({ slot, image: images.find(item => item.slot === slot) })), [images]);
 
-  const upload = (slot: 1 | 2 | 3, current: HomeHeroImage | undefined, event: ChangeEvent<HTMLInputElement>) => {
+  const upload = (slot: HomeHeroSlot, current: HomeHeroImage | undefined, event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
@@ -45,9 +47,9 @@ export function AdminHomeHero() {
   };
 
 
-  return <section className="admin-template-hero">
+  return <section className="admin-template-hero admin-home-shuffle">
     <div className="admin-template-hero-head">
-      <div><span>HOME HERO</span><h2>مدیریت تصاویر بالای صفحه Home</h2><p>سه تصویر بخش بالای Home را از همین‌جا عوض کن. تغییرات بعد از آپلود مستقیماً در صفحه Home دیده می‌شوند.</p></div>
+      <div><span>HOME HERO</span><h2>مدیریت تصاویر بالای صفحه Home</h2><p>هر کدام از ۱۶ تصویر را جداگانه جایگزین کن. شمارهٔ تصویر ثابت است؛ جای آن در صفحهٔ اصلی با حرکت تصاویر تغییر می‌کند.</p></div>
       <a href="/" target="_blank" rel="noreferrer">مشاهده صفحه <StudioIcon name="arrow" size={15}/></a>
     </div>
 
@@ -56,15 +58,15 @@ export function AdminHomeHero() {
     <div className="admin-template-hero-grid">{slots.map(({ slot, image }) => <article key={slot} className="admin-template-hero-card">
       <div className="admin-template-hero-preview">
         <img src={image ? homeHeroPublicUrl(image.storagePath) : HOME_HERO_DEFAULTS[slot-1]} alt=""/>
-        <span>0{slot}</span>
+        <span>{String(slot).padStart(2, '0')}</span>
         {!image && <em>پیش‌فرض</em>}
       </div>
       <div className="admin-template-hero-card-body">
-        <div><strong>تصویر {slot}</strong><small>{slot === 1 ? 'قاب چپ' : slot === 2 ? 'قاب وسط' : 'قاب راست'}</small></div>
-        <label className={busySlot === slot ? 'busy' : ''}><input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg" disabled={busySlot !== null} onChange={event => upload(slot, image, event)}/><StudioIcon name="upload" size={16}/>{image ? 'جایگزینی' : 'آپلود تصویر'}</label>
+        <div><strong>تصویر {slot}</strong><small>{`ردیف ${Math.ceil(slot / 4)} · ستون ${(slot - 1) % 4 + 1}`}</small></div>
+        <label className={busySlot !== null ? 'busy' : ''}><input type="file" aria-label={`جایگزینی تصویر ${slot}`} accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg" disabled={busySlot !== null} onChange={event => upload(slot, image, event)}/><StudioIcon name="upload" size={16}/>{busySlot === slot ? 'در حال ذخیره…' : image ? 'جایگزینی' : 'آپلود تصویر'}</label>
         {image && <button disabled={busySlot !== null} onClick={() => remove(image)}>بازگشت به پیش‌فرض</button>}
       </div>
     </article>)}</div>
-    <div className="admin-template-hero-tip"><StudioIcon name="image" size={18}/><span><b>پیشنهاد:</b> برای نتیجه بهتر از تصاویر عمودی یا مربعی با کیفیت بالا و بدون متن ریز استفاده کن. WebP یا JPG سبک، سرعت صفحه را بهتر نگه می‌دارد.</span></div>
+    <div className="admin-template-hero-tip"><StudioIcon name="image" size={18}/><span><b>پیشنهاد:</b> برای نتیجه بهتر از تصاویر مربعی با کیفیت بالا و بدون متن ریز استفاده کن. WebP یا JPG سبک، سرعت صفحه را بهتر نگه می‌دارد.</span></div>
   </section>;
 }

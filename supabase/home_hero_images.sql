@@ -1,5 +1,5 @@
 create table if not exists public.home_hero_images (
-slot smallint primary key check (slot between 1 and 3),
+slot smallint primary key check (slot between 1 and 16),
 storage_path text not null check (storage_path like 'home-hero/%'),
 alt_en text not null default '', alt_fa text not null default '',
 updated_by uuid references auth.users(id) on delete set null,

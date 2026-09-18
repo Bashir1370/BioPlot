@@ -1,33 +1,35 @@
-# Home Hero10 adaptation — verification
+# Home Shuffle Grid verification — 2026-09-18
 
-- Source: user-supplied Hero10 example and screenshot `4d4263ec-50de-4eec-9df3-e7490c005e30.png`. The referenced local attachment path is unavailable; the screenshot is visible in the conversation. The upstream registry returns authentication_required, so this is an independently implemented compatible component, not the original source.
-- Implementation: live Home preview captured in the cloud browser at 1348 × 926, English and Persian. Screenshots were emitted in the conversation during verification.
-- State: public visitor, default three images, desktop.
+- Source visual truth: `/workspace/scratch/69be2ccc5bb8/upload/96968499-6dc9-4d5a-a984-355d23171cf0.png` (1911 × 972).
+- Browser implementation: `/workspace/scratch/bioplot-shuffle-en.jpg`, `/workspace/scratch/bioplot-shuffle-fa.jpg` (1363 × 936, CSS viewport 1363 × 936, 1×).
+- Paired comparison: `/workspace/scratch/bioplot-shuffle-comparison.jpg`. Source hero content crop (1420 × 563) and implementation hero crop (1305 × 580) normalized into a 1420px-wide comparison, excluding browser chrome. The original screenshot viewport cannot be set through the available browser API; this is a proportional component comparison, not a pixel-identical clone.
+- State: Home hero, loaded gallery, English/Persian; animation paused for composition review.
 
 ## Findings
 
-Browser inspection confirms a centered serif English heading, BioPlot teal highlight, two pill CTAs, truthful feature text, three overlapping image frames with rounded white borders, and Persian RTL typography. Quick start is absent. No actionable defect was found in these inspected desktop states.
+No actionable P0/P1/P2 findings in the inspected desktop states. The source's two balanced columns, vertically centered headline/copy/actions, 4×4 image mosaic, narrow gutters, rounded image corners and landscape tile proportions are retained. BioPlot's established teal, Inter/Vazirmatn typography, scientific copy, secondary CTA and existing three defaults are intentional product adaptations. Remaining defaults are scientific/medical photographs and the existing cell illustration. All 16 image requests loaded without the error fallback in the inspected browser.
 
-Typography: Georgia for English display, Vazirmatn for Persian; readable body and controls.
-Spacing: centered heading/copy/actions above an overlapping three-card image fan. The Home navigation and search remain intact.
-Colors: existing teal, ink and pale background intentionally retained instead of the sample's black CTA.
-Images: the three supplied CDN images loaded successfully; admin images replace individual slots. Missing image URLs fall back to the existing local scientific illustration.
-Copy: BioPlot's bilingual title, description and features retained; no invented customer counts.
+Typography: bold sans headline and smaller muted body, no clipping; Persian glyphs and RTL flow render correctly. Spacing: image and copy columns have clear separation; grid retains 16 distinct tiles with consistent gutters. Colors: existing brand foreground/background and teal actions preserved. Assets: real image assets, object-fit cover, no drawn substitutes. Focus controls and pause/resume labels are available.
 
-## Interactions and validation
+## Interaction evidence
 
-- Browse templates navigated to the Templates page.
-- FA switched the full hero to Persian with RTL layout.
-- Create scientific figure opened a new editor document.
-- Browser console: no application errors observed in the Home inspection; one browser-extension metadata error was unrelated to app code.
-- Production build and six automated tests passed. Tests cover fixed image slots, upload replacement, failed-save cleanup, authentication, file-type rejection and removal.
-- Live Supabase verification: RLS enabled; public SELECT allowed; anonymous INSERT and authenticated TRUNCATE denied. Admin write policies use the existing admin function.
-- Authenticated admin upload in-browser and mobile viewport testing were not performed.
+- Pause changes to Play with aria-pressed=true; resume changes it back. Subsequent DOM positions show a changed permutation of the same 16 identities.
+- Persian language switch mirrors the layout and translates actions.
+- Browse templates opens `/templates` and renders the template library.
+- Create figure opens `editor.html?id=doc_mu6npqwz_vuccik` with a saved, blank figure in the local preview.
+- Browser console checked: no application errors; browser-extension metadata errors only.
+- Build and TypeScript validation passed. Ten targeted tests passed, including all 16 admin controls, sparse/default mapping, slot-16 upload, out-of-range rejection, shuffle identity preservation, replacement cleanup and failed save handling.
+- Live database constraint confirmed as 1–16 with RLS enabled and existing admin-write/public-read policies preserved.
 
-## Comparison limits
+## Comparison history
 
-No normalized side-by-side comparison artifact could be produced because the source screenshot file is absent. Desktop rendering and navigation were inspected, but exact source fidelity is not certified. No source/prototype pixel-density equivalence is claimed.
+First paired visual review: no substantive layout fixes required. Two invalid stock image URLs found during network validation were replaced before the browser capture; every final gallery image loaded successfully.
 
-final result: blocked
+## Remaining coverage / follow-up polish
 
-Blocker: source attachment unavailable for the formal paired-image fidelity check. The implementation and functional checks are complete; this report does not claim a full visual QA pass.
+- Authenticated admin file upload was tested through mocked persistence tests, not a live administrator browser session (preview is signed out).
+- Mobile breakpoints and reduced-motion behavior are implemented but were not exercised in the available fixed-size browser viewport.
+- A full pixel-matched comparison at the original viewport is not claimed; focused crops were unnecessary because all hero controls and tiles were legible in the combined component comparison.
+- Existing Supabase advisor warnings concern admin helper functions and leaked-password protection; this migration changes only the slot constraint. References: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable and https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection.
+
+final result: passed
