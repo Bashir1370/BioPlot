@@ -1,8 +1,10 @@
 import type { CSSProperties } from 'react';
-import { AlignBottomSimple, AlignCenterHorizontal, AlignCenterHorizontalSimple, AlignCenterVertical, AlignCenterVerticalSimple, AlignLeftSimple, AlignRightSimple, AlignTopSimple, ArrowElbowDownRight, ArrowRight, ArrowUUpLeft, ArrowUUpRight, BezierCurve, CaretRight, Check, Circle, CirclesThreePlus, Clock, Copy, CopySimple, CornersOut, DotsThreeVertical, DownloadSimple, EyeSlash, Flask, FolderSimple, FrameCorners, Graph, GridNine, House, ImageSquare, LockSimple, LockSimpleOpen, MagnifyingGlass, Minus, PaintBucket, PencilSimple, Pill, Plus, Rectangle, SelectionAll, SelectionBackground, SelectionForeground, SelectionSlash, Shapes, ShareNetwork, ShieldCheck, SidebarSimple, SlidersHorizontal, Sparkle, SquaresFour, Stack, Star, TextT, Trash, UploadSimple, X } from '@phosphor-icons/react';
+import { AlignBottomSimple, AlignCenterHorizontal, AlignCenterHorizontalSimple, AlignCenterVertical, AlignCenterVerticalSimple, AlignLeftSimple, AlignRightSimple, AlignTopSimple, ArrowElbowDownRight, ArrowRight, ArrowUUpLeft, ArrowUUpRight, BezierCurve, CaretRight, Check, Circle, CirclesThreePlus, Clock, Copy, CopySimple, CornersOut, DotsThreeVertical, DownloadSimple, EyeSlash, Flask, FolderSimple, FrameCorners, Graph, GridNine, House, ImageSquare, LockSimple, LockSimpleOpen, MagnifyingGlass, Minus, PaintBucket, Pause, Play, PencilSimple, Pill, Plus, Rectangle, SelectionAll, SelectionBackground, SelectionForeground, SelectionSlash, Shapes, ShareNetwork, ShieldCheck, SidebarSimple, SlidersHorizontal, Sparkle, SquaresFour, Stack, Star, TextT, Trash, UploadSimple, X } from '@phosphor-icons/react';
 
 // One optical family for every Home and Figure Studio control.
 const icons = {
+  play: Play,
+  pause: Pause,
   plus: Plus,
   minus: Minus,
   fit: CornersOut,

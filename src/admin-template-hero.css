@@ -6,3 +6,12 @@
 .admin-template-hero-tip{margin-top:16px;display:flex;align-items:flex-start;gap:9px;padding:12px 14px;border-radius:12px;background:#f4f8f7;color:#617a7e;font-size:11px;line-height:1.75}.admin-template-hero-tip svg{color:#0c8176;flex:none;margin-top:1px}.admin-template-hero-tip b{color:#34575b}
 @media(max-width:1000px){.admin-template-hero-grid{grid-template-columns:1fr 1fr}.admin-template-hero-head{align-items:flex-start;flex-direction:column}}
 @media(max-width:680px){.admin-template-hero{padding:16px}.admin-template-hero-grid{grid-template-columns:1fr}.admin-template-hero-card-body{grid-template-columns:1fr}.admin-template-hero-card-body label{width:100%}.admin-template-hero-card-body button{grid-column:auto}.admin-template-hero-preview{height:220px}}
+
+.admin-home-shuffle .admin-template-hero-grid{grid-template-columns:repeat(4,minmax(0,1fr));direction:ltr}
+.admin-home-shuffle .admin-template-hero-card{direction:rtl}
+.admin-home-shuffle .admin-template-hero-preview{height:auto;aspect-ratio:1.16}
+.admin-home-shuffle label{position:relative}
+.admin-home-shuffle label input{display:block;position:absolute;width:1px;height:1px;opacity:0}
+.admin-home-shuffle label:focus-within{outline:3px solid #5ebdb3;outline-offset:3px}
+@media(max-width:1100px){.admin-home-shuffle .admin-template-hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.admin-home-shuffle .admin-template-hero-grid{grid-template-columns:1fr}}
