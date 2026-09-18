@@ -1,7 +1,7 @@
 import {useEffect,useState,type FormEvent} from 'react';
 import {HOME_TEXT_FIELDS,HOME_TEXT_DEFAULTS,loadHomeContent,saveHomeContent,type HomeContent} from './homeContent';
 import './admin-home-text.css';
-const labels={eyebrow:'نوشتهٔ بالای عنوان',title:'عنوان اصلی',highlight:'عنوان رنگی',description:'توضیحات',primaryText:'متن دکمهٔ ساخت شکل',secondaryText:'متن دکمهٔ قالب‌ها',socialProof:'متن زیر دکمه‌ها'};
+const labels={eyebrow:'نوشتهٔ بالای عنوان',title:'عنوان اصلی',highlight:'عنوان رنگی',description:'توضیحات',primaryText:'متن دکمهٔ ساخت شکل',secondaryText:'متن دکمهٔ داشبورد',socialProof:'متن زیر دکمه‌ها'};
 export function AdminHomeText(){
  const [content,setContent]=useState<HomeContent|null>(null);
  const [locale,setLocale]=useState<'fa'|'en'>('fa');

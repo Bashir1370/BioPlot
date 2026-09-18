@@ -1,4 +1,6 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import {supabase} from './supabaseClient';
+import {WorkspaceRepository} from './workspaceRepository';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { BioPlotDocument, migrateDocument } from './model';
 
 export interface ProjectSummary {
@@ -142,6 +144,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
   }
   async save(document: BioPlotDocument) {
     const userId = await this.userId();
+    if(document.ownerId && document.ownerId!==userId)throw new Error('Account changed');
     const updatedAt = new Date().toISOString();
     const { error } = await this.client.from('bioplot_projects').upsert({ id: document.id, user_id: userId, title: document.title, document: { ...document, updatedAt }, updated_at: updatedAt });
     if (error) throw error;
@@ -186,11 +189,7 @@ export class ResilientProjectRepository implements ProjectRepository {
 
 export const localProjects = new BrowserProjectRepository();
 
-export function createCloudRepository(): SupabaseProjectRepository | null {
-  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-  const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-  if (!url || !anon) return null;
-  return new SupabaseProjectRepository(createClient(url, anon));
+export function createCloudRepository(): SupabaseProjectRepository {
+  return new SupabaseProjectRepository(supabase);
 }
-
-export const projects = new ResilientProjectRepository(localProjects, createCloudRepository());
+export const projects = new WorkspaceRepository(localProjects, createCloudRepository(), supabase);

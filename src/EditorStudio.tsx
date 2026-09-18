@@ -70,6 +70,10 @@ export function EditorStudio(){
   const [favoriteVersion,setFavoriteVersion]=useState(0);
   const [libraryVersion,setLibraryVersion]=useState(0);
   const [saveState,setSaveState]=useState('Saved');
+  const [documentReady,setDocumentReady]=useState(false);
+  const [saveFailed,setSaveFailed]=useState(false);
+  const [saveAttempt,setSaveAttempt]=useState(0);
+  const [loadError,setLoadError]=useState(false);
   const [shareState,setShareState]=useState('Share');
   const [libraryWidth,setLibraryWidth]=useState(276);
   const [inspectorWidth,setInspectorWidth]=useState(300);
@@ -264,15 +268,23 @@ export function EditorStudio(){
     if(assetCategory&&!categories.includes(assetCategory))setAssetCategory('');
   },[assetCategory,categories]);
   useEffect(()=>{
+    let alive=true;
     const id=new URLSearchParams(window.location.search).get('id');
     void (async()=>{
-      if(id){const found=await projects.load(id);if(found){storeRef.current.replace(migrateDocument(found));return;}}
+      if(id){
+        const found=await projects.load(id);
+        if(!found)throw new Error('Figure unavailable');
+        if(alive){storeRef.current.replace(migrateDocument(found));setDocumentReady(true);}
+        return;
+      }
       const fresh=createBlankDocument();
       fresh.metadata.locale=localStorage.getItem('bioplot-lang')==='fa'?'fa':'en';
+      if(!alive)return;
       storeRef.current.replace(fresh);
-      await projects.save(fresh);
       history.replaceState(null,'',`/editor?id=${encodeURIComponent(fresh.id)}`);
-    })();
+      setDocumentReady(true);
+    })().catch(()=>{if(alive)setLoadError(true);});
+    return()=>{alive=false;};
   },[]);
   useEffect(()=>{
     const locale=documentState.metadata.locale;
@@ -281,6 +293,7 @@ export function EditorStudio(){
     localStorage.setItem('bioplot-lang',locale);
   },[documentState.metadata.locale]);
   useEffect(()=>{
+    if(!documentReady)return;
     const session=createCollaborationSession();
     collaborationRef.current=session;
     let unsubscribe=()=>{};
@@ -293,18 +306,20 @@ export function EditorStudio(){
       });
     }).catch(()=>{});
     return()=>{unsubscribe();session.disconnect();collaborationRef.current=null;};
-  },[documentState.id,fa]);
+  },[documentState.id,fa,documentReady]);
   useEffect(()=>{setSelected(current=>new Set([...current].filter(id=>objects.some(object=>object.id===id&&!object.hidden))));},[objects]);
   useEffect(()=>{
+    if(!documentReady)return;
+    setSaveFailed(false);
     setSaveState(fa?'در حال ذخیره…':'Saving…');
     const timer=window.setTimeout(async()=>{
-      await projects.save(documentState);
+      try{await projects.save(documentState);}catch{setSaveFailed(true);setSaveState(fa?'ذخیره ناموفق':'Save failed');return;}
       setSaveState(fa?'ذخیره شد':'Saved');
       if(suppressBroadcast.current)suppressBroadcast.current=false;else collaborationRef.current?.publishDocument(documentState);
     },420);
     return()=>window.clearTimeout(timer);
-  },[documentState,fa]);
-  useEffect(()=>{const timer=window.setTimeout(()=>saveRecoverySnapshot(documentState),2200);return()=>window.clearTimeout(timer);},[documentState]);
+  },[documentState,fa,documentReady,saveAttempt]);
+  useEffect(()=>{if(!documentReady)return;const timer=window.setTimeout(()=>saveRecoverySnapshot(documentState),2200);return()=>window.clearTimeout(timer);},[documentState,documentReady]);
   useEffect(()=>{const close=()=>setContextMenu(null);window.addEventListener('pointerdown',close);return()=>window.removeEventListener('pointerdown',close);},[]);
   useEffect(()=>{
     const onKey=(event:KeyboardEvent)=>{
@@ -557,11 +572,13 @@ export function EditorStudio(){
   function openTool(tool:Panel){setLineTool(null);setLinePreview(null);setAssetEditOpen(false);setPanel(tool);setLibraryCollapsed(false);}
   function browseAssets(){setAssetEditOpen(false);setPanel('assets');setLibraryCollapsed(false);}
   const columns=`60px ${libraryCollapsed?0:panel==='lines'?Math.max(360,libraryWidth):libraryWidth}px 6px minmax(0,1fr) 6px ${!inspectorCollapsed?inspectorWidth:pagesCollapsed?0:196}px`;
+  if(loadError)return <div className="editor-cloud-loading"><strong>{fa?'شکل در دسترس نیست یا دریافت آن انجام نشد.':'Figure unavailable or could not be loaded.'}</strong><button onClick={()=>window.location.reload()}>{fa?'تلاش دوباره':'Retry'}</button><a href="/dashboard">{fa?'داشبورد':'Dashboard'}</a></div>;
+  if(!documentReady)return <div className="editor-cloud-loading"><strong>{fa?'در حال دریافت شکل…':'Loading figure…'}</strong></div>;
   return <div className={`studio-shell ${libraryCollapsed?'library-closed':'library-open'} ${inspectorCollapsed?'inspector-closed':'inspector-open'} ${pagesCollapsed?'pages-closed':'pages-open'} ${selectedObjects.length?'has-selection':'no-selection'} ${showGrid?'grid-visible':''}`} dir={fa?'rtl':'ltr'}>
     <header className="studio-topbar">
       <div className="reference-document-card">
-        <a className="studio-brand" href="index.html" aria-label="BioPlot"><span>B</span><strong>BioPlot</strong></a>
-        <div className="studio-document"><input aria-label={fa?'نام شکل':'Figure title'} value={documentState.title} onChange={event=>setTitle(event.target.value)}/><small title={saveState}><i/>{saveState}</small></div>
+        <a className="studio-brand" href="/dashboard" aria-label="BioPlot"><span>B</span><strong>BioPlot</strong></a>
+        <div className="studio-document"><input aria-label={fa?'نام شکل':'Figure title'} value={documentState.title} onChange={event=>setTitle(event.target.value)}/><small title={saveState}><i/>{saveState}</small>{saveFailed&&<button onClick={()=>setSaveAttempt(value=>value+1)}>{fa?'تلاش دوباره':'Retry save'}</button>}</div>
         <div className="studio-history"><button disabled={!storeRef.current.history.canUndo} onClick={()=>storeRef.current.undo()} title={fa?'واگرد':'Undo'} aria-label={fa?'واگرد':'Undo'}><StudioIcon name="undo"/></button><button disabled={!storeRef.current.history.canRedo} onClick={()=>storeRef.current.redo()} title={fa?'ازنو':'Redo'} aria-label={fa?'ازنو':'Redo'}><StudioIcon name="redo"/></button></div>
       </div>
       <details className="canvas-edit-details"><summary aria-label={fa?'ویرایش بوم':'Edit canvas'}><StudioIcon name="canvas"/><span>{fa?'ویرایش بوم':'Edit canvas'}</span></summary><CanvasSettingsForm fa={fa} page={page} onSettings={changeCanvas}/></details>

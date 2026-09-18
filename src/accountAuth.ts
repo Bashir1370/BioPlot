@@ -71,7 +71,8 @@ export async function updateUserProfile(input: { displayName: string; preferredL
 }
 
 export async function signOutUser() {
-  await supabase.auth.signOut();
+  const {error}=await supabase.auth.signOut();
+  if(error)throw error;
 }
 
 export function subscribeAccountState(callback: (state: AccountState) => void) {

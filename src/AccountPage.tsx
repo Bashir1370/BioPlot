@@ -76,6 +76,7 @@ export function AccountPage() {
       if (!mounted) return;
       setAccount(state);
       if (state.user) {
+        if(new URLSearchParams(window.location.search).get('next')==='dashboard'){window.location.href='/dashboard';return;}
         setDisplayName(accountDisplayName(state));
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       }
@@ -100,6 +101,7 @@ export function AccountPage() {
       const state = await getAccountState();
       setAccount(state);
       if (state.user) {
+        if(new URLSearchParams(window.location.search).get('next')==='dashboard'){window.location.href='/dashboard';return;}
         setDisplayName(accountDisplayName(state));
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       }
@@ -192,7 +194,7 @@ export function AccountPage() {
           <span className="account-card-icon"><StudioIcon name="canvas"/></span>
           <h2>Figure Studio</h2>
           <p>{fa ? 'مستقیماً وارد فضای طراحی علمی شو و پروژه‌هایت را ادامه بده.' : 'Open your scientific workspace and continue designing your figures.'}</p>
-          <a className="account-secondary" href="/editor"><StudioIcon name="canvas"/>{t.openEditor}</a>
+          <a className="account-secondary" href="/dashboard"><StudioIcon name="canvas"/>{fa?'داشبورد من':'My dashboard'}</a>
         </section>
 
         {account.isAdmin && <section className="account-card account-admin-card">

@@ -19,3 +19,5 @@ export function isAccountPath(pathname:string){
   const normalized=normalizedPath(pathname);
   return normalized==='/account'||normalized.endsWith('/account');
 }
+
+export function isDashboardPath(pathname:string){return ['/dashboard','/dashboard.html','/templates','/templates.html'].includes(normalizedPath(pathname));}
