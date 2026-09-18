@@ -206,32 +206,33 @@ export function EditorStudio(){
   useEffect(()=>{
     const viewport=canvasViewportRef.current;
     if(!viewport)return;
+    // Wheel events arrive in very different units (mouse wheels, trackpads and
+    // browser "smooth scrolling" all report different deltaY values). Keep a
+    // small frame-batched delta and convert it to a predictable zoom amount.
     let accumulated=0;
     let frame=0;
-    let resetTimer:number|undefined;
     let pointer:ZoomPointer={clientX:0,clientY:0};
     const flush=()=>{
       frame=0;
-      if(Math.abs(accumulated)<WHEEL_STEP_THRESHOLD)return;
-      const direction=accumulated<0?1:-1;
-      const steps=Math.min(4,Math.max(1,Math.floor(Math.abs(accumulated)/WHEEL_STEP_THRESHOLD)));
-      accumulated-=Math.sign(accumulated)*steps*WHEEL_STEP_THRESHOLD;
-      applyZoom(zoomRef.current+direction*ZOOM_STEP*steps,pointer);
+      if(!accumulated)return;
+      const delta=accumulated;
+      accumulated=0;
+      // 240 px of wheel travel is one normal tenth-step. Clamp each frame so
+      // fast wheels cannot jump across the canvas.
+      const zoomDelta=Math.max(-0.16,Math.min(0.16,-delta/240*ZOOM_STEP));
+      applyZoom(zoomRef.current+zoomDelta,pointer);
     };
     const onWheel=(event:WheelEvent)=>{
       if(event.ctrlKey||event.metaKey||event.altKey)return;
       event.preventDefault();
       pointer={clientX:event.clientX,clientY:event.clientY};
       accumulated+=normalizeWheelDelta(event);
-      if(resetTimer!==undefined)window.clearTimeout(resetTimer);
-      resetTimer=window.setTimeout(()=>{accumulated=0;},140);
-      if(Math.abs(accumulated)>=WHEEL_STEP_THRESHOLD&&!frame)frame=requestAnimationFrame(flush);
+      if(!frame)frame=requestAnimationFrame(flush);
     };
     viewport.addEventListener('wheel',onWheel,{passive:false});
     return()=>{
       viewport.removeEventListener('wheel',onWheel);
       if(frame)cancelAnimationFrame(frame);
-      if(resetTimer!==undefined)window.clearTimeout(resetTimer);
     };
   },[]);
 
