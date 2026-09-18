@@ -6,7 +6,7 @@ import { StudioIcon } from './StudioIcon';
 import './vector-studio.css';
 
 export function VectorStudio({fa}:{fa:boolean}) {
-  const [category,setCategory]=useState<LineCategoryId>('lines');
+  const [category,setCategory]=useState<LineCategoryId>('arrows');
   const [libraryVersion,setLibraryVersion]=useState(0);
   const [message,setMessage]=useState('');
   const published=useMemo(()=>getAssetCatalog().filter(asset=>asset.category===LINE_CATEGORY),[libraryVersion]);
@@ -28,8 +28,8 @@ export function VectorStudio({fa}:{fa:boolean}) {
   const presets=LINE_PRESETS.filter(preset=>preset.category===category);
   const assets=published.filter(asset=>lineCategoryOf(asset)===category);
   const current=LINE_CATEGORIES.find(item=>item.id===category)!;
-  return <div className="bp-line-browser" dir={fa?'rtl':'ltr'}>
-    <nav className="bp-line-categories" aria-label={fa?'دسته‌های خطوط':'Line categories'}>
+  return <div className="bp-line-browser" dir="ltr">
+    <nav className="bp-line-categories" dir={fa?'rtl':'ltr'} aria-label={fa?'دسته‌های خطوط':'Line categories'}>
       {LINE_CATEGORIES.map(item=><button key={item.id} type="button" aria-pressed={category===item.id} aria-controls="line-category-gallery" className={category===item.id?'active':''} onClick={()=>{setCategory(item.id);setMessage('');}}>
         <span className="bp-category-symbol" aria-hidden="true" dangerouslySetInnerHTML={{__html:nativePresetSvg({...LINE_PRESETS.find(preset=>preset.category===item.id)!.settings,stroke:'#40515c',strokeWidth:3})}}/>
         <span>{fa?item.fa:item.en}</span><span className="bp-category-chevron" aria-hidden="true">›</span>
@@ -39,7 +39,7 @@ export function VectorStudio({fa}:{fa:boolean}) {
         setMessage(fa?'روی بوم بکشید؛ Esc برای لغو':'Drag on canvas · Esc to cancel');
       }}><StudioIcon name="edit"/><span>{fa?'رسم دلخواه':'Custom'}</span></button>
     </nav>
-    <section id="line-category-gallery" className="bp-line-gallery" aria-label={fa?current.fa:current.en}>
+    <section id="line-category-gallery" className="bp-line-gallery" dir={fa?'rtl':'ltr'} aria-label={fa?current.fa:current.en}>
       <div className="bp-line-gallery-grid">
         {presets.map(preset=><button type="button" key={preset.id} title={fa?preset.fa:preset.en} aria-label={fa?`افزودن ${preset.fa}`:`Add ${preset.en}`} onClick={()=>insert(preset.settings)}>
           <span aria-hidden="true" dangerouslySetInnerHTML={{__html:nativePresetSvg({...preset.settings,stroke:'#40515c',strokeWidth:3})}}/>

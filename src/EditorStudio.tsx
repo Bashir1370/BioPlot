@@ -1,3 +1,5 @@
+import { assetLineEndpoints, updateAssetLineEndpoint } from './assetLineGeometry';
+import { LINE_CATEGORY } from './lineCatalog';
 import {SHAPE_CATALOG,shapeSvgBody} from './shapeGeometry';
 import { FloatingTextControls } from './FloatingTextControls';
 import { PointerEvent as ReactPointerEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -131,7 +133,7 @@ export function EditorStudio(){
     const insert=(event:Event)=>{
       const asset=(event as CustomEvent<ScientificAsset>).detail;
       if(!asset?.svg)return;
-      const object=assetToObject(asset);
+      const object={...assetToObject(asset),lineAsset:true};
       finishInsert(object);
     };
     window.addEventListener('bioplot:activate-line',activate);
@@ -237,6 +239,8 @@ export function EditorStudio(){
   const renderObjects=useMemo(()=>objects.map(object=>object.type==='connector'?resolveConnector(object,objects):object),[objects]);
   const selectedObjects=renderObjects.filter(object=>selected.has(object.id));
   const selectedLine=selectedObjects.length===1&&selectedObjects[0].type==='arrow'&&selectedObjects[0].startPoint&&selectedObjects[0].endPoint?selectedObjects[0]:null;
+  const selectedLineAsset=selectedObjects.length===1&&selectedObjects[0].type==='asset'&&(selectedObjects[0].lineAsset||getAssetCatalog().some(asset=>selectedObjects[0].type==='asset'&&asset.id===selectedObjects[0].assetId&&asset.category===LINE_CATEGORY))?selectedObjects[0]:null;
+  const selectedAssetEndpoints=selectedLineAsset?assetLineEndpoints(selectedLineAsset):[];
   const selectedLineNodes=selectedLine?worldLineNodes(selectedLine):[];
   const previewLine=linePreview&&lineTool?createDrawnLine({x:linePreview.sx,y:linePreview.sy},{x:linePreview.ex,y:linePreview.ey},lineTool):null;
   const selectedAsset=selectedObjects.length===1&&selectedObjects[0].type==='asset'?selectedObjects[0] as StyledAssetObject:null;
@@ -475,6 +479,30 @@ export function EditorStudio(){
     const up=(pointer:PointerEvent)=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);setLinePreview(null);const end=adjusted(pointer.clientX,pointer.clientY);if(Math.hypot(end.x-start.x,end.y-start.y)>=3)addObject(createDrawnLine(start,end,lineTool));setLineTool(null);};
     window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
   }
+  function beginAssetEndpoint(event:ReactPointerEvent,index:number){
+    if(event.button!==0||!selectedLineAsset||selectedLineAsset.locked)return;
+    event.preventDefault();event.stopPropagation();
+    const asset=selectedLineAsset;
+    const origin=selectedAssetEndpoints[index],opposite=selectedAssetEndpoints[1-index];
+    const pointerDown={x:event.clientX,y:event.clientY};
+    const before=structuredClone(asset);
+    let changed=false;
+    const move=(pointer:PointerEvent)=>{
+      const point=lineNodeDragPoint(origin,pointerDown,{x:pointer.clientX,y:pointer.clientY},zoom,
+        {width:page.width,height:page.height},pointer.shiftKey?opposite:undefined);
+      storeRef.current.preview([updateAssetLineEndpoint(asset,index,point)]);changed=true;
+    };
+    const cleanup=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancel);};
+    const up=()=>{
+      cleanup();if(!changed)return;
+      const after=activePage(storeRef.current.snapshot).objects.find(item=>item.id===asset.id);
+      if(after)storeRef.current.commitObjectState([before],[structuredClone(after)],'Move uploaded arrow endpoint');
+    };
+    const cancel=()=>{cleanup();storeRef.current.preview([before]);};
+    window.addEventListener('pointermove',move);
+    window.addEventListener('pointerup',up,{once:true});
+    window.addEventListener('pointercancel',cancel,{once:true});
+  }
   function beginLineNode(event:ReactPointerEvent,index:number){
     if(event.button!==0)return;
     event.preventDefault();event.stopPropagation();
@@ -608,7 +636,7 @@ export function EditorStudio(){
         </>}
       </ShineBorder>
       <div className={`studio-splitter library-splitter ${libraryCollapsed?'disabled':''}`} onPointerDown={event=>!libraryCollapsed&&resizePanel('library',event)}/>
-      <section className={`studio-canvas-zone ${lineTool?'bp-line-drawing':''}`}><div className="studio-canvas-scroll" ref={canvasViewportRef} onPointerDown={event=>{if(event.target===event.currentTarget){setSelected(new Set());setAssetEditOpen(false);setContextMenu(null);}}}><div className="studio-artboard-scale" style={{width:page.width*zoom,height:page.height*zoom}}><span className="reference-artboard-label">{page.width} × {page.height} px</span><div ref={artboardRef} className="studio-artboard" style={{width:page.width,height:page.height,background:page.background,transform:`scale(${zoom})`,transformOrigin:'top left'}} onPointerDown={beginMarquee}>{linePreview&&<svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',overflow:'visible',zIndex:200}}><g opacity="0.7" transform={`translate(${previewLine?.x??0} ${previewLine?.y??0})`} dangerouslySetInnerHTML={{__html:previewLine?lineSvgBody(previewLine):''}}/></svg>}{renderObjects.map(object=><EditorObjectView key={object.id} object={object} objects={objects} selected={selected.has(object.id)} onPointerDown={beginMove} onContextMenu={objectContext}/>)}{guides.x!==undefined&&<div className="studio-guide vertical" style={{left:guides.x}}/>}{guides.y!==undefined&&<div className="studio-guide horizontal" style={{top:guides.y}}/>}{bounds&&<div className={`studio-selection ${selectedLine?'bp-path-selected':''}`} style={{left:bounds.x,top:bounds.y,width:bounds.width,height:bounds.height}}><span className="studio-rotate-line"/><button className="studio-rotate" type="button" title={fa?'چرخاندن انتخاب (Shift: گام ۱۵ درجه)':'Rotate selection (Shift: 15° steps)'} aria-label={fa?'چرخاندن انتخاب':'Rotate selection'} onPointerDown={beginRotate}/>{(selectedLine?['nw','ne','se','sw']:['nw','n','ne','e','se','s','sw','w']).map(handle=><button key={handle} type="button" aria-label={`${handle} resize handle`} title={fa?'تغییر اندازه':'Resize'} className={`studio-handle ${handle}`} onPointerDown={event=>beginResize(event,handle)}/>)}{selectedLine&&selectedLineNodes.map((point,index)=><button key={`node-${index}`} type="button" className={`bp-line-node ${index===0||index===selectedLineNodes.length-1?'is-endpoint':''}`} aria-label={index===0?'Drag line start':index===selectedLineNodes.length-1?'Drag line end':`Drag node ${index+1}; double-click to remove`} title={index===0?'Drag start':index===selectedLineNodes.length-1?'Drag end':'Drag node · Double-click to remove'} style={{left:point.x-bounds.x,top:point.y-bounds.y}} onPointerDown={event=>beginLineNode(event,index)} onDoubleClick={event=>deleteLineNode(event,index)}/>)}{selectedLine&&selectedLineNodes.slice(0,-1).map((point,index)=><button key={`insert-${index}`} type="button" className="bp-line-add-node" title={fa?'افزودن گره':'Add node'} aria-label={fa?'افزودن گره':'Add node'} style={{left:(point.x+selectedLineNodes[index+1].x)/2-bounds.x,top:(point.y+selectedLineNodes[index+1].y)/2-bounds.y}} onClick={event=>addLineMidpoint(event,index)}>+</button>)}</div>}</div></div></div></section>
+      <section className={`studio-canvas-zone ${lineTool?'bp-line-drawing':''}`}><div className="studio-canvas-scroll" ref={canvasViewportRef} onPointerDown={event=>{if(event.target===event.currentTarget){setSelected(new Set());setAssetEditOpen(false);setContextMenu(null);}}}><div className="studio-artboard-scale" style={{width:page.width*zoom,height:page.height*zoom}}><span className="reference-artboard-label">{page.width} × {page.height} px</span><div ref={artboardRef} className="studio-artboard" style={{width:page.width,height:page.height,background:page.background,transform:`scale(${zoom})`,transformOrigin:'top left'}} onPointerDown={beginMarquee}>{linePreview&&<svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',overflow:'visible',zIndex:200}}><g opacity="0.7" transform={`translate(${previewLine?.x??0} ${previewLine?.y??0})`} dangerouslySetInnerHTML={{__html:previewLine?lineSvgBody(previewLine):''}}/></svg>}{renderObjects.map(object=><EditorObjectView key={object.id} object={object} objects={objects} selected={selected.has(object.id)} onPointerDown={beginMove} onContextMenu={objectContext}/>)}{guides.x!==undefined&&<div className="studio-guide vertical" style={{left:guides.x}}/>}{guides.y!==undefined&&<div className="studio-guide horizontal" style={{top:guides.y}}/>}{bounds&&<div className={`studio-selection ${selectedLine||selectedLineAsset?'bp-path-selected':''}`} style={{left:bounds.x,top:bounds.y,width:bounds.width,height:bounds.height}}><span className="studio-rotate-line"/><button className="studio-rotate" type="button" title={fa?'چرخاندن انتخاب (Shift: گام ۱۵ درجه)':'Rotate selection (Shift: 15° steps)'} aria-label={fa?'چرخاندن انتخاب':'Rotate selection'} onPointerDown={beginRotate}/>{(selectedLine||selectedLineAsset?['nw','ne','se','sw']:['nw','n','ne','e','se','s','sw','w']).map(handle=><button key={handle} type="button" aria-label={`${handle} resize handle`} title={fa?'تغییر اندازه':'Resize'} className={`studio-handle ${handle}`} onPointerDown={event=>beginResize(event,handle)}/>)}{selectedLineAsset&&selectedAssetEndpoints.map((point,index)=><button key={`asset-end-${index}`} type="button" className="bp-line-node is-endpoint" aria-label={index===0?'Drag uploaded arrow start':'Drag uploaded arrow end'} title={fa?'جابجایی سر فلش · Shift برای تراز':'Drag endpoint · Shift to align'} style={{left:point.x-bounds.x,top:point.y-bounds.y}} onPointerDown={event=>beginAssetEndpoint(event,index)}/>)}{selectedLine&&selectedLineNodes.map((point,index)=><button key={`node-${index}`} type="button" className={`bp-line-node ${index===0||index===selectedLineNodes.length-1?'is-endpoint':''}`} aria-label={index===0?'Drag line start':index===selectedLineNodes.length-1?'Drag line end':`Drag node ${index+1}; double-click to remove`} title={index===0?'Drag start':index===selectedLineNodes.length-1?'Drag end':'Drag node · Double-click to remove'} style={{left:point.x-bounds.x,top:point.y-bounds.y}} onPointerDown={event=>beginLineNode(event,index)} onDoubleClick={event=>deleteLineNode(event,index)}/>)}{selectedLine&&selectedLineNodes.slice(0,-1).map((point,index)=><button key={`insert-${index}`} type="button" className="bp-line-add-node" title={fa?'افزودن گره':'Add node'} aria-label={fa?'افزودن گره':'Add node'} style={{left:(point.x+selectedLineNodes[index+1].x)/2-bounds.x,top:(point.y+selectedLineNodes[index+1].y)/2-bounds.y}} onClick={event=>addLineMidpoint(event,index)}>+</button>)}</div>}</div></div></div></section>
       <div className={`studio-splitter inspector-splitter ${inspectorCollapsed?'disabled':''}`} onPointerDown={event=>!inspectorCollapsed&&resizePanel('inspector',event)}/>
       {inspectorCollapsed&&!pagesCollapsed&&<StudioPagesPanel fa={fa} documentState={documentState} onSelect={selectPage} onAdd={addPage} onClose={()=>setPagesCollapsed(true)}/>} 
       {!inspectorCollapsed&&<EditorInspector fa={fa} tab={inspectorTab} setTab={setInspectorTab} documentState={documentState} bounds={bounds} selectedObjects={selectedObjects} objects={objects} selected={selected} onBounds={changeBounds} onCommit={commitSelected} onLock={setLocked} onHide={()=>setHidden(selected,true)} onSelect={object=>{setSelected(idsFor(object));setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);setInspectorTab('properties');}} onLayerStep={(id,action)=>zOrderFor(new Set([id]),action)} onLayerReorder={reorderLayer} onToggleObjectLock={object=>storeRef.current.dispatch(new ObjectStateCommand(object.locked?'Unlock':'Lock',[structuredClone(object)],[{...object,locked:!object.locked}]))} onToggleObjectHidden={object=>setHidden(new Set([object.id]),!object.hidden)} onCollapse={()=>setInspectorCollapsed(true)}/>} 

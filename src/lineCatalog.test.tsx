@@ -8,22 +8,23 @@ import { documentToSvg } from './export';
 import { createBlankDocument } from './model';
 
 describe('categorized line library',()=>{
- it('provides unique editable presets in all seven requested categories',()=>{
-  expect(LINE_CATEGORIES.map(item=>item.en)).toEqual(['Lines','Arrows','Inhibitor','Dots','Neurons','Circular','Brackets']);
-  expect(LINE_PRESETS).toHaveLength(99);
+ it('provides unique editable presets in both requested categories',()=>{
+  expect(LINE_CATEGORIES.map(item=>item.en)).toEqual(['Arrows','Circular']);
+  expect(LINE_PRESETS).toHaveLength(6);
   expect(new Set(LINE_PRESETS.map(p=>p.id)).size).toBe(LINE_PRESETS.length);
-  for(const category of LINE_CATEGORIES)expect(LINE_PRESETS.filter(p=>p.category===category.id).length).toBeGreaterThan(0);
+  for(const category of LINE_CATEGORIES)expect(LINE_PRESETS.filter(p=>p.category===category.id).length).toBe(3);
   for(const preset of LINE_PRESETS){
     const line=createDrawnLine({x:30,y:70},{x:250,y:70},preset.settings);
     expect(line.type).toBe('arrow');
     expect(worldLineNodes(line).every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y))).toBe(true);
     expect(nativePresetSvg(preset.settings)).toContain(`data-bioplot-preset="${preset.settings.presetId}"`);
     const doc=createBlankDocument();doc.pages[0].objects=[line];
-    expect(documentToSvg(doc)).not.toMatch(/NaN|Infinity/);
+    // Embedded font bytes can contain the letters NaN; inspect SVG geometry only.
+    expect(documentToSvg(doc).replace(/<style>[\s\S]*?<\/style>/g,'')).not.toMatch(/NaN|Infinity/);
   }
  });
- it('has genuinely different circular and bracket geometry, retained through SVG previews',()=>{
-  for(const id of ['circular','square-bracket','brace']){
+ it('has genuinely different circular geometry, retained through SVG previews',()=>{
+  for(const id of ['circular']){
     const preset=LINE_PRESETS.find(item=>item.settings.presetId===id)!;
     const line=createDrawnLine({x:0,y:0},{x:200,y:0},preset.settings);
     expect(line.height).toBeGreaterThan(90);
@@ -32,15 +33,17 @@ describe('categorized line library',()=>{
   }
  });
  it('assigns published assets by stable category tags and preserves old assets and other keywords',()=>{
-  expect(lineCategoryOf({synonyms:{en:[],fa:[]}})).toBe('lines');
-  const tags=lineCategoryTags(['biology','bioplot-line-category:dots'],'neurons');
-  expect(tags).toEqual(['biology','bioplot-line-category:neurons']);
-  expect(lineCategoryOf({synonyms:{en:tags,fa:[]}})).toBe('neurons');
+  expect(lineCategoryOf({synonyms:{en:[],fa:[]}})).toBe('arrows');
+  const tags=lineCategoryTags(['biology','bioplot-line-category:dots'],'arrows');
+  expect(tags).toEqual(['biology','bioplot-line-category:arrows']);
+  expect(lineCategoryOf({synonyms:{en:tags,fa:[]}})).toBe('arrows');
  });
  it('keeps one Custom option after the category menu without the old drawing settings',()=>{
   const html=renderToStaticMarkup(createElement(VectorStudio,{fa:false}));
-  expect(html.indexOf('Custom')).toBeGreaterThan(html.indexOf('Brackets'));
-  expect(html).toContain('Add Straight');
+  expect(html.indexOf('Custom')).toBeGreaterThan(html.indexOf('Circular'));
+  expect(html).toContain('Add Straight arrow');
+  const persian=renderToStaticMarkup(createElement(VectorStudio,{fa:true}));
+  expect(persian).toContain('class="bp-line-browser" dir="ltr"');
   expect(html).not.toContain('type="color"');
   expect(html).not.toContain('Choose a tool and drag');
   expect(CUSTOM_LINE.axis).toBeUndefined();
