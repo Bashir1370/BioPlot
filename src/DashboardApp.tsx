@@ -1,9 +1,7 @@
 import {HomeHero} from './HomeHero';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { documentToSvg } from './export';
-import { BioPlotDocument } from './model';
+import { useEffect, useState } from 'react';
+import {createBlankDocument} from './model';
 import { projects } from './persistence';
-import { HomeTemplateId, createHomeTemplateDocument, homeTemplates } from './homeTemplates';
 import './home.css';
 import { StudioIcon } from './StudioIcon';
 
@@ -45,20 +43,9 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   return <StudioIcon name={name === 'check' ? 'done' : name} size={size}/>;
 }
 
-function svgDataUri(document: BioPlotDocument) {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(documentToSvg(document))}`;
-}
-
-function TemplatePreview({ id, locale }: { id: HomeTemplateId; locale: Locale }) {
-  const src = useMemo(() => svgDataUri(createHomeTemplateDocument(id, locale)), [id, locale]);
-  return <img className="home-template-image" src={src} alt="" loading="lazy"/>;
-}
-
 export function DashboardApp() {
   const [locale, setLocale] = useState<Locale>(() => localStorage.getItem('bioplot-lang') === 'fa' ? 'fa' : 'en');
-  const [query, setQuery] = useState('');
   const [toast, setToast] = useState('');
-  const searchRef = useRef<HTMLInputElement>(null);
   const t = copy[locale];
   const fa = locale === 'fa';
 
@@ -69,15 +56,6 @@ export function DashboardApp() {
   }, [locale, fa]);
 
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setQuery('');
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); searchRef.current?.focus(); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => { window.removeEventListener('keydown', onKey); };
-  }, []);
-
-  useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(''), 2200);
     return () => window.clearTimeout(timer);
@@ -85,18 +63,13 @@ export function DashboardApp() {
 
   function notify(message: string) { setToast(message); }
 
-  async function createFromTemplate(templateId: HomeTemplateId) {
-    const document = createHomeTemplateDocument(templateId, locale);
+  async function createFigure() {
+    const document = createBlankDocument();
+    document.metadata.locale=locale;
     await projects.save(document);
     notify(t.created);
     window.location.href = `editor.html?id=${encodeURIComponent(document.id)}`;
   }
-
-  const normalizedQuery = query.trim().toLocaleLowerCase(locale === 'fa' ? 'fa-IR' : 'en-US');
-  const matchingTemplates = useMemo(() => {
-    if (!normalizedQuery) return [];
-    return homeTemplates.filter(template => `${template.title.en} ${template.title.fa} ${template.description.en} ${template.description.fa}`.toLocaleLowerCase().includes(normalizedQuery)).slice(0, 4);
-  }, [normalizedQuery]);
 
   return <div className="home-shell">
     <aside className="home-sidebar">
@@ -104,7 +77,7 @@ export function DashboardApp() {
         <a className="home-brand" href="#home" aria-label="BioPlot home"><span className="home-brand-mark">B</span><span><b>BioPlot</b><small>Figure Studio</small></span></a>
         <nav className="home-nav" aria-label={t.home}>
           <a className="active" href="#home" aria-label={t.home}><Icon name="home"/><span>{t.home}</span></a>
-          <a href="#templates" aria-label={t.templates}><Icon name="templates"/><span>{t.templates}</span></a>
+          <a href="/dashboard"><Icon name="templates"/><span>{fa ? 'داشبورد من' : 'My dashboard'}</span></a>
           <a href="editor.html" aria-label={t.editor}><Icon name="figure"/><span>{t.editor}</span></a>
         </nav>
         <div className="home-top-actions"><button className="home-language" onClick={() => setLocale(fa ? 'en' : 'fa')}>{fa ? 'EN' : 'FA'}</button><span className="home-avatar" aria-label="BioPlot workspace">B</span></div>
@@ -116,27 +89,11 @@ export function DashboardApp() {
     </aside>
 
     <main className="home-main">
-      <header className="home-topbar">
-        <div className="home-search-wrap">
-          <Icon name="search" size={17}/>
-          <input ref={searchRef} value={query} onChange={event => setQuery(event.target.value)} placeholder={t.search} aria-label={t.search}/>
-          {query ? <button className="search-clear" onClick={() => setQuery('')} aria-label={t.clearSearch}><Icon name="close" size={15}/></button> : <kbd>⌘ K</kbd>}
-          {normalizedQuery && <div className="home-search-results">
-            {matchingTemplates.length > 0 && <div className="search-group"><small>{t.searchTemplates}</small>{matchingTemplates.map(template => <button key={template.id} onClick={() => createFromTemplate(template.id)}><span className="search-result-thumb template-result"><Icon name="templates"/></span><span><b>{template.title[locale]}</b><em>{template.description[locale]}</em></span><Icon name="plus" size={15}/></button>)}</div>}
-            {matchingTemplates.length === 0 && <div className="search-empty"><Icon name="search"/><span>{t.noSearch}</span></div>}
-          </div>}
-        </div>
-
-      </header>
-
       <div className="home-content">
 
-        <HomeHero locale={locale} title={t.heroTitle} highlight={t.heroAccent} description={t.heroText} primaryText={t.createFigure} secondaryText={t.browseTemplates} onCreate={()=>createFromTemplate('blank')} socialProof={`${t.vector} · ${t.autosave} · ${t.bilingual}`}/>
+        <HomeHero locale={locale} title={t.heroTitle} highlight={t.heroAccent} description={t.heroText} primaryText={t.createFigure} secondaryText={fa?'داشبورد من':'My dashboard'} onCreate={()=>void createFigure().catch(()=>notify(fa?'ذخیره انجام نشد؛ دوباره تلاش کنید.':'Could not save. Please retry.'))} socialProof={`${t.vector} · ${t.autosave} · ${t.bilingual}`}/>
 
-        <section className="home-section home-templates-section" id="templates" aria-labelledby="templates-title">
-          <div className="home-section-heading"><div><span className="home-section-kicker">START WITH STRUCTURE</span><h2 id="templates-title">{t.templatesTitle}</h2><p>{t.templatesSub}</p></div></div>
-          <div className="home-template-grid">{homeTemplates.filter(template => template.id !== 'blank').map((template, index) => <button key={template.id} className="home-template-card" onClick={() => createFromTemplate(template.id)}><div className="template-card-visual"><TemplatePreview id={template.id} locale={locale}/><span className="template-index">0{index + 1}</span></div><div className="template-card-copy"><span><small>{template.eyebrow[locale]}</small><b>{template.title[locale]}</b></span><p>{template.description[locale]}</p><em>{t.createFigure}<Icon name="arrow" size={14}/></em></div></button>)}</div>
-        </section>
+
       </div>
     </main>
 

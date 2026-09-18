@@ -11,9 +11,9 @@ import { AdminLinesPage } from './AdminLinesPage';
 import { AdminLinesShortcut } from './AdminLinesShortcut';
 import { AdminShowcasePage } from './AdminShowcasePage';
 import { AdminShowcaseAccountPortal } from './AdminShowcaseAccountPortal';
-import { AdminTemplateHeroPortal } from './AdminTemplateHeroPortal';
+import {UserDashboard} from './UserDashboard';
 import { AccountPage } from './AccountPage';
-import { isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
+import { isDashboardPath, isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
 import { installTightAssetSelection } from './tightAssetSelection';
 import './styles-v3.css';
 import './home-top-nav.css';
@@ -40,6 +40,7 @@ if (!root) throw new Error('BioPlot root element was not found.');
 const isAdminLines = /^\/admin\/lines\/?$/.test(window.location.pathname);
 const isAdminLibrary = isAdminLibraryPath(window.location.pathname);
 const isAdminShowcase = isAdminShowcasePath(window.location.pathname);
+const isDashboard = isDashboardPath(window.location.pathname);
 const isAccount = isAccountPath(window.location.pathname);
 const isEditor = isEditorPath(window.location.pathname);
 
@@ -48,6 +49,6 @@ if (isEditor) {
 }
 createRoot(root).render(
   <StrictMode>
-    {isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/><AdminTemplateHeroPortal/></> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
+    {isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
   </StrictMode>
 );

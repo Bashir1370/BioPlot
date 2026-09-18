@@ -37,7 +37,7 @@ export function ShuffleHero({
   description = 'Turn complex biology into clear, editable, publication-ready figures.',
   eyebrow = 'BIOPLOT FIGURE STUDIO',
   images = HOME_HERO_DEFAULTS.map((src, i) => ({ id: i + 1, src, alt: 'Scientific inspiration' })),
-  primaryText = 'Create scientific figure', secondaryText = 'Browse templates',
+  primaryText = 'Create scientific figure', secondaryText = 'My dashboard',
   socialProof, onCreate, locale = 'en',
 }: ShuffleHeroProps) {
   const [order, setOrder] = useState(() => Array.from({ length: 16 }, (_, i) => i));
@@ -72,7 +72,7 @@ export function ShuffleHero({
       <p>{description}</p>
       <div className="shuffle-hero-actions">
         {onCreate ? <button className="shuffle-cta" onClick={onCreate}>{primaryText}</button> : <a className="shuffle-cta" href="/editor">{primaryText}</a>}
-        <a className="shuffle-cta secondary" href="/templates">{secondaryText}</a>
+        <a className="shuffle-cta secondary" href="/dashboard">{secondaryText}</a>
       </div>
       {socialProof && <small>{socialProof}</small>}
     </div>

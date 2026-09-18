@@ -25,3 +25,9 @@ describe('admin library route detection',()=>{
     expect(isAdminLibraryPath('/')).toBe(false);
   });
 });
+
+import {isDashboardPath} from './routing';
+describe('user dashboard routes',()=>{
+ it('accepts dashboard and legacy template URLs',()=>{for(const path of ['/dashboard','/dashboard/','/dashboard.html','/templates','/templates.html'])expect(isDashboardPath(path)).toBe(true);});
+ it('does not intercept editor or admin',()=>{for(const path of ['/','/editor','/admin/showcase'])expect(isDashboardPath(path)).toBe(false);});
+});

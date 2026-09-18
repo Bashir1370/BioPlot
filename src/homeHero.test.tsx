@@ -12,7 +12,7 @@ beforeEach(()=>{vi.resetAllMocks();mocks.user.mockResolvedValue({data:{user:{id:
 describe('Home hero images',()=>{
  it('renders sixteen tiles and working template entry point',()=>{
   const html=renderToStaticMarkup(createElement(ShuffleHero));
-  expect(html.match(/class="shuffle-tile"/g)).toHaveLength(16);expect(html).toContain('href="/templates"');expect(html).not.toContain('Trusted by');
+  expect(html.match(/class="shuffle-tile"/g)).toHaveLength(16);expect(html).toContain('href="/dashboard"');expect(html).not.toContain('Trusted by');
  });
  it('renders an independently labelled upload input for every admin image',()=>{
   const html=renderToStaticMarkup(createElement(AdminHomeHero));
