@@ -284,5 +284,5 @@ export function assetToObject(asset: ScientificAsset, x = 360, y = 260): AssetOb
   const maxSide=190;
   if(width>maxSide){height*=maxSide/width;width=maxSide;}
   if(height>maxSide){width*=maxSide/height;height=maxSide;}
-  return { id: makeId(), type: 'asset', name: asset.name, assetId: asset.id, svg: asset.svg, colors: asset.colorSlots.map(slot => ({ key: slot.key, label: slot.label, value: slot.defaultValue })), x, y, width: Math.round(width), height: Math.round(height), rotation: 0, opacity: 1 };
+  return { id: makeId(), type: 'asset', lineAsset: asset.category==='Lines & Arrows', name: asset.name, assetId: asset.id, svg: asset.svg, colors: asset.colorSlots.map(slot => ({ key: slot.key, label: slot.label, value: slot.defaultValue })), x, y, width: Math.round(width), height: Math.round(height), rotation: 0, opacity: 1 };
 }

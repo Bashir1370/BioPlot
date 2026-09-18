@@ -71,12 +71,14 @@ export function setAssetTint(object:AssetObject,color?:string):AssetObject {
   return {...object,tintColor:color};
 }
 export function assetSvgWithTint(object:AssetObject):string {
+  // Stretch only imported Lines assets; retain their original SVG/PNG artwork.
+  const svg=object.lineAsset?object.svg.replace(/<svg\b[^>]*>/i,tag=>tag.replace(/\s+preserveAspectRatio\s*=\s*(["']).*?\1/i,'').replace(/>$/,' preserveAspectRatio="none">')):object.svg;
   const color=assetTintColor(object);
-  if(!color)return object.svg;
+  if(!color)return svg;
   // Use only the source alpha: a black PNG and a colored SVG both receive the exact chosen RGB.
   const id=`bp-tint-${Array.from(object.id).map(char=>char.codePointAt(0)!.toString(16)).join('-')}-${color.slice(1)}`;
   const filter=`<defs><filter id="${id}" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="140%" height="140%"><feFlood flood-color="${color}" result="tint"/><feComposite in="tint" in2="SourceGraphic" operator="in"/></filter></defs>`;
-  return object.svg.replace(/(<svg\b[^>]*>)/i,`$1${filter}<g filter="url(#${id})">`).replace(/<\/svg>\s*$/i,'</g></svg>');
+  return svg.replace(/(<svg\b[^>]*>)/i,`$1${filter}<g filter="url(#${id})">`).replace(/<\/svg>\s*$/i,'</g></svg>');
 }
 
 export function assetCssFilter(object: StyledAssetObject): string {
