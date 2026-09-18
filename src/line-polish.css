@@ -41,11 +41,12 @@
 .studio-selection.bp-path-selected .studio-rotate:hover{background:#e9faf5;border-color:#087f79;box-shadow:0 2px 8px #087f7930}
 .studio-selection.bp-path-selected .studio-rotate:active{cursor:grabbing}
 /* Compact visual points, with invisible hit areas to preserve comfortable pointer interaction. */
-.studio-selection.bp-path-selected .bp-line-node{width:5px;height:5px;border:1px solid #fff;background:#168e84;box-shadow:0 0 0 .6px #168e84;transition:box-shadow .12s,background-color .12s}
-.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:6px;height:6px;background:#087f79;box-shadow:0 0 0 .7px #087f79}
-.studio-selection.bp-path-selected .bp-line-node::before{content:'';position:absolute;inset:-10px;border-radius:50%}
+.studio-selection.bp-path-selected .bp-line-node{width:7px;height:7px;border:1.5px solid #fff;background:#168e84;box-shadow:0 0 0 1px #168e84,0 1px 3px #073d3a22;transition:box-shadow .12s,background-color .12s}
+.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:13px;height:13px;background:#087f79;border:2px solid #fff;box-shadow:0 0 0 1.5px #087f79,0 2px 5px #073d3a33}
+.studio-selection.bp-path-selected .bp-line-node::before{content:'';position:absolute;inset:-5px;border-radius:50%}
+.studio-selection.bp-path-selected .bp-line-node.is-endpoint::after{content:'';position:absolute;inset:3px;border:1px solid rgba(255,255,255,.9);border-radius:50%}
 .studio-selection.bp-path-selected .bp-line-node:hover{transform:translate(-50%,-50%);box-shadow:0 0 0 1px #4dbdaf}
 .studio-selection.bp-path-selected .bp-line-add-node{width:8px;height:8px;font-size:8px;opacity:.33;border:1px solid #69b9ae;color:#087f79;box-shadow:none}
 .studio-selection.bp-path-selected:hover .bp-line-add-node,.studio-selection.bp-path-selected .bp-line-add-node:focus-visible{opacity:.8}
 .studio-selection.bp-path-selected .bp-line-add-node::before{content:'';position:absolute;inset:-10px;border-radius:50%}
-@media(max-width:680px){.studio-selection.bp-path-selected .bp-line-node{width:9px;height:9px}.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:10px;height:10px}.studio-selection.bp-path-selected .bp-line-add-node{width:12px;height:12px}}
+@media(max-width:680px){.studio-selection.bp-path-selected .bp-line-node{width:10px;height:10px}.studio-selection.bp-path-selected .bp-line-node.is-endpoint{width:15px;height:15px}.studio-selection.bp-path-selected .bp-line-add-node{width:12px;height:12px}}
