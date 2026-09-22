@@ -37,6 +37,12 @@ export const ASSET_STYLE_PRESETS = [
   { id: 'muted', label: 'Muted', labelFa: 'ملایم', saturation: 55, brightness: 108, contrast: 92, hueRotate: 0 },
 ] as const;
 
+// Solid colors for monochrome Lines assets: hue rotation cannot color black pixels.
+export const LINE_ASSET_PRESET_COLORS:Record<string,string> = {
+  teal:'#087f79',blue:'#2563eb',violet:'#7c3aed',pink:'#db2777',
+  orange:'#ea580c',green:'#16a34a',muted:'#64748b',
+};
+
 let libraryInsertionStyleUntil = 0;
 
 export function markAssetStyleAutoOpenFromLibrary() {
@@ -184,6 +190,7 @@ export function tintAssetSvg(source: string, color: string): string {
 }
 
 export function applyConfiguredAssetPreset(object: StyledAssetObject, preset: AssetStylePresetConfig, originalSvg?: string, originalColors?: AssetObject['colors']): StyledAssetObject {
+  if(object.locked)return object;
   const source = originalSvg ?? object.svg;
   if (preset.kind === 'original') {
     return {
@@ -195,6 +202,10 @@ export function applyConfiguredAssetPreset(object: StyledAssetObject, preset: As
     };
   }
   const color = preset.color && /^#[0-9a-f]{6}$/i.test(preset.color) ? preset.color : '#087f79';
+  if(object.lineAsset)return {
+    ...setAssetTint({...object,svg:source},color),
+    assetStyle:{...DEFAULT_ASSET_VISUAL_STYLE},
+  };
   return {
     ...object,
     tintColor:undefined,
@@ -204,7 +215,12 @@ export function applyConfiguredAssetPreset(object: StyledAssetObject, preset: As
 }
 
 export function applyAssetPreset(object: StyledAssetObject, presetId: string): StyledAssetObject {
+  if(object.locked)return object;
   const preset = ASSET_STYLE_PRESETS.find(item => item.id === presetId) ?? ASSET_STYLE_PRESETS[0];
+  if(object.lineAsset)return {
+    ...setAssetTint(object,LINE_ASSET_PRESET_COLORS[preset.id]),
+    assetStyle:{...DEFAULT_ASSET_VISUAL_STYLE},
+  };
   return {
     ...object,
     tintColor:undefined,
