@@ -8,8 +8,8 @@ type Point = { x: number; y: number };
 const boundsCache = new Map<string, Promise<PixelBounds | null>>();
 let installed = false;
 
-function readImageBounds(src: string): Promise<PixelBounds | null> {
-  const cached = boundsCache.get(src);
+export function readImageBounds(src: string, padding = PADDING_PX): Promise<PixelBounds | null> {
+  const cached = boundsCache.get(`${padding}:${src}`);
   if (cached) return cached;
   const job = new Promise<PixelBounds | null>((resolve) => {
     const image = new Image();
@@ -39,10 +39,10 @@ function readImageBounds(src: string): Promise<PixelBounds | null> {
           }
         }
         if (maxX < minX || maxY < minY) { resolve(null); return; }
-        minX = Math.max(0, minX - PADDING_PX);
-        minY = Math.max(0, minY - PADDING_PX);
-        maxX = Math.min(width - 1, maxX + PADDING_PX);
-        maxY = Math.min(height - 1, maxY + PADDING_PX);
+        minX = Math.max(0, minX - padding);
+        minY = Math.max(0, minY - padding);
+        maxX = Math.min(width - 1, maxX + padding);
+        maxY = Math.min(height - 1, maxY + padding);
         resolve({ minX, minY, maxX, maxY, width, height });
       } catch {
         resolve(null);
@@ -52,7 +52,7 @@ function readImageBounds(src: string): Promise<PixelBounds | null> {
     image.src = src;
   });
 
-  boundsCache.set(src, job);
+  boundsCache.set(`${padding}:${src}`, job);
   return job;
 }
 
