@@ -81,23 +81,7 @@ function selectGroup(groupId,clear=true){if(clear)state.selected.clear();objectE
 function toggleSelection(el){if(el.dataset.group){const members=objectEls().filter(o=>o.dataset.group===el.dataset.group),all=members.every(m=>state.selected.has(m));members.forEach(m=>all?state.selected.delete(m):state.selected.add(m))}else state.selected.has(el)?state.selected.delete(el):state.selected.add(el);renderSelection()}
 function updateArrowAnchors(){
   document.querySelectorAll('.arrow-anchor').forEach(a=>a.remove());
-
-  const selected=selectedEls();
-  if(selected.length!==1) return;
-
-  const arrow=selected[0];
-  if(!arrow.classList.contains('arrow-object')) return;
-
-  const start=document.createElement('div');
-  start.className='arrow-anchor start';
-
-  const end=document.createElement('div');
-  end.className='arrow-anchor end';
-
-  arrow.appendChild(start);
-  arrow.appendChild(end);
 }
-
 function renderSelection(){
   objectEls().forEach(o=>o.classList.toggle('is-selected',state.selected.has(o)));
   const box=boundsOf();
