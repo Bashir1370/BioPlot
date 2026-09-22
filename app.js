@@ -79,12 +79,31 @@ function bindObject(el){
 function selectOnly(el){state.selected.clear();if(el?.dataset.group)selectGroup(el.dataset.group,false);else if(el)state.selected.add(el);renderSelection()}
 function selectGroup(groupId,clear=true){if(clear)state.selected.clear();objectEls().filter(o=>o.dataset.group===groupId).forEach(o=>state.selected.add(o));renderSelection()}
 function toggleSelection(el){if(el.dataset.group){const members=objectEls().filter(o=>o.dataset.group===el.dataset.group),all=members.every(m=>state.selected.has(m));members.forEach(m=>all?state.selected.delete(m):state.selected.add(m))}else state.selected.has(el)?state.selected.delete(el):state.selected.add(el);renderSelection()}
+function updateArrowAnchors(){
+  document.querySelectorAll('.arrow-anchor').forEach(a=>a.remove());
+
+  const selected=selectedEls();
+  if(selected.length!==1) return;
+
+  const arrow=selected[0];
+  if(!arrow.classList.contains('arrow-object')) return;
+
+  const start=document.createElement('div');
+  start.className='arrow-anchor start';
+
+  const end=document.createElement('div');
+  end.className='arrow-anchor end';
+
+  arrow.appendChild(start);
+  arrow.appendChild(end);
+}
+
 function renderSelection(){
   objectEls().forEach(o=>o.classList.toggle('is-selected',state.selected.has(o)));
   const box=boundsOf();
   const sel=$('selectionBox');
   if(!box){sel.classList.add('hidden')}else{sel.classList.remove('hidden');Object.assign(sel.style,{left:`${box.x}px`,top:`${box.y}px`,width:`${box.w}px`,height:`${box.h}px`})}
-  syncProps();renderLayers();renderContext();
+  syncProps();renderLayers();renderContext();updateArrowAnchors();
 }
 function syncProps(){
   const els=selectedEls(),box=boundsOf();
@@ -164,7 +183,17 @@ function addAsset(asset){saveSnapshot();const el=document.createElement('div');e
 function createObject(type){saveSnapshot();const el=document.createElement('div');el.className='canvas-object';el.dataset.id=uid();el.dataset.type=type;el.style.cssText='left:390px;top:410px;--rot:0deg';
   if(type==='text'){el.dataset.label='Scientific text';el.classList.add('text-object');el.style.cssText+=';width:190px;height:42px';el.textContent='Scientific annotation'}
   else if(type==='shape'){el.dataset.label='Shape';el.classList.add('shape-object');el.style.cssText+=';width:130px;height:82px'}
-  else if(type==='arrow'){el.dataset.label='Arrow';el.classList.add('arrow-object');el.style.cssText+=';width:110px;height:44px';el.textContent='→'}
+  else if(type==='arrow'){
+  el.dataset.label='Arrow';
+  el.dataset.type='arrow';
+  el.classList.add('arrow-object');
+  el.style.cssText+=';width:140px;height:50px';
+  el.innerHTML=`
+  <svg class="arrow-svg" viewBox="0 0 140 50" width="100%" height="100%">
+    <line x1="10" y1="25" x2="115" y2="25" stroke="currentColor" stroke-width="4"/>
+    <polygon points="115,10 135,25 115,40" fill="currentColor"/>
+  </svg>`;
+}
   else if(type==='line'){el.dataset.label='Line';el.classList.add('line-object');el.style.cssText+=';width:150px;height:3px'}
   else{el.dataset.label='Label';el.dataset.type='text';el.classList.add('label-object');el.style.cssText+=';width:110px;height:36px';el.textContent='Label'}
   artboard.insertBefore(el,$('guideV'));bindObject(el);selectOnly(el);markSaved()}
