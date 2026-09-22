@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect } from 'react';
 import { getAssetCatalog, ScientificAsset } from './assets';
 import { AssetObject } from './model';
-import { ASSET_STYLE_PRESETS, applyAssetPreset, applyConfiguredAssetPreset, AssetStylePresetConfig, assetCssFilter, consumeAssetStyleAutoOpenFromLibrary, normalizedAssetVisualStyle, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject, tintAssetSvg } from './assetStyling';
+import { ASSET_STYLE_PRESETS, applyAssetPreset, applyConfiguredAssetPreset, AssetStylePresetConfig, assetCssFilter, consumeAssetStyleAutoOpenFromLibrary, normalizedAssetVisualStyle, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject, assetSvgWithTint } from './assetStyling';
 import { StudioIcon } from './StudioIcon';
 import './asset-style-panel.css';
 
@@ -40,17 +40,19 @@ export function AssetStylePanel({fa,object,onChange,onBrowse}:{fa:boolean;object
       <div><small>{fa?'ویرایش المان علمی':'EDIT SCIENTIFIC ASSET'}</small><h2>{object.name}</h2></div>
     </div>
 
-    <div className="asset-style-preview" aria-hidden="true"><div style={{filter:previewFilter}} dangerouslySetInnerHTML={{__html:object.svg}}/></div>
+    <div className="asset-style-preview" aria-hidden="true"><div style={{filter:previewFilter}} dangerouslySetInnerHTML={{__html:assetSvgWithTint({...object,id:`${object.id}-style-preview`})}}/></div>
 
     <section className="asset-style-section">
       <div className="asset-style-section-head"><div><b>{fa?'استایل':'Style'}</b><small>{fa?'پریست‌های سریع':'Quick presets'}</small></div><button onClick={()=>onChange('Reset asset style',resetAssetVisualStyle(object,original?.svg,originalColors))}>{fa?'بازنشانی':'Reset styles'}</button></div>
       {configuredPresets===undefined?<div className="asset-style-presets">
-        {ASSET_STYLE_PRESETS.map(preset=><button key={preset.id} onClick={()=>onChange(`Apply ${preset.label} style`,applyAssetPreset(object,preset.id))} title={fa?preset.labelFa:preset.label}><span style={{filter:`saturate(${preset.saturation}%) brightness(${preset.brightness}%) contrast(${preset.contrast}%) hue-rotate(${preset.hueRotate}deg)`}} dangerouslySetInnerHTML={{__html:object.svg}}/><small>{fa?preset.labelFa:preset.label}</small></button>)}
+        {ASSET_STYLE_PRESETS.map(preset=>{
+          const preview=applyAssetPreset({...object,id:`${object.id}-preset-${preset.id}`},preset.id);
+          return <button key={preset.id} disabled={!!object.locked} onClick={()=>onChange(`Apply ${preset.label} style`,applyAssetPreset(object,preset.id))} title={fa?preset.labelFa:preset.label}><span style={{filter:assetCssFilter(preview)}} dangerouslySetInnerHTML={{__html:assetSvgWithTint(preview)}}/><small>{fa?preset.labelFa:preset.label}</small></button>;
+        })}
       </div>:configuredPresets.length?<div className="asset-style-presets">
         {configuredPresets.map(preset=>{
-          const source=original?.svg??object.svg;
-          const preview=preset.kind==='original'?source:tintAssetSvg(source,preset.color??'#087f79');
-          return <button key={preset.id} onClick={()=>onChange(`Apply ${preset.label} style`,applyConfiguredAssetPreset(object,preset,original?.svg,originalColors))} title={fa&&preset.labelFa?preset.labelFa:preset.label}><span dangerouslySetInnerHTML={{__html:preview}}/><small>{fa&&preset.labelFa?preset.labelFa:preset.label}</small></button>;
+          const preview=applyConfiguredAssetPreset({...object,id:`${object.id}-configured-${preset.id}`},preset,original?.svg,originalColors);
+          return <button key={preset.id} disabled={!!object.locked} onClick={()=>onChange(`Apply ${preset.label} style`,applyConfiguredAssetPreset(object,preset,original?.svg,originalColors))} title={fa&&preset.labelFa?preset.labelFa:preset.label}><span style={{filter:assetCssFilter(preview)}} dangerouslySetInnerHTML={{__html:assetSvgWithTint(preview)}}/><small>{fa&&preset.labelFa?preset.labelFa:preset.label}</small></button>;
         })}
       </div>:<p className="asset-style-empty">{fa?'برای این المان پریست رنگی تعریف نشده است.':'No color presets are configured for this asset.'}</p>}
     </section>
