@@ -21,6 +21,7 @@ import { createDrawnLine, insertLineNode, removeLineNode, updateLineNode, worldL
 import type { ScientificAsset } from './assets';
 import { activePage, BioPlotDocument, BioPlotObject, cloneDocument, createBlankDocument, makeId, migrateDocument } from './model';
 import { projects } from './persistence';
+import {figureContent,readFigureDraft,clearFigureDraft} from './figureDraft';
 import { saveRecoverySnapshot } from './recovery';
 import { reloadRuntimeCloudAssetsFromBrowserCache } from './cloudAssetLibrary';
 import './editor-studio.css';
@@ -71,7 +72,11 @@ export function EditorStudio(){
   const [assetMode,setAssetMode]=useState<AssetMode>('all');
   const [favoriteVersion,setFavoriteVersion]=useState(0);
   const [libraryVersion,setLibraryVersion]=useState(0);
-  const [saveState,setSaveState]=useState('Saved');
+  const [saveState,setSaveState]=useState('');
+  const savedContent=useRef('');
+  const hasSaved=useRef(false);
+  const pendingWrites=useRef(0);
+  const saveQueue=useRef<Promise<void>>(Promise.resolve());
   const [documentReady,setDocumentReady]=useState(false);
   const [saveFailed,setSaveFailed]=useState(false);
   const [saveAttempt,setSaveAttempt]=useState(0);
@@ -279,14 +284,17 @@ export function EditorStudio(){
       if(id){
         const found=await projects.load(id);
         if(!found)throw new Error('Figure unavailable');
-        if(alive){storeRef.current.replace(migrateDocument(found));setDocumentReady(true);}
+        if(alive){const loaded=migrateDocument(found);savedContent.current=figureContent(loaded);hasSaved.current=true;storeRef.current.replace(loaded);setDocumentReady(true);}
         return;
       }
-      const fresh=createBlankDocument();
+      const draftId=new URLSearchParams(window.location.search).get('draft');
+      const draft=draftId?readFigureDraft(draftId):null;
+      const fresh=draft?migrateDocument(draft):createBlankDocument();
       fresh.metadata.locale=localStorage.getItem('bioplot-lang')==='fa'?'fa':'en';
+      savedContent.current=figureContent(fresh);
+      hasSaved.current=false;
       if(!alive)return;
       storeRef.current.replace(fresh);
-      history.replaceState(null,'',`/editor?id=${encodeURIComponent(fresh.id)}`);
       setDocumentReady(true);
     })().catch(()=>{if(alive)setLoadError(true);});
     return()=>{alive=false;};
@@ -315,16 +323,33 @@ export function EditorStudio(){
   useEffect(()=>{setSelected(current=>new Set([...current].filter(id=>objects.some(object=>object.id===id&&!object.hidden))));},[objects]);
   useEffect(()=>{
     if(!documentReady)return;
+    const content=figureContent(documentState);
+    if(content===savedContent.current&&pendingWrites.current===0){
+      setSaveState(hasSaved.current?(fa?'ذخیره شد':'Saved'):(fa?'پیش‌نویس · هنوز ذخیره نشده':'Draft · not saved yet'));
+      return;
+    }
+    let current=true;
     setSaveFailed(false);
     setSaveState(fa?'در حال ذخیره…':'Saving…');
-    const timer=window.setTimeout(async()=>{
-      try{await projects.save(documentState);}catch{setSaveFailed(true);setSaveState(fa?'ذخیره ناموفق':'Save failed');return;}
-      setSaveState(fa?'ذخیره شد':'Saved');
-      if(suppressBroadcast.current)suppressBroadcast.current=false;else collaborationRef.current?.publishDocument(documentState);
+    const timer=window.setTimeout(()=>{
+      // Serialize writes so a slow earlier request cannot overwrite a later edit.
+      pendingWrites.current++;
+      saveQueue.current=saveQueue.current.then(async()=>{
+        try{
+          await projects.save(documentState);
+          savedContent.current=content;
+          hasSaved.current=true;
+          clearFigureDraft(documentState.id);
+          history.replaceState(null,'',`/editor?id=${encodeURIComponent(documentState.id)}`);
+          saveRecoverySnapshot(documentState);
+          if(current)setSaveState(fa?'ذخیره شد':'Saved');
+          if(suppressBroadcast.current)suppressBroadcast.current=false;else collaborationRef.current?.publishDocument(documentState);
+        }catch{if(current){setSaveFailed(true);setSaveState(fa?'ذخیره ناموفق':'Save failed');}}
+        finally{pendingWrites.current--;}
+      });
     },420);
-    return()=>window.clearTimeout(timer);
+    return()=>{current=false;window.clearTimeout(timer);};
   },[documentState,fa,documentReady,saveAttempt]);
-  useEffect(()=>{if(!documentReady)return;const timer=window.setTimeout(()=>saveRecoverySnapshot(documentState),2200);return()=>window.clearTimeout(timer);},[documentState,documentReady]);
   useEffect(()=>{const close=()=>setContextMenu(null);window.addEventListener('pointerdown',close);return()=>window.removeEventListener('pointerdown',close);},[]);
   useEffect(()=>{
     const onKey=(event:KeyboardEvent)=>{

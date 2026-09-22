@@ -1,7 +1,7 @@
 import {HomeHero} from './HomeHero';
 import { useEffect, useState } from 'react';
 import {createBlankDocument} from './model';
-import { projects } from './persistence';
+import {openFigureDraft} from './figureDraft';
 import './home.css';
 import { StudioIcon } from './StudioIcon';
 
@@ -66,9 +66,9 @@ export function DashboardApp() {
   async function createFigure() {
     const document = createBlankDocument();
     document.metadata.locale=locale;
-    await projects.save(document);
+    openFigureDraft(document);
     notify(t.created);
-    window.location.href = `editor.html?id=${encodeURIComponent(document.id)}`;
+
   }
 
   return <div className="home-shell">
