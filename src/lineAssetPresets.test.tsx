@@ -1,12 +1,19 @@
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {describe,it,expect,vi} from 'vitest';
+import {describe,it,expect,vi,afterAll} from 'vitest';
 import {assetToObject,type ScientificAsset} from './assets';
 import {applyAssetPreset,applyConfiguredAssetPreset,assetSvgWithTint,LINE_ASSET_PRESET_COLORS} from './assetStyling';
 import {EditorObjectView} from './EditorObjectView';
 import {objectToSvg} from './export';
 import {createBlankDocument,migrateDocument} from './model';
 import {BioPlotStore,ObjectStateCommand} from './engine';
+
+const storage=new Map<string,string>();
+vi.stubGlobal('localStorage',{
+ getItem:(key:string)=>storage.get(key)??null,
+ setItem:(key:string,value:string)=>storage.set(key,value),
+});
+afterAll(()=>vi.unstubAllGlobals());
 
 const source='<svg viewBox="0 0 300 100"><image href="data:image/png;base64,iVBORw0KGgo=" width="300" height="100"/></svg>';
 // Search and library insertions use assetToObject, not the Lines-only shortcut.
