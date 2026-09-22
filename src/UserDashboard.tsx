@@ -5,6 +5,7 @@ import {projects,localProjects,type ProjectSummary} from './persistence';
 import {openFigureDraft} from './figureDraft';
 import {createBlankDocument,makeId} from './model';
 import {documentToSvg} from './export';
+import {deleteOptimistically} from './optimisticDeletion';
 import {clearRecoverySnapshots} from './recovery';
 import './user-dashboard.css';
 
@@ -27,35 +28,50 @@ export function UserDashboard(){
  const [name,setName]=useState('');
  const [message,setMessage]=useState('');
  const generation=useRef(0);
+ const hiddenProjects=useRef(new Set<string>());
  const fa=locale==='fa';
  const text=(en:string,faText:string)=>fa?faText:en;
  useEffect(()=>{document.documentElement.dir=fa?'rtl':'ltr';document.documentElement.lang=locale;localStorage.setItem('bioplot-lang',locale);},[locale,fa]);
  useEffect(()=>{let alive=true;const receive=(state:AccountState)=>{if(!alive)return;setAccount(state);setName(state.user?accountDisplayName(state):'');setReady(true);};void getAccountState().then(receive).catch(()=>{if(alive){setReady(true);setError('Could not load account.');}});const unsubscribe=subscribeAccountState(receive);return()=>{alive=false;unsubscribe();};},[]);
- const refresh=async()=>{
-  const request=++generation.current;setLoading(true);setError('');
-  try{const rows=await projects.list();if(request!==generation.current)return;setItems(rows);setLoading(false);
+ const refresh=async(background=false)=>{
+  const request=++generation.current;if(!background)setLoading(true);setError('');
+  try{const rows=await projects.list();if(request!==generation.current)return;setItems(rows.filter(row=>!hiddenProjects.current.has(row.id)));setLoading(false);
    const previews:Record<string,string>={};
-   for(const row of rows.slice(0,24)){try{const doc=await projects.load(row.id);if(request!==generation.current)return;if(doc)previews[row.id]=`data:image/svg+xml;charset=utf-8,${encodeURIComponent(documentToSvg(doc))}`;}catch{/* Cards stay accessible if a preview is unavailable. */}}
-   if(request===generation.current)setThumbs(previews);
+   for(const row of rows.slice(0,24)){if(hiddenProjects.current.has(row.id))continue;try{const doc=await projects.load(row.id);if(request!==generation.current)return;if(doc&&!hiddenProjects.current.has(row.id))previews[row.id]=`data:image/svg+xml;charset=utf-8,${encodeURIComponent(documentToSvg(doc))}`;}catch{/* Cards stay accessible if a preview is unavailable. */}}
+   if(request===generation.current)setThumbs(Object.fromEntries(Object.entries(previews).filter(([id])=>!hiddenProjects.current.has(id))));
   }catch{if(request===generation.current){setError(text('Could not load your figures. Please retry.','دریافت شکل‌ها انجام نشد؛ دوباره تلاش کنید.'));setLoading(false);}}
  };
- useEffect(()=>{if(!ready)return;setItems([]);setThumbs({});void refresh();const focus=()=>void refresh();window.addEventListener('focus',focus);return()=>{generation.current++;window.removeEventListener('focus',focus);};},[ready,account.user?.id]);
+ useEffect(()=>{if(!ready)return;hiddenProjects.current=new Set();setItems([]);setThumbs({});void refresh();const focus=()=>void refresh(true);window.addEventListener('focus',focus);return()=>{generation.current++;hiddenProjects.current=new Set();window.removeEventListener('focus',focus);};},[ready,account.user?.id]);
  useEffect(()=>{const close=(event:KeyboardEvent)=>{if(event.key==='Escape')setMobile(false);};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close);},[]);
  const run=async(action:()=>Promise<void>)=>{setBusy(true);setMessage('');try{await action();}catch{setMessage(text('Could not complete this action. Please retry.','عملیات انجام نشد؛ دوباره تلاش کنید.'));}finally{setBusy(false);}};
  const create=()=>run(async()=>{const doc=createBlankDocument();doc.metadata.locale=locale;openFigureDraft(doc);});
  const rename=(row:ProjectSummary)=>{const title=window.prompt(text('Figure name','نام شکل'),row.title);if(!title?.trim())return;void run(async()=>{const doc=await projects.load(row.id);if(!doc)throw new Error('Missing figure');await projects.save({...doc,title:title.trim()});await refresh();});};
  const duplicate=(row:ProjectSummary)=>run(async()=>{const doc=await projects.load(row.id);if(!doc)throw new Error('Missing figure');const now=new Date().toISOString();await projects.save({...doc,id:makeId('doc'),title:`${doc.title} ${text('(copy)','(کپی)')}`,createdAt:now,updatedAt:now});await refresh();});
  const remove=(row:ProjectSummary)=>{
-  if(busy||!window.confirm(text(`Delete “${row.title}”? This cannot be undone.`,`پروژه «${row.title}» حذف شود؟ این کار قابل بازگشت نیست.`)))return;
-  void run(async()=>{
-   await projects.remove(row.id);
-   clearRecoverySnapshots(row.id);
-   // Invalidate pending preview requests before removing the card and its image.
-   generation.current++;
-   setItems(current=>current.filter(item=>item.id!==row.id));
-   setThumbs(current=>{const next={...current};delete next[row.id];return next;});
-   await refresh();
-   setMessage(text('Project deleted.','پروژه حذف شد.'));
+  if(busy||hiddenProjects.current.has(row.id)||!window.confirm(text(`Delete “${row.title}”? This cannot be undone.`,`پروژه «${row.title}» حذف شود؟ این کار قابل بازگشت نیست.`)))return;
+  const hidden=hiddenProjects.current;
+  const preview=thumbs[row.id];
+  void deleteOptimistically(row.id,hidden,{
+   hide:()=>{
+    setMessage('');
+    setItems(current=>current.filter(item=>item.id!==row.id));
+    setThumbs(current=>{const next={...current};delete next[row.id];return next;});
+   },
+   remove:()=>projects.remove(row.id),
+   commit:()=>{
+    clearRecoverySnapshots(row.id);
+    // No list/thumbnail refetch and no global busy lock for deletion.
+   },
+   restore:()=>{
+    if(hiddenProjects.current!==hidden)return;
+    // Ignore reads started before the failure; restore only this card, leaving
+    // other concurrent deletions and edits intact.
+    generation.current++;
+    setLoading(false);
+    setItems(current=>current.some(item=>item.id===row.id)?current:[...current,row].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)));
+    if(preview)setThumbs(current=>({...current,[row.id]:preview}));
+    setMessage(text(`Could not delete “${row.title}”. The project has been restored; please retry.`,`حذف «${row.title}» انجام نشد. پروژه به فهرست برگشت؛ دوباره تلاش کنید.`));
+   },
   });
  };
  const importDrafts=()=>run(async()=>{const rows=await localProjects.list();let count=0;for(const row of rows){const doc=await localProjects.load(row.id);if(!doc||doc.ownerId)continue;await projects.save({...doc,ownerId:account.user!.id});count++;}await refresh();setMessage(text(`${count} device drafts moved to your account.`,`${count} طرح دستگاه به حساب منتقل شد.`));});
