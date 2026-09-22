@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createHomeTemplateDocument, homeTemplates, type HomeTemplateId } from './homeTemplates';
-import { projects } from './persistence';
+import {openFigureDraft} from './figureDraft';
 import { homeTemplateCategoryMap } from './scientificVisualContentModel';
 import { scientificVisualCategories, type ScientificVisualCategory, type ScientificVisualCategoryId } from './scientificVisualTaxonomy';
 import { StudioIcon, type StudioIconName } from './StudioIcon';
@@ -88,8 +88,8 @@ export function TemplatesPage() {
   async function startTemplate(templateId: HomeTemplateId, categoryId?: ScientificVisualCategoryId) {
     const document = createHomeTemplateDocument(templateId, locale);
     if (categoryId) document.metadata.tags = Array.from(new Set([...document.metadata.tags, `category:${categoryId}`]));
-    await projects.save(document);
-    window.location.href = `editor.html?id=${encodeURIComponent(document.id)}`;
+    openFigureDraft(document);
+
   }
 
   async function startCategory(category: ScientificVisualCategory) {
@@ -98,8 +98,8 @@ export function TemplatesPage() {
     const document = createHomeTemplateDocument('blank', locale);
     document.title = fa ? `${category.shortTitle.fa} جدید` : `New ${category.shortTitle.en}`;
     document.metadata.tags = Array.from(new Set([...document.metadata.tags, `category:${category.id}`]));
-    await projects.save(document);
-    window.location.href = `editor.html?id=${encodeURIComponent(document.id)}`;
+    openFigureDraft(document);
+
   }
 
   return <div className="tkh-shell" dir={fa ? 'rtl' : 'ltr'}>

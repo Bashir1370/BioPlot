@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createHomeTemplateDocument, homeTemplates, type HomeTemplateId } from './homeTemplates';
-import { projects } from './persistence';
+import {openFigureDraft} from './figureDraft';
 import { homeTemplateCategoryMap } from './scientificVisualContentModel';
 import {
   featuredScientificVisualCategories,
@@ -125,16 +125,16 @@ export function ScientificVisualHubHome() {
   async function startTemplate(templateId: HomeTemplateId) {
     const document = createHomeTemplateDocument(templateId, locale);
     if (activeCategory) document.metadata.tags = Array.from(new Set([...document.metadata.tags, `category:${activeCategory.id}`]));
-    await projects.save(document);
-    window.location.href = `editor.html?id=${encodeURIComponent(document.id)}`;
+    openFigureDraft(document);
+
   }
 
   async function startBlank(category: ScientificVisualCategory) {
     const document = createHomeTemplateDocument('blank', locale);
     document.title = locale === 'fa' ? `${category.shortTitle.fa} جدید` : `New ${category.shortTitle.en}`;
     document.metadata.tags = Array.from(new Set([...document.metadata.tags, `category:${category.id}`]));
-    await projects.save(document);
-    window.location.href = `editor.html?id=${encodeURIComponent(document.id)}`;
+    openFigureDraft(document);
+
   }
 
   function openPanel(category: ScientificVisualCategory, mode: PanelMode) {
