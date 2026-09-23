@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
+import {orderReturnPath} from './orders/orderModel';
 
 export type UserProfile = {
   id: string;
@@ -41,12 +42,12 @@ export async function signInUser(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email: email.trim(), password });
 }
 
-export async function signUpUser(email: string, password: string, displayName: string) {
+export async function signUpUser(email: string, password: string, displayName: string, next?: string | null) {
   return supabase.auth.signUp({
     email: email.trim(),
     password,
     options: {
-      emailRedirectTo: `${window.location.origin}/account`,
+      emailRedirectTo: `${window.location.origin}/account${orderReturnPath(next??null)?`?next=${encodeURIComponent(next!)}`:''}`,
       data: { display_name: displayName.trim() || email.split('@')[0] },
     },
   });

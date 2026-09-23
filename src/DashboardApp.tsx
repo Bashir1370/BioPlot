@@ -1,3 +1,4 @@
+import './orders/orders.css';
 import {HomeHero} from './HomeHero';
 import { useEffect, useState } from 'react';
 import {createBlankDocument} from './model';
@@ -80,7 +81,7 @@ export function DashboardApp() {
           <a href="/dashboard"><Icon name="templates"/><span>{fa ? 'داشبورد من' : 'My dashboard'}</span></a>
           <a href="editor.html" aria-label={t.editor}><Icon name="figure"/><span>{t.editor}</span></a>
         </nav>
-        <div className="home-top-actions"><button className="home-language" onClick={() => setLocale(fa ? 'en' : 'fa')}>{fa ? 'EN' : 'FA'}</button><span className="home-avatar" aria-label="BioPlot workspace">B</span></div>
+        <div className="home-top-actions"><a href="/design">{fa?'سفارش طراحی':'Design services'}</a><button className="home-language" onClick={() => setLocale(fa ? 'en' : 'fa')}>{fa ? 'EN' : 'FA'}</button><span className="home-avatar" aria-label="BioPlot workspace">B</span></div>
       </div>
       <div className="home-sidebar-bottom">
         <div className="home-focus-card"><span className="focus-icon"><Icon name="sparkle"/></span><small>STAGE 10</small><b>{t.focusTitle}</b><p>{t.focusText}</p><div className="focus-flow"><span>{t.featureTitle}</span><strong>{t.featureText}</strong></div></div>
@@ -92,6 +93,7 @@ export function DashboardApp() {
       <div className="home-content">
 
         <HomeHero locale={locale} title={t.heroTitle} highlight={t.heroAccent} description={t.heroText} primaryText={t.createFigure} secondaryText={fa?'داشبورد من':'My dashboard'} onCreate={()=>void createFigure().catch(()=>notify(fa?'ذخیره انجام نشد؛ دوباره تلاش کنید.':'Could not save. Please retry.'))} socialProof={`${t.vector} · ${t.autosave} · ${t.bilingual}`}/>
+        <section className="design-teaser"><div><h2>{fa?'خودتان بسازید؛ یا طراحی را به ما بسپارید.':'Create it yourself, or work with our design team.'}</h2><p>{fa?'از یک ایده یا طرح اولیه تا تصویر علمی، چکیده تصویری و پوستر؛ با برآورد هزینه و پیگیری سفارش.':'From a brief or sketch to scientific illustrations, graphical abstracts and posters, with a tailored quote and order tracking.'}</p></div><a href="/design">{fa?'آشنایی با خدمات طراحی':'Explore design services'}</a></section>
 
 
       </div>
