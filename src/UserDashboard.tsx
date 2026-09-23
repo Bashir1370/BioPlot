@@ -89,7 +89,7 @@ export function UserDashboard(){
    <nav aria-label={text('Workspace navigation','منوی داشبورد')}>
     {nav.map(item=><button key={item.id} title={item.label} aria-label={item.label} aria-current={tab===item.id?'page':undefined} onClick={()=>{setTab(item.id);setMobile(false);setMessage('');}}><item.icon size={22}/><span>{item.label}</span></button>)}
     <a href="/orders"><Flask size={22}/><span>{text('Design orders','سفارش‌های طراحی')}</span></a>
-    {account.isAdmin&&<a href="/admin/orders"><Clock size={22}/><span>{text('Manage orders','مدیریت سفارش‌ها')}</span></a>}
+    {account.isAdmin&&<a href="/admin/studio">محتوای خدمات و سفارش</a>}{account.isAdmin&&<a href="/admin/orders"><Clock size={22}/><span>{text('Manage orders','مدیریت سفارش‌ها')}</span></a>}
     <a href="/" title={text('Home','خانه')}><House size={22}/><span>{text('Home','خانه')}</span></a>
     {account.isAdmin&&<a href="/admin/library"><Gear size={22}/><span>{text('Administration','مدیریت سایت')}</span></a>}
     {account.user?<button disabled={busy} onClick={()=>void logout()} title={text('Sign out','خروج')}><SignOut size={22}/><span>{text('Sign out','خروج')}</span></button>:<a href="/account?next=dashboard"><User size={22}/><span>{text('Sign in','ورود / ثبت‌نام')}</span></a>}
