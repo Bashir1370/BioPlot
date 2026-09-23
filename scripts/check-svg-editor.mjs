@@ -45,7 +45,7 @@ try {
   const input=page.locator('input[type=file][accept*="svg"]');
   if(await input.count()===0){await page.getByRole('button',{name:/Upload|آپلود/}).first().click();}
   await page.locator('input[type=file][accept*="svg"]').first().setInputFiles({name:'editable-test.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 130"><g id="Layer_x0020_1"><rect id="test-rectangle" x="0" y="10" width="100" height="100" fill="#842bd0"/><path d="M130 20L200 20L180 90L150 90Z" fill="#ffca00"/><path d="M220 30L290 30L270 100L240 100Z" fill="#0863ff"/></g></svg>')});
-  await page.getByRole('button',{name:/Edit SVG components|ویرایش اجزای SVG/}).click();
+  await page.locator('.floating-selection-toolbar').getByRole('button',{name:/^Edit$|^ویرایش$/}).click();
   await page.locator('.svg-part-select').first().waitFor();
   assert.equal(await page.locator('.svg-part-select').count(),4);
   assert.equal(await page.locator('.svg-editor-layers').textContent().then(t=>/path|Layer_x0020_1/.test(t)),false);
@@ -64,14 +64,25 @@ try {
   const modalFrame=page.frameLocator('.svg-editor-workspace iframe');
   await modalFrame.locator('[data-handle="2"]').click();
   await page.getByRole('button',{name:/^Delete node$|^حذف نقطه$/}).click();
+  assert.equal(await page.locator('.svg-editor-add').count(),0,'Add to drawing removed');
+  const viewport=await page.locator('.svg-editor-workspace iframe').boundingBox();
+  await page.mouse.move(viewport.x+viewport.width/2,viewport.y+viewport.height/2);await page.mouse.wheel(0,500);
+  await page.waitForFunction(()=>document.querySelector('.svg-zoom-controls output').textContent!=='100%');
+  const yellow=modalFrame.locator('path[fill="#ffca00"]'),yellowBox=await yellow.boundingBox();
+  await page.mouse.move(yellowBox.x+yellowBox.width/2,yellowBox.y+yellowBox.height/2);await page.mouse.down();await page.mouse.move(viewport.x+viewport.width-35,viewport.y+viewport.height-50,{steps:8});await page.mouse.up();
+  const editedBounds=await modalFrame.locator('body > svg:not(.node-overlay)').evaluate(svg=>{const b=svg.getBBox();return {x:b.x,y:b.y,width:b.width,height:b.height};});
   await page.screenshot({path:'/tmp/bioplot-svg-editor-open.png'});
   await page.getByRole('button',{name:/Apply changes|اعمال تغییرات/}).click();
   await page.waitForSelector('.svg-editor-dialog',{state:'detached'});
+  const fitted=await page.locator('.studio-artboard .studio-asset-visual > svg').getAttribute('viewBox').then(s=>s.split(' ').map(Number));
+  assert.ok(fitted[0]<=editedBounds.x&&fitted[1]<=editedBounds.y&&fitted[0]+fitted[2]>=editedBounds.x+editedBounds.width&&fitted[1]+fitted[3]>=editedBounds.y+editedBounds.height,'Apply contains outlying artwork');
+
   assert.equal(await page.locator('.studio-artboard #test-rectangle').getAttribute('d'),'M0 10 L100 10 L0 110 Z');
   await page.getByRole('button',{name:/^Undo$|^واگرد$/}).first().click();
   assert.equal(await page.locator('.studio-artboard #test-rectangle').evaluate(el=>el.localName),'rect');
-  await page.getByRole('button',{name:/Edit SVG components|ویرایش اجزای SVG/}).click();
-  await page.getByRole('button',{name:/\+ Ellipse|\+ بیضی/}).click();
+  await page.locator('.floating-selection-toolbar').getByRole('button',{name:/^Edit$|^ویرایش$/}).click();
+  await page.locator('.svg-part-select').filter({hasText:/Rectangle|مستطیل/}).click();
+  await page.getByRole('button',{name:/^Delete component$|^حذف جزء$/}).click();
   page.once('dialog',dialog=>dialog.accept());
   await page.getByRole('button',{name:/^Cancel$|^انصراف$/}).click();
   assert.equal(await page.locator('.studio-artboard ellipse').count(),0,'Cancel must not change the document');
