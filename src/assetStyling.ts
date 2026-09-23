@@ -80,7 +80,18 @@ export function assetSvgWithTint(object:AssetObject):string {
   // Stretch only imported Lines assets; retain their original SVG/PNG artwork.
   const svg=object.lineAsset?object.svg.replace(/<svg\b[^>]*>/i,tag=>tag.replace(/\s+preserveAspectRatio\s*=\s*(["']).*?\1/i,'').replace(/>$/,' preserveAspectRatio="none">')):object.svg;
   const color=assetTintColor(object);
-  if(!color)return svg;
+  const palette = object.paletteColor && /^#[0-9a-f]{6}$/i.test(object.paletteColor) ? object.paletteColor : undefined;
+  if(!color && !palette)return svg;
+  if (!color && palette) {
+    // Map luminance through dark / selected color / light. Preserve alpha and
+    // shading, independently of the source hue, including embedded bitmaps.
+    const id = `bp-palette-${Array.from(object.id).map(char=>char.codePointAt(0)!.toString(16)).join('-')}-${palette.slice(1)}`;
+    const channels = [0, 2, 4].map(offset => parseInt(palette.slice(1 + offset, 3 + offset), 16) / 255);
+    const transfer = channels.map((channel, index) => `<feFunc${['R','G','B'][index]} type="table" tableValues="${channel * .15} ${channel} ${.88 + channel * .12}"/>`).join('');
+    const filter = `<defs><filter id="${id}" color-interpolation-filters="sRGB" x="-20%" y="-20%" width="140%" height="140%"><feColorMatrix type="saturate" values="0"/><feComponentTransfer>${transfer}</feComponentTransfer></filter></defs>`;
+    return svg.replace(/(<svg\b[^>]*>)/i, `$1${filter}<g filter="url(#${id})">`).replace(/<\/svg>\s*$/i, '</g></svg>');
+  }
+  if (!color) return svg;
   // Use only the source alpha: a black PNG and a colored SVG both receive the exact chosen RGB.
   const id=`bp-tint-${Array.from(object.id).map(char=>char.codePointAt(0)!.toString(16)).join('-')}-${color.slice(1)}`;
   const filter=`<defs><filter id="${id}" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="140%" height="140%"><feFlood flood-color="${color}" result="tint"/><feComposite in="tint" in2="SourceGraphic" operator="in"/></filter></defs>`;
@@ -127,7 +138,7 @@ export function recolorAssetSlot(object: StyledAssetObject, index: number, nextC
   const nextColors = object.colors.map((item, itemIndex) => itemIndex === index ? { ...item, value: nextColor } : item);
   if (!current || current.toLowerCase() === nextColor.toLowerCase()) return { ...object, colors: nextColors };
   const svg = object.svg.replace(new RegExp(escapeRegExp(current), 'gi'), nextColor);
-  return { ...object, svg, colors: nextColors };
+  return { ...object, svg, colors: nextColors, paletteColor: undefined, tintColor: undefined, assetStyle: { ...DEFAULT_ASSET_VISUAL_STYLE } };
 }
 
 function hexRgb(value: string) {
@@ -196,6 +207,7 @@ export function applyConfiguredAssetPreset(object: StyledAssetObject, preset: As
     return {
       ...object,
       tintColor:undefined,
+      paletteColor:undefined,
       svg: source,
       colors: originalColors ? structuredClone(originalColors) : object.colors,
       assetStyle: { ...DEFAULT_ASSET_VISUAL_STYLE },
@@ -209,6 +221,7 @@ export function applyConfiguredAssetPreset(object: StyledAssetObject, preset: As
   return {
     ...object,
     tintColor:undefined,
+    paletteColor:undefined,
     svg: tintAssetSvg(source, color),
     assetStyle: { ...DEFAULT_ASSET_VISUAL_STYLE },
   };
@@ -223,14 +236,9 @@ export function applyAssetPreset(object: StyledAssetObject, presetId: string): S
   };
   return {
     ...object,
-    tintColor:undefined,
-    assetStyle: {
-      ...normalizedAssetVisualStyle(object),
-      saturation: preset.saturation,
-      brightness: preset.brightness,
-      contrast: preset.contrast,
-      hueRotate: preset.hueRotate,
-    },
+    tintColor: undefined,
+    paletteColor: preset.id === 'original' || preset.id === 'muted' ? undefined : LINE_ASSET_PRESET_COLORS[preset.id],
+    assetStyle: { ...DEFAULT_ASSET_VISUAL_STYLE, saturation: preset.id === 'muted' ? 55 : 100 },
   };
 }
 
@@ -238,6 +246,7 @@ export function resetAssetVisualStyle(object: StyledAssetObject, originalSvg?: s
   return {
     ...object,
     tintColor:undefined,
+    paletteColor:undefined,
     svg: originalSvg ?? object.svg,
     colors: originalColors ? structuredClone(originalColors) : object.colors,
     opacity: 1,

@@ -1,0 +1,42 @@
+/* Keep the inspector readable at its narrow desktop width and in RTL. */
+.studio-shell .studio-document input::placeholder { color: #879a9e; font-weight: 400; opacity: 1; }
+.studio-shell .studio-document input { text-overflow: ellipsis; }
+.studio-shell .studio-document input:focus { background: #f1f8f6; border-radius: 7px; outline: 2px solid #b9ded5; }
+.studio-shell .studio-inspector { --inspector-ink: #173c41; --inspector-muted: #607c81; }
+.studio-shell .studio-inspector :is(h2,h3) { letter-spacing: 0; color: var(--inspector-ink); }
+.studio-shell .studio-inspector .property-selection h2 { overflow-wrap: anywhere; unicode-bidi: plaintext; }
+.studio-shell .studio-inspector .property-hint { font-size: 12px; line-height: 1.8; color: var(--inspector-muted); }
+.studio-shell .studio-inspector :is(input,select,textarea,button) { font-family: inherit; }
+.studio-shell .studio-inspector button:focus-visible { outline: 2px solid #087f79; outline-offset: 2px; }
+.studio-shell .studio-inspector .layer-main b { unicode-bidi: plaintext; overflow-wrap: anywhere; }
+.studio-shell .studio-inspector .layer-main i .studio-ui-icon { width: 17px; height: 17px; }
+.studio-shell .studio-inspector .layer-main small { font-size: 11px; color: var(--inspector-muted); }
+.studio-shell .studio-inspector .quality-issue { padding: 12px; border-radius: 12px; }
+.studio-shell .studio-inspector .quality-issue b { font-size: 13px; }
+.studio-shell .studio-inspector .quality-issue small { font-size: 12px; line-height: 1.85; }
+.studio-shell .studio-inspector .export-panel-refined { padding: 16px; }
+.studio-shell .export-panel-refined .export-card { padding: 18px 16px; border-radius: 16px; background: linear-gradient(135deg,#e9f6f1,#f7fbfa); border-color: #d4e8e1; }
+.studio-shell .export-panel-refined .export-emblem { display: grid; place-items: center; width: 36px; height: 36px; background: #fff; border: 1px solid #d4e8e1; border-radius: 11px; color: #087f79; margin-bottom: 12px; }
+.studio-shell .export-panel-refined .export-card h2 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+.studio-shell .export-panel-refined .export-card p { font-size: 12px; line-height: 1.9; }
+.studio-shell .studio-inspector .export-panel-refined h3 { display: flex; align-items: center; gap: 8px; font-size: 13px!important; margin: 0 0 12px!important; }
+.studio-shell .export-panel-refined .export-unit { margin-inline-start: auto; font-size: 10px; font-weight: 500; color: var(--inspector-muted); background: #edf4f3; padding: 3px 7px; border-radius: 5px; }
+.studio-shell .export-panel-refined section { margin-top: 20px; padding-top: 20px; }
+.studio-shell .export-panel-refined .export-presets { display: grid; gap: 8px; }
+.studio-shell .export-panel-refined .export-resolution { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.studio-shell .export-panel-refined .export-widths { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.studio-shell .export-panel-refined .export-presets button { display: grid; align-content: center; gap: 5px; min-width: 0; min-height: 66px; padding: 9px 5px; border-radius: 10px; border: 1px solid #dbe8e5; background: #fff; color: var(--inspector-ink); font-size: 12px; line-height: 1.7; }
+.studio-shell .export-panel-refined .export-presets button.active { background: #e6f4ee; border-color: #70b7a8; box-shadow: inset 0 0 0 1px #70b7a8; color: #076f69; }
+.studio-shell .export-panel-refined .export-resolution b { font-size: 17px; }
+.studio-shell .export-panel-refined .export-presets small { font-size: 10px; font-weight: 400; color: var(--inspector-muted); }
+.studio-shell .export-panel-refined .export-hint { font-size: 11px; line-height: 1.85; color: var(--inspector-muted); margin: 10px 0 0; }
+.studio-shell .export-panel-refined .export-custom-width { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 12px; }
+.studio-shell .export-panel-refined .export-custom-width input { width: 72px; min-width: 0; margin-inline-start: auto; border: 1px solid #dbe8e5; border-radius: 8px; padding: 8px 5px; text-align: center; color: var(--inspector-ink); background: white; }
+.studio-shell .export-panel-refined .export-custom-width small { font-size: 10px; color: var(--inspector-muted); }
+.studio-shell .export-panel-refined .export-toggle { background: #f2f7f5; border-radius: 10px; padding: 12px; font-size: 12px; margin: 18px 0; }
+.studio-shell .export-panel-refined .export-toggle input { accent-color: #087f79; width: 16px; height: 16px; }
+.studio-shell .export-panel-refined .export-actions-v2 button { height: auto; min-height: 64px; display: grid; place-content: center; gap: 4px; border-radius: 11px; }
+.studio-shell .export-panel-refined .export-actions-v2 bdi { font-size: 15px; font-weight: 700; }
+.studio-shell .export-panel-refined .export-actions-v2 small { font-size: 11px; font-weight: 400; }
+.studio-shell .export-panel-refined .export-selection>b { font-size: 13px; }
+.studio-shell .export-panel-refined button:disabled { opacity: .45; cursor: not-allowed; }
