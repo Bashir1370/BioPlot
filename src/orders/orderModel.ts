@@ -17,4 +17,4 @@ export const MAX_FILE_SIZE=20*1024*1024;
 export const FILE_ACCEPT='.pdf,.png,.jpg,.jpeg,.webp,.svg,.pptx,.docx,.zip';
 export function validateOrderFile(file:{name:string;size:number}){return file.size>0&&file.size<=MAX_FILE_SIZE&&/\.(pdf|png|jpe?g|webp|svg|pptx|docx|zip)$/i.test(file.name);}
 export function validBrief(title:string,brief:OrderBrief){return title.trim().length>=3&&title.trim().length<=160&&brief.message.trim().length>=20&&brief.message.length<=12000&&brief.formats.length>0;}
-export function orderReturnPath(next:string|null){return next==='orders'?'/orders':next==='orders_new'?'/orders?new=1':next==='admin_orders'?'/admin/orders':next==='dashboard'?'/dashboard':null;}
+export function orderReturnPath(next:string|null){return next==='admin_studio'?'/admin/studio':next==='orders'?'/orders':next==='orders_new'?'/orders?new=1':next==='admin_orders'?'/admin/orders':next==='dashboard'?'/dashboard':null;}

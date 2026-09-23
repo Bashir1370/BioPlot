@@ -1,0 +1,44 @@
+[
+  {
+    "id": "faq-1",
+    "type": "faq",
+    "page": "design",
+    "title": {
+      "fa": "هنوز نمونه یا قالب ندارم.",
+      "en": "I do not have a reference yet."
+    },
+    "body": {
+      "fa": "اشکالی ندارد. پیام علمی و کاربرد تصویر را توضیح دهید؛ تیم پیش از شروع جزئیات را با شما هماهنگ می‌کند.",
+      "en": "Describe your message and the intended use. The team will clarify the details before design begins."
+    },
+    "image": ""
+  },
+  {
+    "id": "faq-2",
+    "type": "faq",
+    "page": "design",
+    "title": {
+      "fa": "فایل قابل‌ویرایش هم تحویل می‌گیرم؟",
+      "en": "Can I get editable source files?"
+    },
+    "body": {
+      "fa": "خروجی‌های موردنیاز را در درخواست انتخاب کنید. فرمت قابل‌ویرایش و سایر خروجی‌ها باید در پیشنهاد تیم مشخص و تأیید شوند.",
+      "en": "Select your requested formats. Editable sources and other deliverables will be specified in the team’s quote."
+    },
+    "image": ""
+  },
+  {
+    "id": "faq-3",
+    "type": "faq",
+    "page": "design",
+    "title": {
+      "fa": "هزینه و زمان چگونه مشخص می‌شود؟",
+      "en": "How are price and timing decided?"
+    },
+    "body": {
+      "fa": "بر اساس پیچیدگی، تعداد اجزا، خروجی‌ها و موعد موردنیاز شما. ثبت درخواست پرداختی ایجاد نمی‌کند؛ شیوه پرداخت در پیشنهاد تیم مشخص می‌شود.",
+      "en": "Based on complexity, scope, deliverables and your requested date. Submitting a request does not charge you; payment arrangements are specified in the quote."
+    },
+    "image": ""
+  }
+]

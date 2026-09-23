@@ -1,0 +1,22 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync} from 'node:fs';
+import {beforeAll,afterAll,it,expect} from 'vitest';
+const admin='33333333-3333-4333-8333-333333333333',customer='11111111-1111-4111-8111-111111111111';
+let db:PGlite;
+beforeAll(async()=>{db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;create schema storage;create table auth.users(id uuid primary key);insert into auth.users values('${admin}'),('${customer}');create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.uid',true),'')::uuid$$;create function public.is_bioplot_admin() returns boolean language sql stable as $$select auth.uid()='${admin}'::uuid$$;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);create table storage.objects(bucket_id text,name text);alter table storage.objects enable row level security;grant usage on schema public,auth,storage to authenticated,anon;grant insert,select on storage.objects to authenticated;`);await db.exec(readFileSync('supabase/migrations/20260923200000_design_studio_content.sql','utf8'));},30000);
+afterAll(async()=>{await db.close();});
+const asUser=async(id:string)=>{await db.exec(`reset role;select set_config('test.uid','${id}',false);set role authenticated;`);};
+it('publishes only as admin, prevents lost updates, and exposes public copy without write access',async()=>{
+ await asUser(customer);const result=await db.query<{version:string}>('select updated_at::text as version from public.design_studio_content');const version=result.rows[0].version;
+ const payload=JSON.stringify({copy:{title:{fa:'عنوان جدید',en:'New title'}},images:{},blocks:[]});
+ await expect(db.query('select public.save_design_studio_content($1,$2)',[payload,version])).rejects.toThrow('ADMIN_REQUIRED');
+ await expect(db.exec("update public.design_studio_content set content='{}'")).rejects.toThrow();
+ await expect(db.exec("insert into storage.objects values('bioplot-studio-media','bad.png')")).rejects.toThrow();
+ await asUser(admin);await db.exec("insert into storage.objects values('bioplot-studio-media','hero.png')");
+ await db.query('select public.save_design_studio_content($1,$2)',[payload,version]);
+ await expect(db.query('select public.save_design_studio_content($1,$2)',[payload,version])).rejects.toThrow('CONTENT_CHANGED');
+ await expect(db.exec("update public.design_studio_content set content='{}'")).rejects.toThrow();
+ await db.exec("reset role;select set_config('test.uid','',false);set role anon;");
+ expect((await db.query<{content:{copy:{title:{fa:string}}}}>('select content from public.design_studio_content')).rows[0].content.copy.title.fa).toBe('عنوان جدید');
+ await expect(db.query('select public.save_design_studio_content($1,$2)',[payload,version])).rejects.toThrow();
+});

@@ -1,3 +1,5 @@
+import {AdminStudioContent} from './orders/AdminStudioContent';
+import {StudioContentProvider} from './orders/StudioContent';
 import { DesignServices } from './orders/DesignServices';
 import { OrdersPage } from './orders/OrdersPage';
 import { isDesignPath, isOrdersPath, isAdminOrdersPath } from './routing';
@@ -52,7 +54,7 @@ if (isEditor) {
   installTightAssetSelection();
 }
 createRoot(root).render(
-  <StrictMode>
-    {isDesignPath(location.pathname) ? <DesignServices/> : isOrdersPath(location.pathname) ? <OrdersPage/> : isAdminOrdersPath(location.pathname) ? <OrdersPage admin/> : isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
-  </StrictMode>
+  <StrictMode><StudioContentProvider>
+    {location.pathname.replace(/\/+$/,'')==='/admin/studio' ? <AdminStudioContent/> : isDesignPath(location.pathname) ? <DesignServices/> : isOrdersPath(location.pathname) ? <OrdersPage/> : isAdminOrdersPath(location.pathname) ? <OrdersPage admin/> : isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
+  </StudioContentProvider></StrictMode>
 );
