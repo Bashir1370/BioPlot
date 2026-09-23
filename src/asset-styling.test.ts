@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAssetPreset, assetCssFilter, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject } from './assetStyling';
+import { applyAssetPreset, assetSvgWithTint, LINE_ASSET_PRESET_COLORS, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject } from './assetStyling';
 import { objectToSvg } from './export';
 
 const asset:StyledAssetObject={
@@ -19,8 +19,10 @@ describe('scientific asset styling',()=>{
 
   it('applies non-destructive visual presets to raster-compatible assets',()=>{
     const next=applyAssetPreset(asset,'teal');
-    expect(next.assetStyle?.saturation).toBeGreaterThan(100);
-    expect(assetCssFilter(next)).toContain('hue-rotate(');
+    expect(next.paletteColor).toBe('#087f79');
+    expect(next.assetStyle?.hueRotate).toBe(0);
+    expect(next.svg).toBe(asset.svg);
+    expect(assetSvgWithTint(next)).toContain('feComponentTransfer');
     expect(asset.svg).toContain('#6c5aa8');
   });
 
@@ -28,6 +30,8 @@ describe('scientific asset styling',()=>{
     const changed={...applyAssetPreset(recolorAssetSlot(asset,0,'#123456'),'pink'),opacity:.45};
     const reset=resetAssetVisualStyle(changed,asset.svg,asset.colors);
     expect(reset.opacity).toBe(1);
+    expect(reset.paletteColor).toBeUndefined();
+    expect(assetSvgWithTint(reset)).toBe(asset.svg);
     expect(reset.colors[0].value).toBe('#6c5aa8');
     expect(reset.assetStyle?.saturation).toBe(100);
   });
@@ -35,7 +39,25 @@ describe('scientific asset styling',()=>{
   it('preserves visual filters in exported SVG',()=>{
     const next=applyAssetPreset(asset,'green');
     const svg=objectToSvg(next);
-    expect(svg).toContain('<filter id="bp-asset-asset-test"');
-    expect(svg).toContain('filter="url(#bp-asset-asset-test)"');
+    expect(svg).toContain('bp-palette-');
+    expect(svg).toContain('feComponentTransfer');
+    expect(svg).toContain('feColorMatrix type="saturate" values="0"');
   });
 });
+
+ it('switches named palettes without stacking filters and restores original source',()=>{
+   let next=asset;
+   for(const name of ['pink','blue','orange','green']) {
+     next=applyAssetPreset(next,name);
+     expect(next.paletteColor).toBe(LINE_ASSET_PRESET_COLORS[name]);
+     expect(next.svg).toBe(asset.svg);
+     expect(assetSvgWithTint(next).match(/<filter /g)).toHaveLength(1);
+   }
+   expect(assetSvgWithTint(applyAssetPreset(next,'original'))).toBe(asset.svg);
+   expect(recolorAssetSlot(next,0,'#ff0000').paletteColor).toBeUndefined();
+ });
+ it('ignores malformed palette values and preserves locked objects',()=>{
+   expect(assetSvgWithTint({...asset,paletteColor:'red\" onload=\"bad'})).toBe(asset.svg);
+   const locked={...asset,locked:true};
+   expect(applyAssetPreset(locked,'blue')).toBe(locked);
+ });

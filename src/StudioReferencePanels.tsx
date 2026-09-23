@@ -1,3 +1,4 @@
+import { categoryLabel } from './editorLabels';
 import { useMemo } from 'react';
 import type { ScientificAsset } from './assets';
 import { markAssetStyleAutoOpenFromLibrary } from './assetStyling';
@@ -24,8 +25,8 @@ export function AssetCatalogView({fa,assets,grouped,favorites,onAdd,onFavorite,o
   if(!grouped)return <div className="catalog-results"><span>{assets.length} {fa?'المان':'icons'}</span><div className="studio-assets">{assets.map((asset,index)=>card(asset,index<8))}</div></div>;
   return <div className="catalog-browse">
     <div className="catalog-intro"><strong>{fa?'کتابخانهٔ علمی BioPlot':'Explore BioPlot icons'}</strong><span>{fa?'برای افزودن به بوم، روی المان کلیک کن.':'Click an icon to add it to your canvas.'}</span></div>
-    {categories.slice(0,3).map(category=><section className="catalog-section" key={category}><div><h3>{category}</h3><button onClick={()=>onCategory(category)}>{fa?'مشاهده همه':'View all'}<StudioIcon name="chevron"/></button></div><div className="studio-assets">{assets.filter(asset=>asset.category===category).slice(0,4).map(asset=>card(asset,true))}</div></section>)}
-    <section className="catalog-categories"><h3>{fa?'مرور دسته‌ها':'Browse categories'}</h3>{categories.map(category=>{const matching=assets.filter(asset=>asset.category===category);const first=matching[0];return <button key={category} onClick={()=>onCategory(category)}><span className="category-preview">{first&&<AssetPreviewImage svg={first.svg} cacheKey={`category:${first.id}:${first.version}`} alt=""/>}</span><span>{category}<small>{matching.length} {fa?'المان':'icons'}</small></span><StudioIcon name="chevron"/></button>;})}</section>
+    {categories.slice(0,3).map(category=><section className="catalog-section" key={category}><div><h3>{categoryLabel(category,fa)}</h3><button onClick={()=>onCategory(category)}>{fa?'مشاهده همه':'View all'}<StudioIcon name="chevron"/></button></div><div className="studio-assets">{assets.filter(asset=>asset.category===category).slice(0,4).map(asset=>card(asset,true))}</div></section>)}
+    <section className="catalog-categories"><h3>{fa?'مرور دسته‌ها':'Browse categories'}</h3>{categories.map(category=>{const matching=assets.filter(asset=>asset.category===category);const first=matching[0];return <button key={category} onClick={()=>onCategory(category)}><span className="category-preview">{first&&<AssetPreviewImage svg={first.svg} cacheKey={`category:${first.id}:${first.version}`} alt=""/>}</span><span>{categoryLabel(category,fa)}<small>{matching.length} {fa?'المان':'icons'}</small></span><StudioIcon name="chevron"/></button>;})}</section>
   </div>;
 }
 
