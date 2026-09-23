@@ -1,3 +1,4 @@
+import {orderReturnPath} from './orders/orderModel';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   AccountState,
@@ -68,6 +69,7 @@ export function AccountPage() {
     void getAccountState().then(state => {
       if (!mounted) return;
       setAccount(state);
+      const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(state.user&&destination){window.location.href=destination;return;}
       setDisplayName(accountDisplayName(state));
       setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       setLoading(false);
@@ -76,7 +78,7 @@ export function AccountPage() {
       if (!mounted) return;
       setAccount(state);
       if (state.user) {
-        if(new URLSearchParams(window.location.search).get('next')==='dashboard'){window.location.href='/dashboard';return;}
+        const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(destination){window.location.href=destination;return;}
         setDisplayName(accountDisplayName(state));
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       }
@@ -91,7 +93,7 @@ export function AccountPage() {
     setBusy(true); setMessage('');
     try {
       if (mode === 'signup') {
-        const { data, error } = await signUpUser(email, password, displayName);
+        const { data, error } = await signUpUser(email, password, displayName, new URLSearchParams(window.location.search).get('next'));
         if (error) throw error;
         if (!data.session) setMessage(t.confirm);
       } else {
@@ -101,7 +103,7 @@ export function AccountPage() {
       const state = await getAccountState();
       setAccount(state);
       if (state.user) {
-        if(new URLSearchParams(window.location.search).get('next')==='dashboard'){window.location.href='/dashboard';return;}
+        const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(destination){window.location.href=destination;return;}
         setDisplayName(accountDisplayName(state));
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       }

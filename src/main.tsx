@@ -1,3 +1,6 @@
+import { DesignServices } from './orders/DesignServices';
+import { OrdersPage } from './orders/OrdersPage';
+import { isDesignPath, isOrdersPath, isAdminOrdersPath } from './routing';
 import textFontCss from './fonts/text-fonts.txt?raw';
 const textFontStyle=document.createElement('style');
 textFontStyle.textContent=textFontCss;
@@ -50,6 +53,6 @@ if (isEditor) {
 }
 createRoot(root).render(
   <StrictMode>
-    {isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
+    {isDesignPath(location.pathname) ? <DesignServices/> : isOrdersPath(location.pathname) ? <OrdersPage/> : isAdminOrdersPath(location.pathname) ? <OrdersPage admin/> : isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
   </StrictMode>
 );

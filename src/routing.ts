@@ -21,3 +21,7 @@ export function isAccountPath(pathname:string){
 }
 
 export function isDashboardPath(pathname:string){return ['/dashboard','/dashboard.html','/templates','/templates.html'].includes(normalizedPath(pathname));}
+
+export function isDesignPath(pathname:string){return normalizedPath(pathname)==='/design';}
+export function isOrdersPath(pathname:string){return normalizedPath(pathname)==='/orders';}
+export function isAdminOrdersPath(pathname:string){return normalizedPath(pathname)==='/admin/orders';}
