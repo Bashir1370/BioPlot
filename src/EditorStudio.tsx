@@ -7,6 +7,7 @@ import { PointerEvent as ReactPointerEvent, useEffect, useLayoutEffect, useMemo,
 import { assetToObject, favoriteAssetIds, favoriteAssets, getAssetCatalog, getAssetCategories, recentAssets, sanitizeSvg, saveCustomAsset, searchAssets, toggleFavoriteAsset } from './assets';
 import { StyledAssetObject } from './assetStyling';
 import { AssetStylePanel } from './AssetStylePanel';
+import { SvgTemplateEditor } from './SvgTemplateEditor';
 import { createAnonymousPresence, createCollaborationSession, CollaborationSession } from './collaboration';
 import { resolveConnector } from './connectors';
 import { AddObjectsCommand, AlignMode, BioPlotStore, buildSnapTargets, DeleteObjectsCommand, DistributionAxis, ObjectStateCommand, objectsInRect, PageObjectsCommand, rectFromPoints, reorderObjects, resizeObjects, rotateObjects, selectionBounds, snapDelta, alignObjects, distributeObjects, ZOrderAction } from './engine';
@@ -64,6 +65,7 @@ export function EditorStudio(){
   const [selectionToolbarVisible,setSelectionToolbarVisible]=useState(true);
   const [panel,setPanel]=useState<Panel>('assets');
   const [assetEditOpen,setAssetEditOpen]=useState(false);
+  const [vectorAsset,setVectorAsset]=useState<StyledAssetObject|null>(null);
   const [inspectorTab,setInspectorTab]=useState<InspectorTab>('properties');
   const [zoom,setZoom]=useState(.82);
   const [guides,setGuides]=useState<Guides>({});
@@ -362,6 +364,7 @@ export function EditorStudio(){
   useEffect(()=>{const close=()=>setContextMenu(null);window.addEventListener('pointerdown',close);return()=>window.removeEventListener('pointerdown',close);},[]);
   useEffect(()=>{
     const onKey=(event:KeyboardEvent)=>{
+      if(vectorAsset)return;
       if(isEditable(event.target))return;
       const mod=event.ctrlKey||event.metaKey,key=event.key.toLowerCase();
       if(mod&&key==='z'){event.preventDefault();event.shiftKey?storeRef.current.redo():storeRef.current.undo();return;}
@@ -638,6 +641,7 @@ export function EditorStudio(){
   if(loadError)return <div className="editor-cloud-loading"><strong>{fa?'شکل در دسترس نیست یا دریافت آن انجام نشد.':'Figure unavailable or could not be loaded.'}</strong><button onClick={()=>window.location.reload()}>{fa?'تلاش دوباره':'Retry'}</button><a href="/dashboard">{fa?'داشبورد':'Dashboard'}</a></div>;
   if(!documentReady)return <div className="editor-cloud-loading"><strong>{fa?'در حال دریافت شکل…':'Loading figure…'}</strong></div>;
   return <div className={`studio-shell ${libraryCollapsed?'library-closed':'library-open'} ${inspectorCollapsed?'inspector-closed':'inspector-open'} ${pagesCollapsed?'pages-closed':'pages-open'} ${selectedObjects.length?'has-selection':'no-selection'} ${showGrid?'grid-visible':''}`} dir={fa?'rtl':'ltr'}>
+    {vectorAsset&&<SvgTemplateEditor svg={vectorAsset.svg} fa={fa} onClose={()=>setVectorAsset(null)} onApply={svg=>{commitAssetStyle('Edit SVG components',{...vectorAsset,svg,tintColor:undefined});setVectorAsset(null);}}/>}
     <header className="studio-topbar">
       <div className="reference-document-card">
         <a className="studio-brand" href="/dashboard" aria-label="BioPlot"><span>B</span><strong>BioPlot</strong></a>
@@ -649,6 +653,7 @@ export function EditorStudio(){
     </header>
     {bounds&&selectionToolbarVisible&&<FloatingSelectionToolbar viewportRef={canvasViewportRef} artboardRef={artboardRef} label={fa?'ویرایش انتخاب':'Edit selection'}>
       <div className="studio-command-row">
+        {selectedAsset&&<button disabled={!!selectedAsset.locked} onClick={()=>setVectorAsset(structuredClone(selectedAsset))}>{fa?'ویرایش اجزای SVG':'Edit SVG components'}</button>}
         <SelectionToolbar fa={fa} selectedObjects={selectedObjects} grouped={grouped} onCopy={copySelection} onDuplicate={duplicateSelection} onAlign={align} onDistribute={distribute} onFront={()=>zOrder('front')} onBack={()=>zOrder('back')} onGroup={groupSelection} onUngroup={ungroupSelection} onLock={()=>setLocked(!selectedObjects.every(object=>object.locked))} onDelete={deleteSelection}/>
         <button className="ribbon-inspector-toggle" aria-pressed={!inspectorCollapsed} onClick={()=>setInspectorCollapsed(value=>!value)} title={fa?'پنل‌های ویرایش':'Editor panels'}><StudioIcon name="panel"/><span>{fa?'پنل‌ها':'Panels'}</span></button>
       </div>

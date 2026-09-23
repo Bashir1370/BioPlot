@@ -79,7 +79,7 @@ export function sanitizeSvg(source: string): string {
       const value = rawValue.toLowerCase();
       const safeEmbeddedImage = (name === 'href' || name.endsWith(':href')) && /^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=\s]+$/i.test(rawValue);
       const externalRef = (name === 'href' || name.endsWith(':href')) && !value.startsWith('#') && value !== '' && !safeEmbeddedImage;
-      if (name.startsWith('on') || externalRef || value.includes('javascript:') || value.includes('url(')) node.removeAttribute(attribute.name);
+      if (name.startsWith('on') || externalRef || value.includes('javascript:') || (/url\s*\(/i.test(rawValue) && /url\s*\(/i.test(rawValue.replace(/url\(\s*(['"]?)#[a-zA-Z_][\w:.-]*\1\s*\)/gi, '')))) node.removeAttribute(attribute.name);
     });
   });
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
