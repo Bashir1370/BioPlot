@@ -2,6 +2,8 @@
 
 Select any SVG asset on the Canvas, including assets published through the admin library or inserted from search. Choose **Edit SVG components / ویرایش اجزای SVG** in the floating selection toolbar.
 
+The **Shapes & groups / شکل‌ها و گروه‌ها** panel shows numbered, translated shape names and color swatches instead of raw SVG tags or generated IDs. Nested groups can collapse; selecting a child on the canvas reveals its group in the list. Rename a selected item using the name field. This writes an accessible label while preserving the source ID and its references; names survive Apply, saving and reopening. Text content controls appear only for a selected text element.
+
 The dedicated canvas lets you select individual components (including children of nested groups), Shift-select several, drag them, change fill/stroke, reorder or delete them, and insert rectangles, ellipses, text, or another SVG. The component list provides access to overlapping components. Use Select group, Group, and Ungroup for grouping; groups with shared opacity, masks or filters stay intact to avoid changing their composite appearance. Their children remain individually selectable.
 
 Choose **Edit nodes** for a rectangle, polygon, polyline, line, circle, ellipse, or path. Drag the visible vertices or curve handles. Select a vertex and choose Delete node (or press Delete in the editing canvas) to remove it. A rectangle with one vertex deleted becomes a triangle. Closed paths retain at least three vertices; open paths retain two. Add node splits the next line or quadratic/cubic Bézier segment without altering the outline.

@@ -39,12 +39,27 @@ try {
   await page.evaluate(()=>{const s=window.session;s.pick(s.root.querySelector('#group'));s.ungroup();});
   assert.equal(await page.evaluate(()=>!!window.session.root.querySelector('#group')),false);
   await page.evaluate(()=>{window.session.dispose();window.testFrame.remove();});
-  // Exercise the actual Canvas integration through an uploaded SVG asset.
+  // Exercise readable names, hierarchy, renaming and the actual Canvas integration.
+  const persianToggle=page.getByRole('button',{name:'FA',exact:true});
+  if(await persianToggle.count())await persianToggle.click();
   const input=page.locator('input[type=file][accept*="svg"]');
   if(await input.count()===0){await page.getByRole('button',{name:/Upload|آپلود/}).first().click();}
-  await page.locator('input[type=file][accept*="svg"]').first().setInputFiles({name:'editable-test.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect id="test-rectangle" width="100" height="100" fill="red"/></svg>')});
+  await page.locator('input[type=file][accept*="svg"]').first().setInputFiles({name:'editable-test.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 130"><g id="Layer_x0020_1"><rect id="test-rectangle" x="0" y="10" width="100" height="100" fill="#842bd0"/><path d="M130 20L200 20L180 90L150 90Z" fill="#ffca00"/><path d="M220 30L290 30L270 100L240 100Z" fill="#0863ff"/></g></svg>')});
   await page.getByRole('button',{name:/Edit SVG components|ویرایش اجزای SVG/}).click();
-  await page.locator('.svg-editor-layers button').filter({hasText:'test-rectangle'}).click();
+  await page.locator('.svg-part-select').first().waitFor();
+  assert.equal(await page.locator('.svg-part-select').count(),4);
+  assert.equal(await page.locator('.svg-editor-layers').textContent().then(t=>/path|Layer_x0020_1/.test(t)),false);
+  await page.locator('.svg-part-disclosure').click();
+  assert.equal(await page.locator('.svg-part-select').count(),1,'collapse nested components');
+  await page.frameLocator('.svg-editor-workspace iframe').locator('#test-rectangle').click();
+  assert.equal(await page.locator('.svg-part-disclosure').getAttribute('aria-expanded'),'true','Canvas selection reveals collapsed ancestors');
+  await page.locator('.svg-part-select').filter({hasText:/Rectangle|مستطیل/}).click();
+  assert.equal(await page.locator('.svg-part-select[aria-pressed=true]').count(),1);
+  assert.equal(await page.locator('.svg-part-symbol.is-color').first().evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(132, 43, 208)');
+  await page.locator('input[name=componentName]').fill('قسمت اصلی');
+  await page.getByRole('button',{name:/^Rename$|^تغییر نام$/}).click();
+  assert.equal(await page.locator('.svg-part-select').filter({hasText:'قسمت اصلی'}).count(),1);
+  assert.equal(await page.frameLocator('.svg-editor-workspace iframe').locator('#test-rectangle').getAttribute('aria-label'),'قسمت اصلی','rename must preserve source ID');
   await page.getByRole('button',{name:/^Edit nodes$|^ویرایش نقاط$/}).click();
   const modalFrame=page.frameLocator('.svg-editor-workspace iframe');
   await modalFrame.locator('[data-handle="2"]').click();
@@ -52,7 +67,7 @@ try {
   await page.screenshot({path:'/tmp/bioplot-svg-editor-open.png'});
   await page.getByRole('button',{name:/Apply changes|اعمال تغییرات/}).click();
   await page.waitForSelector('.svg-editor-dialog',{state:'detached'});
-  assert.equal(await page.locator('.studio-artboard #test-rectangle').getAttribute('d'),'M0 0 L100 0 L0 100 Z');
+  assert.equal(await page.locator('.studio-artboard #test-rectangle').getAttribute('d'),'M0 10 L100 10 L0 110 Z');
   await page.getByRole('button',{name:/^Undo$|^واگرد$/}).first().click();
   assert.equal(await page.locator('.studio-artboard #test-rectangle').evaluate(el=>el.localName),'rect');
   await page.getByRole('button',{name:/Edit SVG components|ویرایش اجزای SVG/}).click();
@@ -62,5 +77,5 @@ try {
   assert.equal(await page.locator('.studio-artboard ellipse').count(),0,'Cancel must not change the document');
   assert.deepEqual(errors,[]);
   await page.screenshot({path:'/tmp/bioplot-svg-editor-verified.png'});
-  console.log('PASS: SVG import, nested transforms, real pointer drag, rectangle→triangle, Bézier handles, local undo, add/remove, ungroup, apply and project undo.');
+  console.log('PASS: readable names, color swatches, collapse/expand, rename without ID changes, RTL,  SVG import, nested transforms, real pointer drag, rectangle→triangle, Bézier handles, local undo, add/remove, ungroup, apply and project undo.');
 } finally {await browser.close();await server.close();}
