@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { sanitizeSvg } from './assets';
 import { deletePathNode, insertPathNode, movePathHandle, parsePath, pathHandles, pathString, primitivePath, type NodeHandle } from './vectorNodes';
 import './svg-template-editor.css';
+import { combinedBox, fittedSvg, matrixFrom, transformedLocal } from './svgEditingGeometry';
 import { describeSvgComponents, svgComponentName, type SvgComponentRow } from './svgComponentLabels';
 
 const NS='http://www.w3.org/2000/svg';
 const graphics='path,rect,circle,ellipse,polygon,polyline,line,text,image,use,g';
 const excluded='defs,clipPath,mask,marker,pattern,symbol';
-type EditorState={undo:boolean;redo:boolean;name:string;nodes:boolean;node:boolean;count:number;layers:SvgComponentRow[]};
-const empty:EditorState={undo:false,redo:false,name:'',nodes:false,node:false,count:0,layers:[]};
+type EditorState={zoom:number;undo:boolean;redo:boolean;name:string;nodes:boolean;node:boolean;count:number;layers:SvgComponentRow[]};
+const empty:EditorState={zoom:1,undo:false,redo:false,name:'',nodes:false,node:false,count:0,layers:[]};
 
 /** Draft-only DOM editing: Apply is one atomic document command; Cancel changes nothing. */
 export class SvgEditingSession {
@@ -19,6 +20,8 @@ export class SvgEditingSession {
   node:NodeHandle|null=null;
   history:string[]=[];
   index=0;
+  zoom=1;
+  pan={x:0,y:0};
   private cleanupDrag:(()=>void)|null=null;
   constructor(private doc:Document,source:string,private changed:(state:EditorState)=>void){
     const parsed=new DOMParser().parseFromString(source,'image/svg+xml');
@@ -29,14 +32,25 @@ export class SvgEditingSession {
     }
     this.overlay=doc.createElementNS(NS,'svg');this.overlay.classList.add('node-overlay');
     doc.body.replaceChildren(this.root,this.overlay);
+    doc.body.tabIndex=-1;
     this.history=[this.serialize()];
     doc.addEventListener('pointerdown',this.pointerDown);
     doc.addEventListener('keydown',this.keyDown);
+    doc.addEventListener('wheel',this.wheel,{passive:false});
     doc.defaultView?.addEventListener('resize',this.refresh);
     this.refresh();
   }
+  fitted=()=>fittedSvg(this.root);
+  setZoom(value:number,x=this.doc.documentElement.clientWidth/2,y=this.doc.documentElement.clientHeight/2){
+    if(this.cleanupDrag)return;
+    const next=Math.max(.1,Math.min(8,value)),ratio=next/this.zoom;
+    this.pan={x:x-24-ratio*(x-24-this.pan.x),y:y-24-ratio*(y-24-this.pan.y)};this.zoom=next;this.updateCamera();
+  }
+  resetZoom(){this.zoom=1;this.pan={x:0,y:0};this.updateCamera();}
+  private updateCamera(){const style=this.doc.documentElement.style;style.setProperty('--svg-zoom',String(this.zoom));style.setProperty('--svg-pan-x',`${this.pan.x}px`);style.setProperty('--svg-pan-y',`${this.pan.y}px`);this.refresh();}
+  private wheel=(event:WheelEvent)=>{event.preventDefault();const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?200:1);this.setZoom(this.zoom*Math.exp(-Math.max(-200,Math.min(200,delta))*.002),event.clientX,event.clientY);};
   serialize=()=>new XMLSerializer().serializeToString(this.root);
-  dispose(){this.cleanupDrag?.();this.doc.removeEventListener('pointerdown',this.pointerDown);this.doc.removeEventListener('keydown',this.keyDown);this.doc.defaultView?.removeEventListener('resize',this.refresh);}
+  dispose(){this.cleanupDrag?.();this.doc.removeEventListener('pointerdown',this.pointerDown);this.doc.removeEventListener('keydown',this.keyDown);this.doc.removeEventListener('wheel',this.wheel);this.doc.defaultView?.removeEventListener('resize',this.refresh);}
   checkpoint(){const value=this.serialize();if(value!==this.history[this.index]){this.history=this.history.slice(0,this.index+1);this.history.push(value);this.index++;}this.refresh();}
   restore(delta:number){const index=this.index+delta;if(index<0||index>=this.history.length)return;this.cleanupDrag?.();this.index=index;const parsed=new DOMParser().parseFromString(this.history[index],'image/svg+xml');const root=this.doc.importNode(parsed.documentElement,true) as unknown as SVGSVGElement;this.root.replaceWith(root);this.root=root;this.selected=[];this.nodes=false;this.node=null;this.refresh();}
   pick(element:Element,additive=false){
@@ -50,6 +64,15 @@ export class SvgEditingSession {
     this.overlay.replaceChildren();
     const add=(tag:string,attrs:Record<string,string>)=>{const element=this.doc.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>element.setAttribute(k,v));this.overlay.append(element);return element;};
     for(const element of this.selected){const r=element.getBoundingClientRect();add('rect',{x:String(r.x),y:String(r.y),width:String(r.width),height:String(r.height),fill:'none',stroke:'#07857d','stroke-width':'1','stroke-dasharray':'4 3'});}
+    const bounds=combinedBox(this.selected);
+    if(bounds&&!this.nodes){
+      const {x,y,width:w,height:h}=bounds;
+      for(const [name,dx,dy] of [['nw',0,0],['n',.5,0],['ne',1,0],['e',1,.5],['se',1,1],['s',.5,1],['sw',0,1],['w',0,.5]] as const){
+        add('rect',{x:String(x+w*dx-4),y:String(y+h*dy-4),width:'8',height:'8',rx:'2',fill:'white',stroke:'#07857d','data-transform':name,style:`pointer-events:all;cursor:${name}-resize`});
+      }
+      add('line',{x1:String(x+w/2),x2:String(x+w/2),y1:String(y),y2:String(y-24),stroke:'#07857d'});
+      add('circle',{cx:String(x+w/2),cy:String(y-24),r:'6',fill:'white',stroke:'#07857d','data-transform':'rotate',style:'pointer-events:all;cursor:grab'});
+    }
     if(this.nodes&&this.selected.length===1){
       const element=this.selected[0];
       const handles=pathHandles(parsePath(element.getAttribute('d')??''));
@@ -59,11 +82,14 @@ export class SvgEditingSession {
       }
     }
     const layers=Array.from(this.root.querySelectorAll(graphics)).filter(e=>!e.closest(excluded));
-    this.changed({undo:this.index>0,redo:this.index<this.history.length-1,name:this.selected.map(e=>e.getAttribute('aria-label')||e.id||e.localName).join(', '),nodes:this.nodes,node:!!this.node&&!this.node.control,count:this.selected.length,layers:describeSvgComponents(layers,this.selected)});
+    this.changed({zoom:this.zoom,undo:this.index>0,redo:this.index<this.history.length-1,name:this.selected.map(e=>e.getAttribute('aria-label')||e.id||e.localName).join(', '),nodes:this.nodes,node:!!this.node&&!this.node.control,count:this.selected.length,layers:describeSvgComponents(layers,this.selected)});
   };
   private pointerDown=(event:PointerEvent)=>{
     if(event.button!==0)return;
+    this.doc.body.focus({preventScroll:true});
     const target=event.target as Element;
+    const transform=target.getAttribute?.('data-transform');
+    if(transform){this.beginTransform(event,transform);return;}
     const handle=target.getAttribute?.('data-handle');
     if(handle!==null&&handle!==undefined&&this.nodes){
       const element=this.selected[0],segments=parsePath(element.getAttribute('d')??''),node=pathHandles(segments)[Number(handle)];
@@ -71,27 +97,64 @@ export class SvgEditingSession {
       const start=this.localPoint(element,event.clientX,event.clientY);
       this.drag(event,p=>{const next=this.localPoint(element,p.clientX,p.clientY);element.setAttribute('d',pathString(movePathHandle(segments,node,node.x+next.x-start.x,node.y+next.y-start.y)));});return;
     }
-    const element=target.closest?.(graphics) as SVGGraphicsElement|null;
-    if(!element||!this.root.contains(element)||element.closest(excluded)){this.selected=[];this.nodes=false;this.node=null;this.refresh();return;}
+    let element=target.closest?.(graphics) as SVGGraphicsElement|null;
+    if(element&&!event.shiftKey)element=this.selected.find(selected=>selected.contains(element))??element;
+    if(!element||!this.root.contains(element)||element.closest(excluded)){this.beginMarquee(event);return;}
     if(!this.selected.includes(element)||event.shiftKey)this.pick(element,event.shiftKey);
     if(event.shiftKey)return;
     const initial=this.selected.map(e=>({element:e,transform:e.getAttribute('transform')??'',parent:e.parentElement as unknown as SVGGraphicsElement}));
     const origins=initial.map(s=>this.localPoint(s.parent,event.clientX,event.clientY));
     this.drag(event,p=>initial.forEach((s,i)=>{const next=this.localPoint(s.parent,p.clientX,p.clientY),dx=next.x-origins[i].x,dy=next.y-origins[i].y;s.element.setAttribute('transform',`translate(${dx} ${dy}) ${s.transform}`);}));
   };
-  private drag(event:PointerEvent,move:(event:PointerEvent)=>void){
+  private transformStarts(){return this.selected.map(element=>({element,parent:matrixFrom((element.parentNode as SVGGraphicsElement).getScreenCTM()!),local:element.transform.baseVal.consolidate()?matrixFrom(element.transform.baseVal.consolidate()!.matrix):new DOMMatrix()}));}
+  private beginTransform(event:PointerEvent,handle:string){
+    const box=combinedBox(this.selected);if(!box)return;
+    const starts=this.transformStarts(),cx=box.x+box.width/2,cy=box.y+box.height/2;
+    const anchorX=handle.includes('w')?box.x+box.width:box.x,anchorY=handle.includes('n')?box.y+box.height:box.y;
+    this.drag(event,p=>{
+      let gesture:DOMMatrix;
+      if(handle==='rotate'){
+        let angle=(Math.atan2(p.clientY-cy,p.clientX-cx)-Math.atan2(event.clientY-cy,event.clientX-cx))*180/Math.PI;
+        if(p.shiftKey)angle=Math.round(angle/15)*15;
+        gesture=new DOMMatrix().translate(cx,cy).rotate(angle).translate(-cx,-cy);
+      }else{
+        let sx=handle.includes('w')||handle.includes('e')?Math.max(.02,(p.clientX-anchorX)/(event.clientX-anchorX||1)):1;
+        let sy=handle.includes('n')||handle.includes('s')?Math.max(.02,(p.clientY-anchorY)/(event.clientY-anchorY||1)):1;
+        if(p.shiftKey){const scale=Math.abs(sx-1)>Math.abs(sy-1)?sx:sy;sx=sy=scale;}
+        gesture=new DOMMatrix().translate(anchorX,anchorY).scale(sx,sy).translate(-anchorX,-anchorY);
+      }
+      starts.forEach(s=>s.element.setAttribute('transform',transformedLocal(s.parent,s.local,gesture).toString()));
+    });
+  }
+  private beginMarquee(event:PointerEvent){
+    const before=event.shiftKey?[...this.selected]:[];this.nodes=false;this.node=null;
+    const candidates=Array.from(this.root.querySelectorAll<SVGGraphicsElement>(graphics)).filter(e=>e.localName!=='g'&&!e.closest(excluded)&&this.doc.defaultView!.getComputedStyle(e).display!=='none');
+    this.selected=before;this.refresh();
+    this.drag(event,p=>{
+      const x=Math.min(event.clientX,p.clientX),y=Math.min(event.clientY,p.clientY),width=Math.abs(event.clientX-p.clientX),height=Math.abs(event.clientY-p.clientY);
+      const hits=width>3||height>3?candidates.filter(e=>{const r=e.getBoundingClientRect();return r.width+r.height>0&&r.left<=x+width&&r.right>=x&&r.top<=y+height&&r.bottom>=y;}):[];
+      this.selected=[...new Set([...before,...hits])].filter(e=>!before.some(parent=>parent!==e&&parent.contains(e)));
+      // Selection feedback is drawn after the normal overlay refresh.
+      this.refresh();const rect=this.doc.createElementNS(NS,'rect');
+      for(const [key,value]of Object.entries({x,y,width,height,fill:'#07857d18',stroke:'#07857d','stroke-width':1,'stroke-dasharray':'4 3','data-marquee':'true'}))rect.setAttribute(key,String(value));
+      this.overlay.append(rect);
+    },false);
+  }
+  private drag(event:PointerEvent,move:(event:PointerEvent)=>void,refresh=true){
     event.preventDefault();const before=this.serialize();let moved=false;
-    const onMove=(e:PointerEvent)=>{if(e.pointerId!==event.pointerId)return;move(e);moved=true;this.refresh();};
+    const onMove=(e:PointerEvent)=>{if(e.pointerId!==event.pointerId)return;move(e);moved=true;if(refresh)this.refresh();};
     const stop=()=>{this.doc.removeEventListener('pointermove',onMove);this.doc.removeEventListener('pointerup',up);this.doc.removeEventListener('pointercancel',cancel);this.cleanupDrag=null;};
-    const up=(e:PointerEvent)=>{if(e.pointerId!==event.pointerId)return;stop();if(moved)this.checkpoint();};
+    const up=(e:PointerEvent)=>{if(e.pointerId!==event.pointerId)return;stop();if(moved)this.checkpoint();else this.refresh();};
     const cancel=()=>{stop();if(moved){const parsed=new DOMParser().parseFromString(before,'image/svg+xml');const root=this.doc.importNode(parsed.documentElement,true) as unknown as SVGSVGElement;this.root.replaceWith(root);this.root=root;this.selected=[];this.nodes=false;this.refresh();}};
     this.cleanupDrag=cancel;
     this.root.setPointerCapture?.(event.pointerId);
     this.doc.addEventListener('pointermove',onMove);this.doc.addEventListener('pointerup',up);this.doc.addEventListener('pointercancel',cancel);
   }
-  private keyDown=(e:KeyboardEvent)=>{
+  keyDown=(e:KeyboardEvent)=>{
+    if((e.target as Element)?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
     if(e.ctrlKey||e.metaKey){if(e.key.toLowerCase()==='z'){e.preventDefault();this.restore(e.shiftKey?1:-1);}return;}
     if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();if(this.nodes)this.removeNode();else this.remove();}
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)&&this.selected.length){e.preventDefault();const n=e.shiftKey?10:1,dx=e.key==='ArrowLeft'?-n:e.key==='ArrowRight'?n:0,dy=e.key==='ArrowUp'?-n:e.key==='ArrowDown'?n:0;this.transformStarts().forEach(s=>s.element.setAttribute('transform',transformedLocal(s.parent,s.local,new DOMMatrix().translate(dx,dy)).toString()));this.checkpoint();}
     if(e.key==='Escape'){this.nodes=false;this.node=null;this.selected=[];this.refresh();}
   };
   remove(){this.selected.forEach(e=>e.remove());this.selected=[];this.nodes=false;this.node=null;this.checkpoint();}
@@ -109,7 +172,27 @@ export class SvgEditingSession {
   paint(property:'fill'|'stroke',value:string){for(const e of this.selected){e.style.setProperty(property,value);e.setAttribute(property,value);}this.checkpoint();}
   reorder(front:boolean){for(const e of this.selected){const parent=e.parentNode!;if(front)parent.appendChild(e);else parent.insertBefore(e,parent.firstChild);}this.checkpoint();}
   selectParent(){const parent=this.selected[0]?.parentElement;if(parent&&parent!==(this.root as unknown as Element)&&parent.localName==='g')this.pick(parent);}
-  group(){if(this.selected.length<2)return;const parent=this.selected[0].parentNode;if(!this.selected.every(e=>e.parentNode===parent))throw new Error('Select components in the same group first.');const ordered=Array.from(parent!.childNodes).filter(e=>this.selected.includes(e as SVGGraphicsElement));const group=this.doc.createElementNS(NS,'g');parent!.insertBefore(group,ordered[0]);ordered.forEach(e=>group.appendChild(e));this.selected=[group];this.checkpoint();}
+  group(){
+    if(this.selected.length<2)return;
+    const ordered=[...this.selected].sort((a,b)=>a.compareDocumentPosition(b)&4?-1:1);
+    let parent=ordered[0].parentElement as unknown as SVGGraphicsElement;
+    while(!ordered.every(element=>parent.contains(element)))parent=parent.parentElement as unknown as SVGGraphicsElement;
+    const sameParent=ordered.every(element=>element.parentNode===parent);
+    const inherited=['fill','fill-opacity','fill-rule','stroke','stroke-width','stroke-opacity','stroke-linecap','stroke-linejoin','stroke-dasharray','font-family','font-size','font-weight','text-anchor','visibility'];
+    const relative=matrixFrom(parent.getScreenCTM()!).inverse();
+    const prepared=ordered.map(element=>{
+      if(!sameParent)for(let ancestor=element.parentElement;ancestor&&ancestor!==(parent as unknown as Element);ancestor=ancestor.parentElement){
+        const style=this.doc.defaultView!.getComputedStyle(ancestor);
+        if(Number(style.opacity)!==1||style.filter!=='none'||style.clipPath!=='none'||style.maskImage!=='none')throw new Error('Open groups with shared effects before regrouping their components.');
+      }
+      const style=this.doc.defaultView!.getComputedStyle(element);
+      return {element,matrix:relative.multiply(matrixFrom(element.getScreenCTM()!)),styles:inherited.map(property=>[property,style.getPropertyValue(property)])};
+    });
+    let anchor:Element=ordered[0];while(anchor.parentNode!==parent)anchor=anchor.parentElement!;
+    const group=this.doc.createElementNS(NS,'g');parent.insertBefore(group,anchor);
+    prepared.forEach(({element,matrix,styles})=>{if(!sameParent){styles.forEach(([property,value])=>element.style.setProperty(property,value));element.setAttribute('transform',matrix.toString());}group.appendChild(element);});
+    this.selected=[group];this.nodes=false;this.node=null;this.checkpoint();
+  }
   ungroup(){
     if(this.selected.length!==1||this.selected[0].localName!=='g')return;
     const group=this.selected[0],style=this.doc.defaultView!.getComputedStyle(group);
@@ -147,8 +230,8 @@ export function SvgTemplateEditor({svg,fa,onApply,onClose}:{svg:string;fa:boolea
   useEffect(()=>{dialog.current?.showModal();return()=>session.current?.dispose();},[]);
   const initialize=()=>run(()=>{const doc=frame.current?.contentDocument;if(!doc)return;session.current?.dispose();session.current=new SvgEditingSession(doc,sanitizeSvg(svg),next=>{setState(next);setCollapsed(previous=>{const expanded=new Set(previous);next.layers.filter(row=>row.selected).forEach(row=>row.parents.forEach(parent=>expanded.delete(parent)));return expanded.size===previous.size?previous:expanded;});});});
   const button=(en:string,faLabel:string,action:()=>void,disabled=false)=><button type="button" disabled={disabled} onClick={()=>run(action)}>{t(en,faLabel)}</button>;
-  return <dialog ref={dialog} className="svg-editor-dialog" dir={fa?'rtl':'ltr'} onCancel={event=>{event.preventDefault();close();}} onKeyDown={event=>{event.stopPropagation();if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'&&!(event.target instanceof HTMLInputElement)){event.preventDefault();session.current?.restore(event.shiftKey?1:-1);}}}>
-    <header><div><strong>{t('Edit SVG components','ویرایش اجزای SVG')}</strong><small>{t('Select a component; Shift-click to select several. Node mode edits vertices and curve handles.','یک جزء را انتخاب کنید؛ Shift برای انتخاب چند جزء. در حالت نقاط، رأس‌ها و دستگیره‌های منحنی قابل جابه‌جایی‌اند.')}</small></div>{button('Cancel','انصراف',close)}{button('Apply changes','اعمال تغییرات',()=>{if(session.current?.index)onApply(session.current.serialize());else onClose();})}</header>
+  return <dialog ref={dialog} className="svg-editor-dialog" dir={fa?'rtl':'ltr'} onCancel={event=>{event.preventDefault();close();}} onKeyDown={event=>{event.stopPropagation();session.current?.keyDown(event.nativeEvent);}}>
+    <header><div><strong>{t('Edit','ویرایش')}</strong><small>{t('Select a component; Shift-click to select several. Node mode edits vertices and curve handles.','یک جزء را انتخاب کنید؛ Shift برای انتخاب چند جزء. در حالت نقاط، رأس‌ها و دستگیره‌های منحنی قابل جابه‌جایی‌اند.')}</small></div>{button('Cancel','انصراف',close)}{button('Apply changes','اعمال تغییرات',()=>{if(session.current)onApply(session.current.fitted());})}</header>
     <nav aria-label={t('Vector tools','ابزارهای وکتور')}>
       {button('Undo','واگرد',()=>session.current?.restore(-1),!state.undo)}{button('Redo','ازنو',()=>session.current?.restore(1),!state.redo)}
       {button(state.nodes?'Finish nodes':'Edit nodes',state.nodes?'پایان ویرایش نقاط':'ویرایش نقاط',()=>session.current?.enterNodes(),state.count!==1)}
@@ -156,8 +239,8 @@ export function SvgTemplateEditor({svg,fa,onApply,onClose}:{svg:string;fa:boolea
       {button('Delete node','حذف نقطه',()=>session.current?.removeNode(),!state.node)}
       {button('Delete component','حذف جزء',()=>session.current?.remove(),!state.count)}
       {button('Select group','انتخاب گروه',()=>session.current?.selectParent(),state.count!==1)}
-      {button('Group','گروه‌بندی',()=>session.current?.group(),state.count<2)}
-      {button('Ungroup','بازکردن گروه',()=>session.current?.ungroup(),state.count!==1)}
+      {button('Group','ادغام (گروه‌کردن)',()=>session.current?.group(),state.count<2)}
+      {button('Ungroup','عدم ادغام (بازکردن گروه)',()=>session.current?.ungroup(),state.count!==1||session.current?.selected[0]?.localName!=='g')}
       {button('Bring forward','رو آوردن',()=>session.current?.reorder(true),!state.count)}{button('Send back','عقب بردن',()=>session.current?.reorder(false),!state.count)}
       {(['fill','stroke'] as const).map(property=><label key={property}>{t(property==='fill'?'Fill':'Stroke',property==='fill'?'رنگ داخل':'رنگ خط')}<input aria-label={property} type="color" disabled={!state.count} defaultValue="#087f79" onChange={e=>run(()=>session.current?.paint(property,e.target.value))}/>{button('None','بدون رنگ',()=>session.current?.paint(property,'none'),!state.count)}</label>)}
     </nav>
@@ -183,12 +266,10 @@ export function SvgTemplateEditor({svg,fa,onApply,onClose}:{svg:string;fa:boolea
         <label>{t('Selected item name','نام شکل انتخاب‌شده')}<input name="componentName" maxLength={120} defaultValue={state.layers.find(row=>row.selected)?.name??''} placeholder={state.layers.find(row=>row.selected)?svgComponentName(state.layers.find(row=>row.selected)!,fa):''}/></label>
         <button type="submit">{t('Rename','تغییر نام')}</button>
       </form>}
-      <div className="svg-editor-add"><strong>{t('Add to drawing','افزودن به طرح')}</strong>
-        {button('+ Rectangle','+ مستطیل',()=>session.current?.add('rect'))}{button('+ Ellipse','+ بیضی',()=>session.current?.add('ellipse'))}{button('+ Text','+ متن',()=>session.current?.add('text'))}
-        <label className="svg-file-picker">{t('+ Import SVG file','+ افزودن فایل SVG')}<input type="file" accept=".svg,image/svg+xml" onChange={async e=>{const input=e.currentTarget,file=input.files?.[0];if(file){try{const text=await file.text();run(()=>session.current?.addSvg(text));}catch{setError(t('Cannot read file','خواندن فایل ممکن نشد'));}}input.value='';}}/></label>
-        {state.count===1&&session.current?.selected[0]?.localName==='text'&&<label>{t('Text content','محتوای متن')}<input aria-label="Component text" key={state.name} defaultValue={session.current.selected[0].textContent??''} onBlur={e=>run(()=>session.current?.setText(e.target.value))}/></label>}
-      </div></aside>
-    <iframe ref={frame} title={t('SVG editing canvas','بوم ویرایش SVG')} sandbox="allow-same-origin" onLoad={initialize} srcDoc={'<!doctype html><html><head><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:white}body>svg:not(.node-overlay){position:absolute;left:24px;top:24px;width:calc(100% - 48px);height:calc(100% - 48px);display:block;touch-action:none}.node-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}</style></head><body></body></html>'}/></div>
+      {state.count===1&&session.current?.selected[0]?.localName==='text'&&<label>{t('Text content','محتوای متن')}<input aria-label="Component text" key={state.name} defaultValue={session.current.selected[0].textContent??''} onBlur={e=>run(()=>session.current?.setText(e.target.value))}/></label>}
+      </aside>
+    <iframe ref={frame} title={t('SVG editing canvas','بوم ویرایش SVG')} sandbox="allow-same-origin" onLoad={initialize} srcDoc={'<!doctype html><html><head><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:white}body>svg:not(.node-overlay){position:absolute;left:24px;top:24px;width:calc(100% - 48px);height:calc(100% - 48px);display:block;touch-action:none;overflow:visible;transform-origin:0 0;transform:translate(var(--svg-pan-x,0px),var(--svg-pan-y,0px)) scale(var(--svg-zoom,1))}.node-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}</style></head><body></body></html>'}/></div>
+    <div className="svg-zoom-controls" dir="ltr">{button('−','−',()=>session.current?.setZoom(state.zoom/1.2))}<output aria-label="Zoom">{Math.round(state.zoom*100)}%</output>{button('+','+',()=>session.current?.setZoom(state.zoom*1.2))}{button('Reset view','بازنشانی نما',()=>session.current?.resetZoom())}<span>{t('Mouse wheel: zoom · Drag blank space: select','چرخ ماوس: زوم · کشیدن روی فضای خالی: انتخاب چندتایی')}</span></div>
     <footer>{t('Edits affect this project only. Embedded photos remain images. Select a node and press Delete to remove it (closed shapes keep at least three vertices).','تغییرات فقط برای همین پروژه است. عکس‌های داخل فایل، عکس باقی می‌مانند. برای حذف رأس، نقطه را انتخاب کنید و Delete بزنید؛ شکل بسته حداقل سه رأس دارد.')}</footer>
   </dialog>;
 }
