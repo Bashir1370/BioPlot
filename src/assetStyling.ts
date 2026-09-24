@@ -37,6 +37,13 @@ export const ASSET_STYLE_PRESETS = [
   { id: 'muted', label: 'Muted', labelFa: 'ملایم', saturation: 55, brightness: 108, contrast: 92, hueRotate: 0 },
 ] as const;
 
+// Soft midtones for the default scientific-asset suggestions. The existing
+// luminance mapping keeps highlights, shading and source transparency intact.
+export const ASSET_PRESET_COLORS:Record<string,string> = {
+  teal:'#91c9c3',blue:'#a4bfea',violet:'#bda8dd',pink:'#e6aec6',
+  orange:'#ecc19e',green:'#a6cdb0',
+};
+
 // Solid colors for monochrome Lines assets: hue rotation cannot color black pixels.
 export const LINE_ASSET_PRESET_COLORS:Record<string,string> = {
   teal:'#087f79',blue:'#2563eb',violet:'#7c3aed',pink:'#db2777',
@@ -237,7 +244,7 @@ export function applyAssetPreset(object: StyledAssetObject, presetId: string): S
   return {
     ...object,
     tintColor: undefined,
-    paletteColor: preset.id === 'original' || preset.id === 'muted' ? undefined : LINE_ASSET_PRESET_COLORS[preset.id],
+    paletteColor: preset.id === 'original' || preset.id === 'muted' ? undefined : ASSET_PRESET_COLORS[preset.id],
     assetStyle: { ...DEFAULT_ASSET_VISUAL_STYLE, saturation: preset.id === 'muted' ? 55 : 100 },
   };
 }
