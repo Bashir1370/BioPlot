@@ -40,8 +40,8 @@ export const ASSET_STYLE_PRESETS = [
 // Soft midtones for the default scientific-asset suggestions. The existing
 // luminance mapping keeps highlights, shading and source transparency intact.
 export const ASSET_PRESET_COLORS:Record<string,string> = {
-  teal:'#91c9c3',blue:'#a4bfea',violet:'#bda8dd',pink:'#e6aec6',
-  orange:'#ecc19e',green:'#a6cdb0',
+  teal:'#76bab4',blue:'#8badea',violet:'#b092e0',pink:'#e493b6',
+  orange:'#ecac81',green:'#89c59c',
 };
 
 // Solid colors for monochrome Lines assets: hue rotation cannot color black pixels.

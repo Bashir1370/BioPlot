@@ -19,7 +19,7 @@ describe('scientific asset styling',()=>{
 
   it('applies non-destructive visual presets to raster-compatible assets',()=>{
     const next=applyAssetPreset(asset,'teal');
-    expect(next.paletteColor).toBe('#91c9c3');
+    expect(next.paletteColor).toBe('#76bab4');
     expect(next.assetStyle?.hueRotate).toBe(0);
     expect(next.svg).toBe(asset.svg);
     expect(assetSvgWithTint(next)).toContain('feComponentTransfer');
