@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAssetPreset, assetSvgWithTint, LINE_ASSET_PRESET_COLORS, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject } from './assetStyling';
+import { applyAssetPreset, assetSvgWithTint, ASSET_PRESET_COLORS, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject } from './assetStyling';
 import { objectToSvg } from './export';
 
 const asset:StyledAssetObject={
@@ -19,7 +19,7 @@ describe('scientific asset styling',()=>{
 
   it('applies non-destructive visual presets to raster-compatible assets',()=>{
     const next=applyAssetPreset(asset,'teal');
-    expect(next.paletteColor).toBe('#087f79');
+    expect(next.paletteColor).toBe('#91c9c3');
     expect(next.assetStyle?.hueRotate).toBe(0);
     expect(next.svg).toBe(asset.svg);
     expect(assetSvgWithTint(next)).toContain('feComponentTransfer');
@@ -49,7 +49,7 @@ describe('scientific asset styling',()=>{
    let next=asset;
    for(const name of ['pink','blue','orange','green']) {
      next=applyAssetPreset(next,name);
-     expect(next.paletteColor).toBe(LINE_ASSET_PRESET_COLORS[name]);
+     expect(next.paletteColor).toBe(ASSET_PRESET_COLORS[name]);
      expect(next.svg).toBe(asset.svg);
      expect(assetSvgWithTint(next).match(/<filter /g)).toHaveLength(1);
    }
