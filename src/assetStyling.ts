@@ -83,6 +83,30 @@ export function setAssetTint(object:AssetObject,color?:string):AssetObject {
   if(object.locked||(color!==undefined&&!/^#[0-9a-f]{6}$/i.test(color)))return object;
   return {...object,tintColor:color};
 }
+
+function hueOfHex(value: string): { hue: number; saturation: number } | null {
+  const hex = value.slice(1);
+  if (!/^(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)) return null;
+  const rgb = (hex.length === 3 ? [...hex].map(char => char + char) : hex.match(/../g)!).map(channel => parseInt(channel, 16) / 255);
+  const max = Math.max(...rgb), min = Math.min(...rgb), difference = max - min;
+  if (!difference) return { hue: 0, saturation: 0 };
+  const index = rgb.indexOf(max);
+  const sector = index === 0 ? (rgb[1] - rgb[2]) / difference : index === 1 ? (rgb[2] - rgb[0]) / difference + 2 : (rgb[0] - rgb[1]) / difference + 4;
+  return { hue: (sector * 60 + 360) % 360, saturation: difference / (1 - Math.abs(max + min - 1)) };
+}
+
+// Only explicit vector paint is inspectable here. Embedded photographs and PNGs
+// remain on the tonal path; their pixels must never be mistaken for SVG colors.
+function multicolorVectorHue(svg: string): number | undefined {
+  if (/<image\b/i.test(svg)) return undefined;
+  const hues = [...svg.matchAll(/(?:fill|stroke|stop-color)\s*(?:=\s*["']|:\s*)(#[0-9a-f]{3}(?:[0-9a-f]{3})?)/gi)]
+    .map(match => hueOfHex(match[1]))
+    .filter((color): color is { hue: number; saturation: number } => !!color && color.saturation > .22)
+    .map(color => color.hue);
+  if (!hues.some(hue => Math.abs(((hue - hues[0] + 540) % 360) - 180) > 35)) return undefined;
+  return hues[0];
+}
+
 export function assetSvgWithTint(object:AssetObject):string {
   // Stretch only imported Lines assets; retain their original SVG/PNG artwork.
   const svg=object.lineAsset?object.svg.replace(/<svg\b[^>]*>/i,tag=>tag.replace(/\s+preserveAspectRatio\s*=\s*(["']).*?\1/i,'').replace(/>$/,' preserveAspectRatio="none">')):object.svg;
@@ -90,12 +114,17 @@ export function assetSvgWithTint(object:AssetObject):string {
   const palette = object.paletteColor && /^#[0-9a-f]{6}$/i.test(object.paletteColor) ? object.paletteColor : undefined;
   if(!color && !palette)return svg;
   if (!color && palette) {
-    // Map luminance through dark / selected color / light. Preserve alpha and
-    // shading, independently of the source hue, including embedded bitmaps.
+    // Preserve distinct hues in multi-color vectors. For single-hue artwork or
+    // embedded images, expand the tonal range before applying the new palette.
     const id = `bp-palette-${Array.from(object.id).map(char=>char.codePointAt(0)!.toString(16)).join('-')}-${palette.slice(1)}`;
+    const sourceHue = multicolorVectorHue(svg);
+    const targetHue = hueOfHex(palette)?.hue ?? 0;
+    const delta = ((targetHue - (sourceHue ?? 0) + 540) % 360) - 180;
     const channels = [0, 2, 4].map(offset => parseInt(palette.slice(1 + offset, 3 + offset), 16) / 255);
-    const transfer = channels.map((channel, index) => `<feFunc${['R','G','B'][index]} type="table" tableValues="${channel * .15} ${channel} ${.88 + channel * .12}"/>`).join('');
-    const filter = `<defs><filter id="${id}" color-interpolation-filters="sRGB" x="-20%" y="-20%" width="140%" height="140%"><feColorMatrix type="saturate" values="0"/><feComponentTransfer>${transfer}</feComponentTransfer></filter></defs>`;
+    const transfer = channels.map((channel, index) => `<feFunc${['R','G','B'][index]} type="table" tableValues="${channel * .12} ${channel} ${.94 + channel * .06}"/>`).join('');
+    const tonal = `<feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="gamma" amplitude="1" exponent="2.2" offset="0"/><feFuncG type="gamma" amplitude="1" exponent="2.2" offset="0"/><feFuncB type="gamma" amplitude="1" exponent="2.2" offset="0"/></feComponentTransfer><feComponentTransfer>${transfer}</feComponentTransfer>`;
+    const chromatic = `<feColorMatrix type="hueRotate" values="${delta}"/><feColorMatrix type="saturate" values="0.85"/>`;
+    const filter = `<defs><filter id="${id}" color-interpolation-filters="sRGB" x="-20%" y="-20%" width="140%" height="140%">${sourceHue === undefined ? tonal : chromatic}</filter></defs>`;
     return svg.replace(/(<svg\b[^>]*>)/i, `$1${filter}<g filter="url(#${id})">`).replace(/<\/svg>\s*$/i, '</g></svg>');
   }
   if (!color) return svg;
@@ -228,8 +257,9 @@ export function applyConfiguredAssetPreset(object: StyledAssetObject, preset: As
   return {
     ...object,
     tintColor:undefined,
-    paletteColor:undefined,
-    svg: tintAssetSvg(source, color),
+    paletteColor:color,
+    svg:source,
+    colors:originalColors ? structuredClone(originalColors) : object.colors,
     assetStyle: { ...DEFAULT_ASSET_VISUAL_STYLE },
   };
 }
