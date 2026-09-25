@@ -129,7 +129,7 @@ function renderedCropBounds(
   };
 }
 
-async function updateTightSelection() {
+export async function updateTightSelection() {
   const artboard = document.querySelector<HTMLElement>('.studio-artboard');
   const selection = artboard?.querySelector<HTMLElement>('.studio-selection') ?? null;
   if (!artboard || !selection) return;
@@ -149,8 +149,32 @@ async function updateTightSelection() {
 
   const svg = object.querySelector<SVGSVGElement>('.studio-asset-visual svg');
   const imageNode = svg?.querySelector<SVGImageElement>('image');
-  if (!svg || !imageNode) {
+  if (!svg) {
     clearTightStyle(selection);
+    return;
+  }
+  if (!imageNode) {
+    // An uploaded vector can have a spacious viewBox even when its paths occupy
+    // only one corner. Its painted geometry, not the SVG viewport, should drive
+    // the visual selection frame and the tight resize mapping.
+    let box: DOMRect;
+    try { box = svg.getBBox(); } catch { clearTightStyle(selection); return; }
+    const viewBox = parseViewBox(svg, box.width, box.height);
+    const padding = Math.max(viewBox.width, viewBox.height) * .004;
+    const cropX = Math.max(viewBox.x, box.x - padding);
+    const cropY = Math.max(viewBox.y, box.y - padding);
+    const cropRight = Math.min(viewBox.x + viewBox.width, box.x + box.width + padding);
+    const cropBottom = Math.min(viewBox.y + viewBox.height, box.y + box.height + padding);
+    if (!(cropRight > cropX && cropBottom > cropY)) { clearTightStyle(selection); return; }
+    const rendered = renderedCropBounds(artboard, svg, cropX, cropY, cropRight, cropBottom);
+    if (!rendered || rendered.width <= 0 || rendered.height <= 0) { clearTightStyle(selection); return; }
+    const objectBox = object.getBoundingClientRect();
+    if (rendered.width >= objectBox.width / (artboard.getBoundingClientRect().width / artboard.offsetWidth) * .985 &&
+        rendered.height >= objectBox.height / (artboard.getBoundingClientRect().height / artboard.offsetHeight) * .985) {
+      clearTightStyle(selection);
+      return;
+    }
+    setTightStyle(selection, rendered.left, rendered.top, rendered.width, rendered.height);
     return;
   }
   const href = imageNode.getAttribute('href') ?? imageNode.getAttributeNS('http://www.w3.org/1999/xlink', 'href') ?? '';
