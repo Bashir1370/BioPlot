@@ -14,6 +14,20 @@ function setup(){
  return {repo,local,cloud,session,a,b,guest};
 }
 describe('account workspace storage',()=>{
+ it('opens an owned browser copy while the cloud request is still pending',async()=>{
+  const {repo,cloud,a}=setup();
+  cloud.load.mockImplementation(()=>new Promise(()=>{}));
+  expect(await repo.loadCached('a')).toEqual(a);
+  expect(cloud.load).not.toHaveBeenCalled();
+ });
+ it('does not reveal another account or guest cache through the fast path',async()=>{
+  const {repo,session}=setup();
+  expect(await repo.loadCached('b')).toBeNull();
+  expect(await repo.loadCached('g')).toBeNull();
+  session.mockResolvedValue({data:{session:null},error:null});
+  expect(await repo.loadCached('a')).toBeNull();
+  expect((await repo.loadCached('g'))?.id).toBe('g');
+ });
  it('shows only own cached figures for an account',async()=>{const {repo}=setup();expect((await repo.list()).map(r=>r.id)).toEqual(['a']);expect(await repo.load('b')).toBeNull();expect(await repo.load('g')).toBeNull();});
  it('shows only anonymous drafts to guests',async()=>{const {repo,session,cloud}=setup();session.mockResolvedValue({data:{session:null},error:null});expect((await repo.list()).map(r=>r.id)).toEqual(['g']);expect(await repo.load('a')).toBeNull();expect(cloud.load).not.toHaveBeenCalled();});
  it('saves ownership and retains a local copy when cloud save fails',async()=>{const {repo,local,cloud,guest}=setup();cloud.save.mockRejectedValue(new Error('Offline'));await expect(repo.save(guest)).rejects.toThrow('Offline');expect(local.save).toHaveBeenCalledWith(expect.objectContaining({ownerId:'alice'}));});
