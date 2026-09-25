@@ -78,7 +78,7 @@ export async function signOutUser() {
 
 export function subscribeAccountState(callback: (state: AccountState) => void) {
   const { data } = supabase.auth.onAuthStateChange(() => {
-    void getAccountState().then(callback);
+    void getAccountState().then(callback).catch(() => {});
   });
   return () => data.subscription.unsubscribe();
 }
