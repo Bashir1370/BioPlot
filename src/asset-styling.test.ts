@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { applyAssetPreset, assetSvgWithTint, ASSET_PRESET_COLORS, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject } from './assetStyling';
+import { describe, expect, it, vi } from 'vitest';
+import { applyAssetPreset, applyConfiguredAssetPreset, assetSvgWithTint, ASSET_PRESET_COLORS, recolorAssetSlot, resetAssetVisualStyle, StyledAssetObject } from './assetStyling';
+import { assetToObject, type ScientificAsset } from './assets';
 import { objectToSvg } from './export';
 
 const asset:StyledAssetObject={
@@ -42,6 +43,43 @@ describe('scientific asset styling',()=>{
     expect(svg).toContain('bp-palette-');
     expect(svg).toContain('feComponentTransfer');
     expect(svg).toContain('feColorMatrix type="saturate" values="0"');
+  });
+
+  it('keeps tonal gradients in configured PNG presets without replacing the source',()=>{
+    const source='<svg viewBox="0 0 10 10"><image href="data:image/png;base64,iVBORw0KGgo=" width="10" height="10"/></svg>';
+    const raster={...asset,svg:source,colors:[]};
+    const pink=applyConfiguredAssetPreset(raster,{id:'pink',label:'Pink',kind:'tint',color:'#e493b6'},source);
+    expect(pink.svg).toBe(source);
+    expect(pink.paletteColor).toBe('#e493b6');
+    expect(assetSvgWithTint(pink)).toContain('type="gamma" amplitude="1" exponent="2.2"');
+    expect(objectToSvg(pink)).toContain('data:image/png;base64,');
+    const blue=applyConfiguredAssetPreset(pink,{id:'blue',label:'Blue',kind:'tint',color:'#8badea'},source);
+    expect(blue.svg).toBe(source);
+    expect(assetSvgWithTint(blue).match(/<filter /g)).toHaveLength(1);
+    expect(assetSvgWithTint(applyConfiguredAssetPreset(blue,{id:'original',label:'Original',kind:'original'},source))).toBe(source);
+  });
+
+  it('keeps different vector hues separate when changing a multi-color asset palette',()=>{
+    const vector={...asset,svg:'<svg viewBox="0 0 20 10"><rect width="10" height="10" fill="#e35050"/><rect x="10" width="10" height="10" fill="#306fdd"/></svg>'};
+    const pink=applyAssetPreset(vector,'pink');
+    const rendered=assetSvgWithTint(pink);
+    expect(rendered).toContain('feColorMatrix type="hueRotate"');
+    expect(rendered).not.toContain('feColorMatrix type="saturate" values="0"');
+    expect(rendered).toContain('fill="#e35050"');
+    expect(rendered).toContain('fill="#306fdd"');
+    expect(objectToSvg(pink)).toContain('feColorMatrix type="hueRotate"');
+  });
+
+  it('exposes separate editable paints and gradient stops on uploaded SVG assets',()=>{
+    vi.stubGlobal('localStorage',{getItem:()=>null,setItem:()=>{}});
+    try {
+      const vector=assetToObject({id:'colorful-svg',name:'Two colors',category:'Scientific',sourceType:'svg',colorSlots:[],synonyms:{en:[],fa:[]},reviewStatus:'reviewed',premium:false,version:1,svg:'<svg viewBox="0 0 20 10"><defs><linearGradient id="shade"><stop stop-color="#aaccff"/></linearGradient></defs><rect fill="#e35050" stroke="#306fdd"/></svg>'} satisfies ScientificAsset);
+      expect(vector.colors.map(slot=>slot.value)).toEqual(['#aaccff','#e35050','#306fdd']);
+      const changed=recolorAssetSlot(vector,1,'#ff99bb');
+      expect(changed.svg).toContain('fill="#ff99bb"');
+      expect(changed.svg).toContain('stroke="#306fdd"');
+      expect(changed.svg).toContain('stop-color="#aaccff"');
+    } finally { vi.unstubAllGlobals(); }
   });
 });
 

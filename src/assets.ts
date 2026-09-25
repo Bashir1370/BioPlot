@@ -284,5 +284,17 @@ export function assetToObject(asset: ScientificAsset, x = 360, y = 260): AssetOb
   const maxSide=190;
   if(width>maxSide){height*=maxSide/width;width=maxSide;}
   if(height>maxSide){width*=maxSide/height;height=maxSide;}
-  return { id: makeId(), type: 'asset', lineAsset: asset.category==='Lines & Arrows', name: asset.name, assetId: asset.id, svg: asset.svg, colors: asset.colorSlots.map(slot => ({ key: slot.key, label: slot.label, value: slot.defaultValue })), x, y, width: Math.round(width), height: Math.round(height), rotation: 0, opacity: 1 };
+  const colors = asset.colorSlots.map(slot => ({ key: slot.key, label: slot.label, value: slot.defaultValue }));
+  // Offer independent paint controls for uploaded vectors even when an admin
+  // did not explicitly configure color slots. Embedded bitmap pixels cannot
+  // be addressed as separate vector colors.
+  if(asset.category!=='Lines & Arrows' && asset.sourceType!=='png' && asset.sourceType!=='jpeg' && asset.sourceType!=='webp' && !/<image\b/i.test(asset.svg)) {
+    const painted = [...asset.svg.matchAll(/(?:fill|stroke|stop-color)\s*(?:=\s*["']|:\s*)(#[0-9a-f]{6})(?![0-9a-f])/gi)]
+      .map(match=>match[1].toLowerCase());
+    for(const value of new Set(painted)) {
+      if(colors.length>=16)break;
+      if(!colors.some(slot=>slot.value.toLowerCase()===value))colors.push({key:`paint-${colors.length+1}`,label:`Color ${colors.length+1}`,value});
+    }
+  }
+  return { id: makeId(), type: 'asset', lineAsset: asset.category==='Lines & Arrows', name: asset.name, assetId: asset.id, svg: asset.svg, colors, x, y, width: Math.round(width), height: Math.round(height), rotation: 0, opacity: 1 };
 }
