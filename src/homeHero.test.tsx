@@ -7,9 +7,16 @@ const mocks=vi.hoisted(()=>({upload:vi.fn(),remove:vi.fn(),upsert:vi.fn(),delete
 vi.mock('./supabaseClient',()=>({supabase:{auth:{getUser:mocks.user},storage:{from:()=>({upload:mocks.upload,remove:mocks.remove,getPublicUrl:(p:string)=>({data:{publicUrl:`https://assets.test/${p}`}})})},from:()=>({upsert:mocks.upsert,delete:()=>({eq:mocks.deleteEq}),select:()=>({order:mocks.order})})}}));
 import {setHomeHeroImage,removeHomeHeroImage,loadHomeHeroImages,HOME_HERO_DEFAULTS} from './homeHero';
 import {homeHeroSlots} from './HomeHero';
+import {HomeHero} from './HomeHero';
 const old={slot:2 as const,storagePath:'home-hero/old.png',altEn:'Old',altFa:'قبلی',updatedAt:''};
 beforeEach(()=>{vi.resetAllMocks();mocks.user.mockResolvedValue({data:{user:{id:'admin'}}});mocks.upload.mockResolvedValue({error:null});mocks.upsert.mockResolvedValue({error:null});mocks.remove.mockResolvedValue({error:null});mocks.deleteEq.mockResolvedValue({error:null});});
 describe('Home hero images',()=>{
+ it('shows bundled scientific images before a cloud response',()=>{
+  const html=renderToStaticMarkup(createElement(HomeHero,{locale:'en',title:'Science',highlight:'Figures',description:'Create',primaryText:'Start',secondaryText:'Dashboard',socialProof:'',onCreate:()=>{}}));
+  expect(html.match(/class="shuffle-tile"/g)).toHaveLength(16);
+  expect(html).not.toContain('shuffle-placeholder');
+  expect(HOME_HERO_DEFAULTS.every(src=>src.startsWith('data:image/svg+xml,'))).toBe(true);
+ });
  it('renders sixteen tiles and working template entry point',()=>{
   const html=renderToStaticMarkup(createElement(ShuffleHero));
   expect(html.match(/class="shuffle-tile"/g)).toHaveLength(16);expect(html).toContain('href="/dashboard"');expect(html).not.toContain('Trusted by');
