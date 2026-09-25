@@ -34,7 +34,7 @@ export function HomeAccountPortal() {
   const initial = account.user ? accountInitial(account) : 'B';
 
   return createPortal(
-    <a className={`home-account-entry ${account.user ? 'signed-in' : ''} ${account.isAdmin ? 'is-admin' : ''}`} href="/dashboard" aria-label={fa ? 'حساب کاربری BioPlot' : 'BioPlot account'}>
+    <a className={`home-account-entry ${account.user ? 'signed-in' : ''} ${account.isAdmin ? 'is-admin' : ''}`} href={account.user?'/account':'/account?next=dashboard'} aria-label={fa ? 'حساب کاربری BioPlot' : 'BioPlot account'}>
       <span className="home-account-avatar">{ready ? initial : '·'}</span>
       <span className="home-account-label"><b>{name}</b><small>{subtitle}</small></span>
       {account.isAdmin && <span className="home-account-admin-dot" title={fa ? 'مدیر BioPlot' : 'BioPlot administrator'}/>} 
