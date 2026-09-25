@@ -39,6 +39,7 @@ import './persian-typography.css';
 import './admin-library-redesign.css';
 import './studio-contextual.css';
 import './editor-persian-polish.css';
+import './selection-controls.css';
 import './components/ui/shine-border.css';
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
