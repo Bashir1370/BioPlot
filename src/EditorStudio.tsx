@@ -296,9 +296,28 @@ export function EditorStudio(){
     const id=new URLSearchParams(window.location.search).get('id');
     void (async()=>{
       if(id){
-        const found=await projects.load(id);
+        const cached=await projects.loadCached(id);
+        const found=cached??await projects.load(id);
         if(!found)throw new Error('Figure unavailable');
-        if(alive){const loaded=migrateDocument(found);savedContent.current=figureContent(loaded);hasSaved.current=true;storeRef.current.replace(loaded);setDocumentReady(true);}
+        if(alive){
+          const loaded=migrateDocument(found);
+          const initialContent=figureContent(loaded);
+          savedContent.current=initialContent;
+          hasSaved.current=true;
+          storeRef.current.replace(loaded);
+          setDocumentReady(true);
+          if(cached)void projects.load(id).then(remote=>{
+            // A newer cloud copy can replace the cache only while the user has
+            // not changed the figure. Never discard edits made during the fetch.
+            if(!alive||!remote||remote.updatedAt<=loaded.updatedAt||
+              savedContent.current!==initialContent||
+              figureContent(storeRef.current.snapshot)!==initialContent||
+              pendingWrites.current!==0)return;
+            const fresh=migrateDocument(remote);
+            savedContent.current=figureContent(fresh);
+            storeRef.current.replace(fresh);
+          }).catch(()=>{});
+        }
         return;
       }
       const draftId=new URLSearchParams(window.location.search).get('draft');
