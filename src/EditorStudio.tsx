@@ -60,7 +60,7 @@ function duplicateObjects(source:BioPlotObject[],dx=24,dy=24){
   });
 }
 
-export function EditorStudio(){
+export function EditorStudio({onReady}:{onReady?:()=>void}={}){
   const storeRef=useRef(new BioPlotStore(createBlankDocument()));
   const [documentState,setDocumentState]=useState(storeRef.current.snapshot);
   const [selected,setSelected]=useState<Set<string>>(new Set());
@@ -84,6 +84,7 @@ export function EditorStudio(){
   const pendingWrites=useRef(0);
   const saveQueue=useRef<Promise<void>>(Promise.resolve());
   const [documentReady,setDocumentReady]=useState(false);
+  const [libraryReady,setLibraryReady]=useState(false);
   const [saveFailed,setSaveFailed]=useState(false);
   const [saveAttempt,setSaveAttempt]=useState(0);
   const [loadError,setLoadError]=useState(false);
@@ -105,6 +106,12 @@ export function EditorStudio(){
   const autoFitRef=useRef(true);
   const pendingZoomAnchorRef=useRef<PendingZoomAnchor|null>(null);
   const page=activePage(documentState);
+  useEffect(()=>{
+    if(!documentReady)return;
+    // Paint the canvas before parsing a potentially large uploaded PNG catalog.
+    const frame=requestAnimationFrame(()=>setLibraryReady(true));
+    return()=>cancelAnimationFrame(frame);
+  },[documentReady]);
   useEffect(()=>{
     const viewport=canvasViewportRef.current;
     if(!viewport)return;
@@ -266,12 +273,13 @@ export function EditorStudio(){
   const selectedAsset=selectedObjects.length===1&&selectedObjects[0].type==='asset'?selectedObjects[0] as StyledAssetObject:null;
   const bounds=selectionBounds(selectedObjects);
   const fa=documentState.metadata.locale==='fa';
-  const categories=useMemo(()=>getAssetCategories(),[documentState.updatedAt,libraryVersion]);
+  const categories=useMemo(()=>libraryReady?getAssetCategories():[],[libraryReady,documentState.updatedAt,libraryVersion]);
   const assets=useMemo(()=>{
+    if(!libraryReady)return [];
     if(assetMode==='favorites')return favoriteAssets().filter(asset=>!assetCategory||asset.category===assetCategory).filter(asset=>!assetQuery||searchAssets(assetQuery,documentState.metadata.locale,assetCategory).some(found=>found.id===asset.id));
     if(assetMode==='recent')return recentAssets().filter(asset=>!assetCategory||asset.category===assetCategory).filter(asset=>!assetQuery||searchAssets(assetQuery,documentState.metadata.locale,assetCategory).some(found=>found.id===asset.id));
     return searchAssets(assetQuery,documentState.metadata.locale,assetCategory||undefined);
-  },[assetQuery,assetCategory,assetMode,documentState.metadata.locale,documentState.updatedAt,favoriteVersion,libraryVersion]);
+  },[libraryReady,assetQuery,assetCategory,assetMode,documentState.metadata.locale,documentState.updatedAt,favoriteVersion,libraryVersion]);
   const favoriteIds=useMemo(()=>new Set(favoriteAssetIds()),[favoriteVersion]);
   const grouped=selectedObjects.length>1&&selectedObjects.every(object=>object.groupId)&&new Set(selectedObjects.map(object=>object.groupId)).size===1;
   useEffect(()=>storeRef.current.subscribe(setDocumentState),[]);
@@ -296,8 +304,7 @@ export function EditorStudio(){
     const id=new URLSearchParams(window.location.search).get('id');
     void (async()=>{
       if(id){
-        const cached=await projects.loadCached(id);
-        const found=cached??await projects.load(id);
+        const {document:found,refresh}=await projects.loadForEditor(id);
         if(!found)throw new Error('Figure unavailable');
         if(alive){
           const loaded=migrateDocument(found);
@@ -306,7 +313,8 @@ export function EditorStudio(){
           hasSaved.current=true;
           storeRef.current.replace(loaded);
           setDocumentReady(true);
-          if(cached)void projects.load(id).then(remote=>{
+          onReady?.();
+          if(refresh)void refresh.then(remote=>{
             // A newer cloud copy can replace the cache only while the user has
             // not changed the figure. Never discard edits made during the fetch.
             if(!alive||!remote||remote.updatedAt<=loaded.updatedAt||
@@ -329,6 +337,7 @@ export function EditorStudio(){
       if(!alive)return;
       storeRef.current.replace(fresh);
       setDocumentReady(true);
+      onReady?.();
     })().catch(()=>{if(alive)setLoadError(true);});
     return()=>{alive=false;};
   },[]);
