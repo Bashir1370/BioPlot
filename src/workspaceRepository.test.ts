@@ -17,16 +17,32 @@ describe('account workspace storage',()=>{
  it('opens an owned browser copy while the cloud request is still pending',async()=>{
   const {repo,cloud,a}=setup();
   cloud.load.mockImplementation(()=>new Promise(()=>{}));
-  expect(await repo.loadCached('a')).toEqual(a);
-  expect(cloud.load).not.toHaveBeenCalled();
+  const result=await repo.loadForEditor('a');
+  expect(result.document).toEqual(a);
+  expect(cloud.load).toHaveBeenCalledOnce();
  });
  it('does not reveal another account or guest cache through the fast path',async()=>{
   const {repo,session}=setup();
-  expect(await repo.loadCached('b')).toBeNull();
-  expect(await repo.loadCached('g')).toBeNull();
+  expect((await repo.loadForEditor('b')).document).toBeNull();
+  expect((await repo.loadForEditor('g')).document).toBeNull();
   session.mockResolvedValue({data:{session:null},error:null});
-  expect(await repo.loadCached('a')).toBeNull();
-  expect((await repo.loadCached('g'))?.id).toBe('g');
+  expect((await repo.loadForEditor('a')).document).toBeNull();
+  expect((await repo.loadForEditor('g')).document?.id).toBe('g');
+ });
+ it('does not repeat the browser or session read for a cloud-only figure',async()=>{
+  const {repo,local,cloud,session,a}=setup();
+  cloud.load.mockResolvedValue({...a,id:'remote'});
+  expect((await repo.loadForEditor('remote')).document?.id).toBe('remote');
+  expect(local.load).toHaveBeenCalledOnce();
+  expect(session).toHaveBeenCalledOnce();
+  expect(cloud.load).toHaveBeenCalledOnce();
+ });
+ it('refreshes a cached figure only when the cloud version is newer',async()=>{
+  const {repo,cloud,a}=setup();
+  cloud.load.mockResolvedValue({...a,title:'Newer',updatedAt:'2026-09-19T12:00:00Z'});
+  const result=await repo.loadForEditor('a');
+  expect(result.document?.title).toBe(a.title);
+  expect((await result.refresh)?.title).toBe('Newer');
  });
  it('shows only own cached figures for an account',async()=>{const {repo}=setup();expect((await repo.list()).map(r=>r.id)).toEqual(['a']);expect(await repo.load('b')).toBeNull();expect(await repo.load('g')).toBeNull();});
  it('shows only anonymous drafts to guests',async()=>{const {repo,session,cloud}=setup();session.mockResolvedValue({data:{session:null},error:null});expect((await repo.list()).map(r=>r.id)).toEqual(['g']);expect(await repo.load('a')).toBeNull();expect(cloud.load).not.toHaveBeenCalled();});
