@@ -82,7 +82,10 @@ export function ShuffleHero({
         {!loading && images.slice(0, 16).map((image, i) => {
           const position = order.indexOf(i);
           return <div key={image.id} className="shuffle-tile" data-image-slot={image.id} style={{ '--column': position % 4, '--row': Math.floor(position / 4) } as CSSProperties}>
-            <img src={image.src} alt={image.alt} decoding="async"/>
+            <img src={image.src} alt={image.alt} decoding="async" onError={event=>{
+              const fallback=HOME_HERO_DEFAULTS[i];
+              if(event.currentTarget.src!==fallback)event.currentTarget.src=fallback;
+            }}/>
           </div>;
         })}
       </div>

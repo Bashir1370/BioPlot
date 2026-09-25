@@ -29,6 +29,8 @@ Production: `https://bioplot.pages.dev`
 
 Cloudflare Pages is connected to `main`. The existing `build.sh` automatically uses the Vite production build when `package.json` is present and outputs to `dist/`.
 
+The Pages Function at `/api/supabase/*` forwards browser authentication, database and public-image requests to Supabase through the BioPlot origin. The same path is proxied by Vite locally. Set `SUPABASE_URL` in Pages runtime settings only when using a different Supabase project; otherwise the configured project fallback is used. `public/_routes.json` limits Function invocations to this API path.
+
 ## Run locally
 
 ```bash
