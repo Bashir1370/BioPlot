@@ -1,5 +1,5 @@
 import {orderReturnPath} from './orders/orderModel';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccountState,
   accountDisplayName,
@@ -47,7 +47,6 @@ const copy = {
 export function AccountPage() {
   const [locale, setLocale] = useState<Locale>(() => localStorage.getItem('bioplot-lang') === 'fa' ? 'fa' : 'en');
   const [account, setAccount] = useState<AccountState>(emptyState);
-  const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,6 +54,7 @@ export function AccountPage() {
   const [preferredLanguage, setPreferredLanguage] = useState<Locale>(locale);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const authSubmitted = useRef(false);
   const t = copy[locale];
   const fa = locale === 'fa';
 
@@ -67,13 +67,12 @@ export function AccountPage() {
   useEffect(() => {
     let mounted = true;
     void getAccountState().then(state => {
-      if (!mounted) return;
+      if (!mounted || authSubmitted.current) return;
       setAccount(state);
       const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(state.user&&destination){window.location.href=destination;return;}
       setDisplayName(accountDisplayName(state));
       setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
-      setLoading(false);
-    });
+    }).catch(() => {/* Keep the sign-in form usable when session lookup fails. */});
     const unsubscribe = subscribeAccountState(state => {
       if (!mounted) return;
       setAccount(state);
@@ -82,7 +81,6 @@ export function AccountPage() {
         setDisplayName(accountDisplayName(state));
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       }
-      setLoading(false);
     });
     return () => { mounted = false; unsubscribe(); };
   }, []);
@@ -92,21 +90,26 @@ export function AccountPage() {
     if (!email.trim() || !password) return;
     setBusy(true); setMessage('');
     try {
+      let signedIn = false;
       if (mode === 'signup') {
         const { data, error } = await signUpUser(email, password, displayName, new URLSearchParams(window.location.search).get('next'));
         if (error) throw error;
-        if (!data.session) setMessage(t.confirm);
+        if (!data.session) { setMessage(t.confirm); return; }
+        if (data.session?.user) { setAccount({user:data.session.user,profile:null,isAdmin:false}); signedIn = true; }
       } else {
-        const { error } = await signInUser(email, password);
+        const { data, error } = await signInUser(email, password);
         if (error) throw error;
+        if (data.session?.user) { setAccount({user:data.session.user,profile:null,isAdmin:false}); signedIn = true; }
       }
-      const state = await getAccountState();
-      setAccount(state);
-      if (state.user) {
-        const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(destination){window.location.href=destination;return;}
+      if (!signedIn) throw new Error(t.error);
+      authSubmitted.current = true;
+      const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));
+      if(destination){window.location.href=destination;return;}
+      void getAccountState().then(state=>{
+        setAccount(state);
         setDisplayName(accountDisplayName(state));
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
-      }
+      }).catch(()=>{});
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t.error);
     } finally { setBusy(false); }
@@ -139,8 +142,6 @@ export function AccountPage() {
     if (!raw) return '—';
     return new Intl.DateTimeFormat(fa ? 'fa-IR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(raw));
   }, [account.profile?.created_at, account.user?.created_at, fa]);
-
-  if (loading) return <div className="account-page account-loading"><div className="account-loader"/><span>BioPlot</span></div>;
 
   return <div className="account-page" dir={fa ? 'rtl' : 'ltr'}>
     <header className="account-topbar">
