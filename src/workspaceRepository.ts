@@ -17,14 +17,24 @@ export class WorkspaceRepository implements ProjectRepository {
   for(const row of [...remote,...local]){const prev=merged.get(row.id);if(!prev||row.updatedAt>prev.updatedAt)merged.set(row.id,row);}
   return [...merged.values()].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
  }
- // Let the editor paint an owned browser copy without waiting for the cloud.
- // A cache miss still goes through load(), so figures from another device work.
- async loadCached(id:string){
+ // Read owner and browser cache once. The editor can paint a cached figure
+ // while the remote version is fetched; a cache miss waits for the cloud.
+ async loadForEditor(id:string):Promise<{document:BioPlotDocument|null;refresh?:Promise<BioPlotDocument|null>}>{
   const owner=await this.owner();
   const cached=await this.local.load(id);
-  if(!cached||!this.belongs(cached,owner))return null;
-  this.bindings.set(id,owner);
-  return cached;
+  const local=cached&&this.belongs(cached,owner)?cached:null;
+  if(local)this.bindings.set(id,owner);
+  if(!owner)return {document:local};
+  if(!local){
+   const remote=await this.cloud.load(id);
+   if(remote)this.bindings.set(id,owner);
+   return {document:remote?{...remote,ownerId:owner}:null};
+  }
+  const refresh=this.cloud.load(id).then(remote=>{
+   if(!remote||remote.updatedAt<=local.updatedAt)return local;
+   return {...remote,ownerId:owner};
+  });
+  return {document:local,refresh};
  }
  async load(id:string){
   const owner=await this.owner();const cached=await this.local.load(id);const local=cached&&this.belongs(cached,owner)?cached:null;
