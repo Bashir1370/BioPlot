@@ -17,6 +17,15 @@ export class WorkspaceRepository implements ProjectRepository {
   for(const row of [...remote,...local]){const prev=merged.get(row.id);if(!prev||row.updatedAt>prev.updatedAt)merged.set(row.id,row);}
   return [...merged.values()].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
  }
+ // Let the editor paint an owned browser copy without waiting for the cloud.
+ // A cache miss still goes through load(), so figures from another device work.
+ async loadCached(id:string){
+  const owner=await this.owner();
+  const cached=await this.local.load(id);
+  if(!cached||!this.belongs(cached,owner))return null;
+  this.bindings.set(id,owner);
+  return cached;
+ }
  async load(id:string){
   const owner=await this.owner();const cached=await this.local.load(id);const local=cached&&this.belongs(cached,owner)?cached:null;
   if(local)this.bindings.set(id,owner);
