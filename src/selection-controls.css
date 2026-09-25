@@ -1,0 +1,58 @@
+/* The artboard scales with zoom; selection chrome stays a fixed screen size. */
+.studio-shell .studio-selection {
+  border: 0 !important;
+  border-radius: calc(var(--bp-selection-px, 1px) * 2);
+  box-shadow: inset 0 0 0 var(--bp-selection-px, 1px) rgba(8, 127, 121, .68) !important;
+  background: transparent;
+}
+
+.studio-shell .studio-selection .studio-handle {
+  width: calc(var(--bp-selection-px, 1px) * 8) !important;
+  height: calc(var(--bp-selection-px, 1px) * 8) !important;
+  border: 0 !important;
+  border-radius: calc(var(--bp-selection-px, 1px) * 2);
+  background: #fff;
+  box-shadow: inset 0 0 0 var(--bp-selection-px, 1px) #168e84, 0 calc(var(--bp-selection-px, 1px) * 1) calc(var(--bp-selection-px, 1px) * 3) #073d3a25;
+  touch-action: none;
+}
+
+.studio-shell .studio-selection .studio-handle.nw,
+.studio-shell .studio-selection .studio-handle.ne,
+.studio-shell .studio-selection .studio-handle.sw,
+.studio-shell .studio-selection .studio-handle.se { left: auto; right: auto; top: auto; bottom: auto; }
+.studio-shell .studio-selection .studio-handle.nw { left: calc(var(--bp-selection-px, 1px) * -4); top: calc(var(--bp-selection-px, 1px) * -4); }
+.studio-shell .studio-selection .studio-handle.ne { right: calc(var(--bp-selection-px, 1px) * -4); top: calc(var(--bp-selection-px, 1px) * -4); }
+.studio-shell .studio-selection .studio-handle.se { right: calc(var(--bp-selection-px, 1px) * -4); bottom: calc(var(--bp-selection-px, 1px) * -4); }
+.studio-shell .studio-selection .studio-handle.sw { left: calc(var(--bp-selection-px, 1px) * -4); bottom: calc(var(--bp-selection-px, 1px) * -4); }
+.studio-shell .studio-selection .studio-handle.n { top: calc(var(--bp-selection-px, 1px) * -4); }
+.studio-shell .studio-selection .studio-handle.e { right: calc(var(--bp-selection-px, 1px) * -4); }
+.studio-shell .studio-selection .studio-handle.s { bottom: calc(var(--bp-selection-px, 1px) * -4); }
+.studio-shell .studio-selection .studio-handle.w { left: calc(var(--bp-selection-px, 1px) * -4); }
+
+/* A larger invisible target keeps small controls easy to grab. */
+.studio-shell .studio-selection .studio-handle::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--bp-selection-px, 1px) * -5);
+}
+
+.studio-shell .studio-selection .studio-rotate-line {
+  top: calc(var(--bp-selection-px, 1px) * -17);
+  height: calc(var(--bp-selection-px, 1px) * 16);
+  width: var(--bp-selection-px, 1px);
+  background: rgba(8, 127, 121, .68);
+}
+.studio-shell .studio-selection .studio-rotate {
+  top: calc(var(--bp-selection-px, 1px) * -27);
+  width: calc(var(--bp-selection-px, 1px) * 12) !important;
+  height: calc(var(--bp-selection-px, 1px) * 12) !important;
+  border: 0 !important;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 var(--bp-selection-px, 1px) #168e84, 0 calc(var(--bp-selection-px, 1px) * 1) calc(var(--bp-selection-px, 1px) * 3) #073d3a25;
+}
+.studio-shell .studio-selection .studio-rotate::after { display: none; }
+.studio-shell .studio-selection .studio-rotate::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--bp-selection-px, 1px) * -5);
+}
