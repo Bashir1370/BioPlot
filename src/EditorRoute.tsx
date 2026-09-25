@@ -9,8 +9,10 @@ const LIBRARY_REFRESH_COOLDOWN_MS = 30_000;
 
 export function EditorRoute() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
 
   useEffect(() => {
+    if (!editorReady) return;
     let alive = true;
     let syncing = false;
     let lastSyncStartedAt = 0;
@@ -51,17 +53,18 @@ export function EditorRoute() {
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, []);
+  }, [editorReady]);
 
   useEffect(() => {
+    if (!editorReady) return;
     let alive = true;
     void getAdminSessionState().then(state => { if (alive) setIsAdmin(state.isAdmin); });
     const unsubscribe = subscribeAdminState(state => { if (alive) setIsAdmin(state.isAdmin); });
     return () => { alive = false; unsubscribe(); };
-  }, []);
+  }, [editorReady]);
 
   return <>
-    <EditorStudio />
+    <EditorStudio onReady={() => setEditorReady(true)} />
     {isAdmin && <a className="editor-admin-shortcut" href="/admin/library" title="مدیریت کتابخانه" aria-label="مدیریت کتابخانه">
       <StudioIcon name="settings" />
       <span>مدیریت</span>
