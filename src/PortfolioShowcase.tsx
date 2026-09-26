@@ -3,6 +3,10 @@ import { createPortal } from 'react-dom';
 import { StudioIcon } from './StudioIcon';
 import { loadPublishedShowcaseItems, ShowcaseItem, showcasePublicUrl } from './showcasePortfolio';
 import './portfolio-showcase.css';
+import {createPublicPageCache} from './publicPageCache';
+const showcaseCache = createPublicPageCache('bioplot-public-showcase-v1', loadPublishedShowcaseItems,
+ (value): value is ShowcaseItem[] => Array.isArray(value) && value.length <= 6 && value.every(item =>
+   item && typeof item.id === 'string' && typeof item.storagePath === 'string' && item.active === true));
 
 type Locale = 'en' | 'fa';
 const AUTOPLAY_MS = 5200;
@@ -21,7 +25,7 @@ function safeImageRatio(image: HTMLImageElement) {
 export function PortfolioShowcasePortal() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [locale, setLocale] = useState<Locale>(localeFromDocument);
-  const [slides, setSlides] = useState<ShowcaseItem[]>([]);
+  const [slides, setSlides] = useState<ShowcaseItem[]>(() => showcaseCache.read() ?? []);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [ratios, setRatios] = useState<Record<string, number>>({});
@@ -44,18 +48,18 @@ export function PortfolioShowcasePortal() {
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
+    async function load(force = false) {
       try {
-        const next = await loadPublishedShowcaseItems();
+        const next = await showcaseCache.refresh(force);
         if (!cancelled) {
           setSlides(next);
           setActive(current => next.length ? Math.min(current, next.length - 1) : 0);
         }
       } catch {
-        if (!cancelled) setSlides([]);
+        // Preserve the last successful public gallery when the service is unavailable.
       }
     }
-    void load();
+    void load(true);
     const refresh = () => void load();
     window.addEventListener('focus', refresh);
     return () => { cancelled = true; window.removeEventListener('focus', refresh); };

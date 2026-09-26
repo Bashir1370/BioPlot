@@ -12,8 +12,9 @@ export function normalizeHomeContent(value: unknown): HomeContent {
  for(const lang of ['en','fa'] as const) if(['Browse templates','مشاهده قالب‌ها'].includes(normalized[lang].secondaryText)) normalized[lang].secondaryText=HOME_TEXT_DEFAULTS[lang].secondaryText;
  return normalized;
 }
-export async function loadHomeContent(): Promise<HomeContent> {
- const {data,error} = await supabase.from('home_hero_content').select('content').eq('id',1).maybeSingle();
+export async function loadHomeContent(signal?: AbortSignal): Promise<HomeContent> {
+ const query = supabase.from('home_hero_content').select('content').eq('id',1);
+ const {data,error} = await (signal ? query.abortSignal(signal) : query).maybeSingle();
  if(error) throw error;
  return normalizeHomeContent(data?.content);
 }

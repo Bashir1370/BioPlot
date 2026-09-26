@@ -30,13 +30,14 @@ export function showcasePublicUrl(storagePath: string) {
   return supabase.storage.from(BUCKET).getPublicUrl(storagePath).data.publicUrl;
 }
 
-export async function loadPublishedShowcaseItems(): Promise<ShowcaseItem[]> {
-  const { data, error } = await supabase
+export async function loadPublishedShowcaseItems(signal?: AbortSignal): Promise<ShowcaseItem[]> {
+  const query = supabase
     .from('portfolio_showcase_items')
     .select('id,storage_path,source_project_id,sort_order,active,created_at,updated_at')
     .eq('active', true)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true });
+  const {data, error} = await (signal ? query.abortSignal(signal) : query);
   if (error) throw error;
   return (data ?? []).map(rowToItem).filter(item => Boolean(item.storagePath)).slice(0, MAX_ITEMS);
 }
