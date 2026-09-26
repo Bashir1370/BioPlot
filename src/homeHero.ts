@@ -28,11 +28,12 @@ export function homeHeroPublicUrl(storagePath: string) {
   return supabase.storage.from(BUCKET).getPublicUrl(storagePath).data.publicUrl;
 }
 
-export async function loadHomeHeroImages(): Promise<HomeHeroImage[]> {
-  const { data, error } = await supabase
+export async function loadHomeHeroImages(signal?: AbortSignal): Promise<HomeHeroImage[]> {
+  const query = supabase
     .from('home_hero_images')
     .select('slot,storage_path,alt_en,alt_fa,updated_at')
     .order('slot', { ascending: true });
+  const {data, error} = await (signal ? query.abortSignal(signal) : query);
   if (error) throw error;
   return (data ?? []).map(rowToImage).filter(item => item.slot >= 1 && item.slot <= 16 && Boolean(item.storagePath));
 }

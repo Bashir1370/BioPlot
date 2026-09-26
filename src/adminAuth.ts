@@ -38,8 +38,24 @@ export async function signOutAdmin() {
 }
 
 export function subscribeAdminState(callback: (state: AdminSessionState) => void) {
+  let active = true;
+  let generation = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const { data } = supabase.auth.onAuthStateChange(() => {
-    void getAdminSessionState().then(callback);
+    // Supabase holds its auth lock while notifying subscribers. Query only
+    // after that callback has returned, and coalesce simultaneous events.
+    const request = ++generation;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      void getAdminSessionState().then(state => {
+        if (active && request === generation) callback(state);
+      }).catch(() => {});
+    }, 0);
   });
-  return () => data.subscription.unsubscribe();
+  return () => {
+    active = false;
+    ++generation;
+    clearTimeout(timer);
+    data.subscription.unsubscribe();
+  };
 }
