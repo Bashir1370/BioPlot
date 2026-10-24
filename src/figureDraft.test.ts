@@ -4,6 +4,12 @@ import {figureContent,openFigureDraft,readFigureDraft,clearFigureDraft} from './
 
 afterEach(()=>vi.unstubAllGlobals());
 describe('unsaved figure lifecycle',()=>{
+ it('ignores corrupt or inaccessible tab drafts instead of blocking the editor',()=>{
+  vi.stubGlobal('sessionStorage',{getItem:()=>'{broken'});
+  expect(readFigureDraft('draft')).toBeNull();
+  vi.stubGlobal('sessionStorage',{getItem:()=>{throw new Error('Blocked');}});
+  expect(readFigureDraft('draft')).toBeNull();
+ });
  it('keeps navigation drafts outside persistent project storage until edited',()=>{
   const entries=new Map<string,string>();
   vi.stubGlobal('sessionStorage',{setItem:(key:string,value:string)=>entries.set(key,value),getItem:(key:string)=>entries.get(key)??null,removeItem:(key:string)=>entries.delete(key)});

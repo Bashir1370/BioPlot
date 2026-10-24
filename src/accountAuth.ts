@@ -78,7 +78,9 @@ export async function signOutUser() {
 
 export function subscribeAccountState(callback: (state: AccountState) => void) {
   const { data } = supabase.auth.onAuthStateChange(() => {
-    void getAccountState().then(callback).catch(() => {});
+    // Auth callbacks run while Supabase holds its session lock. Calling an
+    // authenticated API synchronously here can stall sign-in/refresh.
+    setTimeout(()=>{void getAccountState().then(callback).catch(() => {});},0);
   });
   return () => data.subscription.unsubscribe();
 }

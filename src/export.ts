@@ -6,6 +6,7 @@ import { connectorPath, resolveConnector } from './connectors';
 import { plotToSvg } from './plots';
 import { fontStackForText } from './typography';
 import { lineSvgBody } from './lineGeometry';
+import { selectionBounds as rotatedSelectionBounds } from './engine';
 
 export interface SvgExportOptions { transparent?: boolean; objectIds?: Set<string>; cropToSelection?: boolean; }
 export const EXPORT_DPI_PRESETS=[150,300,600] as const;
@@ -33,7 +34,13 @@ function renderImage(object:ImageObject){const preserve=object.fit==='cover'?'xM
 function renderContainer(object:ContainerObject){return `<g transform="${transform(object)}" opacity="${object.opacity}"><rect width="${object.width}" height="${object.height}" rx="${object.radius}" fill="${object.fill}" stroke="${object.stroke}" stroke-width="${object.strokeWidth}"/></g>`;}
 function renderPlot(object:PlotObject){return `<g transform="${transform(object)}" opacity="${object.opacity}">${plotToSvg(object.spec,object.width,object.height)}</g>`;}
 export function objectToSvg(object:BioPlotObject){if(object.hidden)return'';switch(object.type){case'text':return renderText(object);case'label':return renderLabel(object);case'shape':return renderShape(object);case'arrow':return renderArrow(object);case'connector':return renderConnector(object);case'asset':return renderAsset(object);case'image':return renderImage(object);case'container':return renderContainer(object);case'plot':return renderPlot(object);}}
-function selectionBounds(objects:BioPlotObject[]){if(!objects.length)return null;const x=Math.min(...objects.map(o=>o.x)),y=Math.min(...objects.map(o=>o.y)),right=Math.max(...objects.map(o=>o.x+o.width)),bottom=Math.max(...objects.map(o=>o.y+o.height));return{x,y,width:right-x,height:bottom-y};}
+function selectionBounds(objects:BioPlotObject[]){
+  const bounds=rotatedSelectionBounds(objects);
+  if(!bounds)return null;
+  // Strokes are centered on the outline and extend beyond object geometry.
+  const padding=Math.max(0,...objects.map(object=>'strokeWidth' in object?object.strokeWidth/2:0));
+  return {x:bounds.x-padding,y:bounds.y-padding,width:Math.max(1,bounds.width+padding*2),height:Math.max(1,bounds.height+padding*2)};
+}
 export function documentToSvg(bioDocument:BioPlotDocument,options:SvgExportOptions={}){const page=activePage(bioDocument),resolved=page.objects.map(object=>object.type==='connector'?resolveConnector(object,page.objects):object),visible=resolved.filter(object=>!object.hidden&&(!options.objectIds||options.objectIds.has(object.id))),crop=options.cropToSelection?selectionBounds(visible):null,width=crop?.width??page.width,height=crop?.height??page.height,offsetX=crop?.x??0,offsetY=crop?.y??0,objects=visible.map(object=>objectToSvg({...object,x:object.x-offsetX,y:object.y-offsetY} as BioPlotObject)).join(''),background=options.transparent?'':`<rect width="100%" height="100%" fill="${page.background}"/>`;return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs><style>${textFontCss}</style><marker id="bp-arrow-end" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="context-stroke"/></marker><marker id="bp-arrow-start" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto-start-reverse"><path d="M8 0L0 4L8 8Z" fill="context-stroke"/></marker><marker id="bp-inhibit-end" markerWidth="8" markerHeight="12" refX="7" refY="6" orient="auto"><path d="M7 1V11" stroke="context-stroke" stroke-width="2"/></marker></defs>${background}${objects}</svg>`;}
 const safeFileName=(title:string)=>title.trim().replace(/[^a-z0-9-_]+/gi,'-').replace(/^-|-$/g,'')||'bioplot-figure';
 export function downloadSvg(bioDocument:BioPlotDocument,options:SvgExportOptions={}){downloadBlob(new Blob([documentToSvg(bioDocument,options)],{type:'image/svg+xml;charset=utf-8'}),`${safeFileName(bioDocument.title)}${options.objectIds?'-selection':''}.svg`);}

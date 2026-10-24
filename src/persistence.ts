@@ -41,7 +41,7 @@ export class LocalProjectRepository implements ProjectRepository {
   async load(id: string) { return this.read().find(document => document.id === id) ?? null; }
   async save(document: BioPlotDocument) {
     const documents = this.read();
-    const next = migrateDocument({ ...document, updatedAt: new Date().toISOString() });
+    const next = migrateDocument(document);
     const index = documents.findIndex(item => item.id === next.id);
     if (index >= 0) documents[index] = next; else documents.unshift(next);
     this.write(documents);
@@ -69,7 +69,10 @@ export class IndexedDbProjectRepository implements ProjectRepository {
       return await new Promise<T>((resolve, reject) => {
         const tx = db.transaction(STORE, mode);
         const request = action(tx.objectStore(STORE));
-        request.onsuccess = () => resolve(request.result);
+        // A successful request can still be rolled back when the transaction
+        // commits (for example when the browser runs out of disk space).
+        tx.oncomplete = () => resolve(request.result);
+        tx.onabort = () => reject(tx.error ?? new Error('IndexedDB transaction aborted'));
         request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed'));
         tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'));
       });
@@ -84,42 +87,49 @@ export class IndexedDbProjectRepository implements ProjectRepository {
     return row ? migrateDocument(row) : null;
   }
   async save(document: BioPlotDocument) {
-    const next = migrateDocument({ ...document, updatedAt: new Date().toISOString() });
+    const next = migrateDocument(document);
     await this.withStore<IDBValidKey>('readwrite', store => store.put(next));
   }
   async remove(id: string) { await this.withStore<undefined>('readwrite', store => store.delete(id) as IDBRequest<undefined>); }
 }
 
 export class BrowserProjectRepository implements ProjectRepository {
-  private indexed = new IndexedDbProjectRepository();
-  constructor(private fallback = new LocalProjectRepository()) {}
+  constructor(
+    private fallback: ProjectRepository = new LocalProjectRepository(),
+    private indexed: ProjectRepository = new IndexedDbProjectRepository(),
+  ) {}
   async list() {
     try {
-      const [indexed, legacy] = await Promise.all([this.indexed.list(), this.fallback.list()]);
+      const results = await Promise.allSettled([this.indexed.list(), this.fallback.list()]);
+      if (results[0].status === 'rejected' && results[1].status === 'rejected') throw results[0].reason;
       const merged = new Map<string, ProjectSummary>();
-      [...legacy, ...indexed].forEach(item => {
+      results.flatMap(result => result.status === 'fulfilled' ? result.value : []).forEach(item => {
         const current = merged.get(item.id);
         if (!current || item.updatedAt > current.updatedAt) merged.set(item.id, item);
       });
       return [...merged.values()].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
-    } catch { return this.fallback.list(); }
+    } catch (error) { throw error; }
   }
   async load(id: string) {
-    try {
-      const current = await this.indexed.load(id);
-      if (current) return current;
-      const legacy = await this.fallback.load(id);
-      if (legacy) await this.indexed.save(legacy);
-      return legacy;
-    } catch { return this.fallback.load(id); }
+    const results = await Promise.allSettled([this.indexed.load(id), this.fallback.load(id)]);
+    if (results[0].status === 'rejected' && results[1].status === 'rejected') throw results[0].reason;
+    const documents = results.flatMap(result => result.status === 'fulfilled' && result.value ? [result.value] : []);
+    const latest = documents.sort((a,b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null;
+    if (latest && (results[0].status === 'rejected' || results[0].value?.updatedAt !== latest.updatedAt)) {
+      // Failure to warm the primary store must not hide a valid fallback copy.
+      try { await this.indexed.save(latest); } catch {}
+    }
+    return latest;
   }
   async save(document: BioPlotDocument) {
     try { await this.indexed.save(document); }
     catch { await this.fallback.save(document); }
   }
   async remove(id: string) {
-    try { await this.indexed.remove(id); } catch {}
-    await this.fallback.remove(id);
+    const results = await Promise.allSettled([this.indexed.remove(id), this.fallback.remove(id)]);
+    // Surface partial deletion: otherwise an old copy can reappear next time.
+    const failure = results.find(result => result.status === 'rejected');
+    if (failure?.status === 'rejected') throw failure.reason;
   }
 }
 

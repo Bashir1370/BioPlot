@@ -4,6 +4,7 @@ import { StudioIcon } from './StudioIcon';
 import { getAdminSessionState, subscribeAdminState } from './adminAuth';
 import { hydratePublishedCloudAssetsFromIndexedDb, syncPublishedCloudAssetsToBrowserCache } from './cloudAssetLibrary';
 import './admin-access.css';
+import './textFonts';
 
 const LIBRARY_REFRESH_COOLDOWN_MS = 30_000;
 

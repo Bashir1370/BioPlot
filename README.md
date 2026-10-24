@@ -60,7 +60,7 @@ VITE_BIOPLOT_AI_ENDPOINT=
 
 Without these values BioPlot remains functional with local project persistence, browser-tab collaboration and the local editable AI drafting provider.
 
-For Supabase, apply `supabase/schema.sql` to create the project and scientific asset tables with Row Level Security.
+For Supabase, follow [`supabase/SETUP.md`](./supabase/SETUP.md). The full application also needs profiles, administrator access, library categories, storage buckets and the dated feature migrations; `schema.sql` alone is not sufficient.
 
 ## Product direction
 
