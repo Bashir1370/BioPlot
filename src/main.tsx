@@ -16,7 +16,6 @@ const AccountPage=lazy(()=>import('./AccountPage').then(module=>({default:module
 import { createRoot } from 'react-dom/client';
 import { isDashboardPath, isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
 import './styles-v3.css';
-import './home-top-nav.css';
 import './editor-pro.css';
 import './template-previews-pro.css';
 import './studio-polish.css';
