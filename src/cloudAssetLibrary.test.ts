@@ -11,13 +11,16 @@ vi.mock('./supabaseClient',()=>({supabase:{storage:{from:()=>({getPublicUrl:(pat
   then:(resolve:(value:unknown)=>unknown,reject:(error:unknown)=>unknown)=>{
    server.requests.push({...request});
    if((request.id&&server.failArtwork)||(!request.id&&request.from>=100&&server.failPage))return Promise.resolve({data:null,error:new Error('Temporary failure')}).then(resolve,reject);
-   const data=request.id?server.rows.find(row=>row.id===request.id):server.rows.slice(request.from,request.to+1).map(({render_svg,metadata,...row})=>row);
+   const found=server.rows.find(row=>row.id===request.id);
+   const data=request.id?(request.columns==='render_svg'?{render_svg:found?.render_svg}:request.columns.startsWith('legacy_svg:')?{legacy_svg:found?.metadata?.render_svg}:found):server.rows.slice(request.from,request.to+1).map(({render_svg,metadata,...row})=>row);
    return Promise.resolve({data,error:null}).then(resolve,reject);
   },
  };return builder;
 }}}));
 function row(id:number){return {id:String(id).padStart(4,'0'),name:`Asset ${id}`,category:id%2?'Cell biology':'Lines & Arrows',asset_type:'svg',is_published:true,storage_path:`library/${id}.svg`,render_svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><script>alert(1)</script><path d="M0 10h100" stroke="#000"/></svg>',version:1};}
-beforeEach(()=>{vi.resetModules();localStorage.clear();server.rows=Array.from({length:67},(_,i)=>row(i));server.requests=[];server.failPage=false;server.failArtwork=false;});
+async function cacheDb(){return new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open('bioplot-cloud-library-cache-v1',1);request.onupgradeneeded=()=>request.result.createObjectStore('library');request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
+async function storedArtwork(){const db=await cacheDb();return new Promise<Array<[IDBValidKey,unknown]>>(resolve=>{const entries:Array<[IDBValidKey,unknown]>=[];const tx=db.transaction('library','readonly');const request=tx.objectStore('library').openCursor();request.onsuccess=()=>{const cursor=request.result;if(cursor){entries.push([cursor.key,cursor.value]);cursor.continue();}};tx.oncomplete=()=>{db.close();resolve(entries);};});}
+beforeEach(async()=>{vi.resetModules();localStorage.clear();server.rows=Array.from({length:67},(_,i)=>row(i));server.requests=[];server.failPage=false;server.failArtwork=false;const db=await cacheDb();await new Promise<void>(resolve=>{const tx=db.transaction('library','readwrite');tx.objectStore('library').clear();tx.oncomplete=()=>resolve();});db.close();});
 describe('lightweight cloud catalog and on-demand artwork',()=>{
  it('makes all 67 assets searchable without downloading their full SVG payloads',async()=>{
   const library=await import('./cloudAssetLibrary');const assets=await library.syncPublishedCloudAssetsToBrowserCache();
@@ -52,6 +55,34 @@ describe('lightweight cloud catalog and on-demand artwork',()=>{
   const [a,b]=await Promise.all([library.loadCloudAssetArtwork(asset),library.loadCloudAssetArtwork(asset)]);
   expect(a).toBe(b);expect(a.artworkLoaded).toBe(true);expect(a.svg).toContain('<path');expect(a.svg).not.toContain('<script');
   expect(server.requests).toHaveLength(1);expect(server.requests[0].id).toBe(asset.id);
+  expect(server.requests[0].columns).toBe('render_svg');
+ });
+ it('reuses downloaded artwork after reload but fetches new asset versions',async()=>{
+  let library=await import('./cloudAssetLibrary');const [asset]=await library.loadPublishedCloudAssets();
+  await library.loadCloudAssetArtwork(asset);
+  await vi.waitFor(async()=>expect((await storedArtwork()).some(([key])=>String(key).startsWith('artwork:'))).toBe(true));
+  vi.resetModules();library=await import('./cloudAssetLibrary');server.requests=[];server.failArtwork=true;
+  expect((await library.loadCloudAssetArtwork(asset)).svg).toContain('<path');expect(server.requests).toHaveLength(0);
+  server.failArtwork=false;
+  await library.loadCloudAssetArtwork({...asset,version:2});expect(server.requests).toHaveLength(1);
+ });
+ it('reads legacy artwork only when the primary field is empty',async()=>{
+  const original=server.rows[0].render_svg;server.rows[0].render_svg='';server.rows[0].metadata={render_svg:original};
+  const library=await import('./cloudAssetLibrary');const [asset]=await library.loadPublishedCloudAssets();server.requests=[];
+  expect((await library.loadCloudAssetArtwork(asset)).svg).toContain('<path');
+  expect(server.requests.map(request=>request.columns)).toEqual(['render_svg','legacy_svg:metadata->>render_svg']);
+ });
+ it('recovers from corrupt cached SVG instead of leaving an asset unusable',async()=>{
+  const library=await import('./cloudAssetLibrary');const [asset]=await library.loadPublishedCloudAssets();
+  const db=await cacheDb();await new Promise<void>(resolve=>{const tx=db.transaction('library','readwrite');tx.objectStore('library').put('<invalid>',`artwork:${JSON.stringify([asset.id,asset.version,asset.storagePath])}`);tx.oncomplete=()=>resolve();});db.close();server.requests=[];
+  expect((await library.loadCloudAssetArtwork(asset)).svg).toContain('<path');expect(server.requests).toHaveLength(1);
+ });
+ it('bounds persistent artwork caching while preserving the lightweight catalog',async()=>{
+  const library=await import('./cloudAssetLibrary');const assets=await library.syncPublishedCloudAssetsToBrowserCache();
+  for(const asset of assets.slice(0,26))await library.loadCloudAssetArtwork(asset);
+  await vi.waitFor(async()=>expect((await storedArtwork()).filter(([key])=>String(key).startsWith('artwork:'))).toHaveLength(24));
+  const entries=await storedArtwork();expect(entries.some(([key])=>key==='published-assets')).toBe(true);
+  expect(entries.some(([key])=>key===`artwork:${JSON.stringify([assets[0].id,assets[0].version,assets[0].storagePath])}`)).toBe(false);
  });
  it('allows retry after a failed artwork request and preserves the catalog entry',async()=>{
   const library=await import('./cloudAssetLibrary');const [asset]=await library.loadPublishedCloudAssets();server.failArtwork=true;
