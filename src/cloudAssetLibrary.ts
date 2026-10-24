@@ -43,6 +43,9 @@ const CLOUD_IDB_NAME = 'bioplot-cloud-library-cache-v1';
 const CLOUD_IDB_STORE = 'library';
 const CLOUD_IDB_PUBLISHED_KEY = 'published-assets';
 const CLOUD_IDB_ADMIN_KEY = 'admin-assets';
+const ARTWORK_CACHE_INDEX = 'artwork-index-v1';
+const MAX_CACHED_ARTWORK = 24;
+const MAX_CACHED_ARTWORK_BYTES = 32 * 1024 * 1024;
 
 let memoryPublishedCloudAssets: CloudAsset[] | null = null;
 let publishedCatalogRevision=0;
@@ -563,18 +566,85 @@ export function syncPublishedCloudAssetsToBrowserCache():Promise<CloudAsset[]> {
   return publishedSync;
 }
 
+// Cache individual selected files, never a second copy of the whole library.
+// A small manifest bounds disk usage without reading every large SVG to prune it.
+async function readCachedArtwork(key: string): Promise<string | undefined> {
+  const db = await openCloudCacheDb();
+  if (!db) return undefined;
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction(CLOUD_IDB_STORE, 'readonly');
+      const request = tx.objectStore(CLOUD_IDB_STORE).get(key);
+      request.onsuccess = () => resolve(typeof request.result === 'string' ? request.result : undefined);
+      request.onerror = tx.onabort = () => resolve(undefined);
+    } catch { resolve(undefined); }
+  });
+}
+
+async function cacheArtwork(key: string, svg: string) {
+  const db = await openCloudCacheDb();
+  // UTF-16 is a conservative estimate of the uncompressed stored string size.
+  const bytes = svg.length * 2;
+  if (!db || bytes > MAX_CACHED_ARTWORK_BYTES) return;
+  await new Promise<void>(resolve => {
+    try {
+      const tx = db.transaction(CLOUD_IDB_STORE, 'readwrite');
+      const store = tx.objectStore(CLOUD_IDB_STORE);
+      const request = store.get(ARTWORK_CACHE_INDEX);
+      request.onsuccess = () => {
+        const previous: Array<{key: string; bytes: number}> = Array.isArray(request.result)
+          ? request.result.filter(item => item && typeof item.key === 'string' && item.key.startsWith('artwork:') && Number.isFinite(item.bytes) && item.bytes >= 0)
+          : [];
+        const entries = previous.filter(item => item.key !== key);
+        entries.push({key, bytes});
+        let total = entries.reduce((sum, item) => sum + item.bytes, 0);
+        while (entries.length > MAX_CACHED_ARTWORK || total > MAX_CACHED_ARTWORK_BYTES) {
+          const oldest = entries.shift()!;
+          store.delete(oldest.key);
+          total -= oldest.bytes;
+        }
+        store.put(svg, key);
+        store.put(entries, ARTWORK_CACHE_INDEX);
+      };
+      tx.oncomplete = tx.onabort = tx.onerror = () => resolve();
+    } catch { resolve(); }
+  });
+}
+
 /** Download exact editable artwork only when the user inserts that asset. */
 export function loadCloudAssetArtwork(asset:ScientificAsset):Promise<ScientificAsset>{
   if(asset.artworkLoaded!==false)return Promise.resolve(asset);
-  const key=`${asset.id}:${asset.version}`;
+  const key=`artwork:${JSON.stringify([asset.id,asset.version,(asset as Partial<CloudAsset>).storagePath??''])}`;
   const existing=artworkRequests.get(key);if(existing)return existing;
   const job=(async()=>{
-    const {data,error}=await supabase.from('assets').select('render_svg,metadata')
+    // Browser storage can stall in private/low-disk environments. Start the
+    // network request promptly rather than waiting indefinitely for the cache.
+    let cacheTimer: ReturnType<typeof setTimeout> | undefined;
+    const cached = await Promise.race([readCachedArtwork(key), new Promise<undefined>(resolve => {
+      cacheTimer = setTimeout(() => resolve(undefined), 150);
+    })]).finally(() => clearTimeout(cacheTimer));
+    if (cached) {
+      try { return {...asset, svg: sanitizeSvg(cached), artworkLoaded: true}; }
+      catch { /* A corrupt cache entry must fall through to the server. */ }
+    }
+    // Legacy metadata can contain another megabyte-size copy of render_svg.
+    // Fetch only one artwork field, using the legacy field only if needed.
+    const {data,error}=await supabase.from('assets').select('render_svg')
       .eq('id',asset.id).eq('is_published',true).abortSignal(AbortSignal.timeout(20_000)).single();
     if(error)throw error;
-    const svg=String(data?.render_svg||data?.metadata?.render_svg||'');
+    let svg=String(data?.render_svg||'');
+    if (!svg) {
+      const legacy = await supabase.from('assets').select('legacy_svg:metadata->>render_svg')
+        .eq('id',asset.id).eq('is_published',true).abortSignal(AbortSignal.timeout(20_000)).single();
+      if (legacy.error) throw legacy.error;
+      svg = String(legacy.data?.legacy_svg || '');
+    }
     if(!svg)throw new Error('Asset artwork is unavailable.');
-    return {...asset,svg:sanitizeSvg(svg),artworkLoaded:true};
+    const safe = sanitizeSvg(svg);
+    // Persistence must not delay insertion or turn a successful download into
+    // an error when browser storage is full/disabled.
+    void cacheArtwork(key, safe).catch(() => {});
+    return {...asset,svg:safe,artworkLoaded:true};
   })().catch(error=>{artworkRequests.delete(key);throw error;});
   artworkRequests.set(key,job);
   while(artworkRequests.size>24)artworkRequests.delete(artworkRequests.keys().next().value!);
