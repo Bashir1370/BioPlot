@@ -5,15 +5,18 @@ import { getAdminSessionState, subscribeAdminState } from './adminAuth';
 import { hydratePublishedCloudAssetsFromIndexedDb, syncPublishedCloudAssetsToBrowserCache } from './cloudAssetLibrary';
 import './admin-access.css';
 import './textFonts';
+import './editor-startup.css';
 
 const LIBRARY_REFRESH_COOLDOWN_MS = 30_000;
 
 export function EditorRoute() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
+  const [loadingLibrary,setLoadingLibrary]=useState(true);
+  const [libraryError,setLibraryError]=useState(false);
+  const [libraryAttempt,setLibraryAttempt]=useState(0);
 
   useEffect(() => {
-    if (!editorReady) return;
     let alive = true;
     let syncing = false;
     let lastSyncStartedAt = 0;
@@ -25,12 +28,15 @@ export function EditorRoute() {
 
       syncing = true;
       lastSyncStartedAt = now;
+      setLoadingLibrary(true);
+      setLibraryError(false);
       try {
         await syncPublishedCloudAssetsToBrowserCache();
       } catch {
-        // The editor and the local/cached asset catalog stay usable if the cloud is slow or offline.
+        if(alive)setLibraryError(true);
       } finally {
         syncing = false;
+        if(alive)setLoadingLibrary(false);
       }
     };
 
@@ -54,7 +60,7 @@ export function EditorRoute() {
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [editorReady]);
+  }, [libraryAttempt]);
 
   useEffect(() => {
     if (!editorReady) return;
@@ -65,7 +71,7 @@ export function EditorRoute() {
   }, [editorReady]);
 
   return <>
-    <EditorStudio onReady={() => setEditorReady(true)} />
+    <EditorStudio onReady={() => setEditorReady(true)} loadingLibrary={loadingLibrary} libraryError={libraryError} onRetryLibrary={()=>setLibraryAttempt(value=>value+1)} />
     {isAdmin && <a className="editor-admin-shortcut" href="/admin/library" title="مدیریت کتابخانه" aria-label="مدیریت کتابخانه">
       <StudioIcon name="settings" />
       <span>مدیریت</span>

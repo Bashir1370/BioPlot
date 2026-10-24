@@ -12,6 +12,9 @@ export interface ScientificAsset {
   synonyms: { en: string[]; fa: string[] };
   tags?: string[];
   svg: string;
+  /** Published cloud rows can be listed without downloading their full artwork. */
+  previewUrl?: string;
+  artworkLoaded?: boolean;
   colorSlots: Array<{ key: string; label: string; defaultValue: string }>;
   reviewStatus: 'draft' | 'reviewed';
   premium: boolean;
@@ -109,12 +112,12 @@ function normalizeAsset(asset: ScientificAsset, index = 0): ScientificAsset {
 export function setRuntimeCloudAssets(assets: ScientificAsset[]) {
   const next = assets.flatMap((asset,index) => {
     try {
-      return [normalizeAsset({ ...asset, svg: sanitizeSvg(asset.svg) }, index)];
+      return [normalizeAsset(asset.artworkLoaded===false?asset:{ ...asset, svg: sanitizeSvg(asset.svg) }, index)];
     } catch {
       return [];
     }
   });
-  const signature = (items: ScientificAsset[]) => JSON.stringify(items.map(asset => [asset.id, asset.version, asset.active, asset.featured, asset.sortOrder, asset.svg.length]));
+  const signature = (items: ScientificAsset[]) => JSON.stringify(items.map(asset => [asset.id, asset.version, asset.active, asset.featured, asset.sortOrder, asset.svg.length,asset.previewUrl]));
   const changed = runtimeCloudAssets === null || signature(runtimeCloudAssets) !== signature(next);
   runtimeCloudAssets = next;
   if (changed) notifyLibraryChanged();
@@ -283,6 +286,7 @@ function assetAspectRatio(svg:string){
 }
 
 export function assetToObject(asset: ScientificAsset, x = 360, y = 260): AssetObject {
+  if(asset.artworkLoaded===false||!asset.svg)throw new Error('Load asset artwork before insertion.');
   markAssetUsed(asset.id);
   const ratio=Math.max(.3,Math.min(3.3,assetAspectRatio(asset.svg)));
   const targetArea=150*110;

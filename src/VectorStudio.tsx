@@ -4,6 +4,8 @@ import { nativePresetSvg, parseNativeLinePreset, type DrawLineSettings } from '.
 import { CUSTOM_LINE, LINE_CATEGORIES, LINE_CATEGORY, LINE_PRESETS, lineCategoryOf, type LineCategoryId } from './lineCatalog';
 import { StudioIcon } from './StudioIcon';
 import './vector-studio.css';
+import {loadCloudAssetArtwork} from './cloudAssetLibrary';
+import {AssetPreviewImage} from './AssetPreviewImage';
 
 export function VectorStudio({fa}:{fa:boolean}) {
   const [category,setCategory]=useState<LineCategoryId>('arrows');
@@ -19,11 +21,15 @@ export function VectorStudio({fa}:{fa:boolean}) {
     window.dispatchEvent(new CustomEvent('bioplot:insert-native-line',{detail:settings}));
     setMessage(fa?'خط اضافه شد':'Line added');
   };
-  const insertAsset=(asset:ScientificAsset)=>{
+  const insertAsset=async(input:ScientificAsset)=>{
+    setMessage(fa?'در حال آماده‌سازی تصویر…':'Preparing artwork…');
+    try{
+    const asset=await loadCloudAssetArtwork(input);
     const settings=parseNativeLinePreset(asset.svg);
     if(settings){insert(settings);return;}
     window.dispatchEvent(new CustomEvent('bioplot:insert-line-asset',{detail:asset}));
     setMessage(fa?'تصویر اضافه شد':'Image added');
+    }catch{setMessage(fa?'دریافت تصویر انجام نشد؛ دوباره تلاش کنید.':'Could not load artwork. Please retry.');}
   };
   const presets=LINE_PRESETS.filter(preset=>preset.category===category);
   const assets=published.filter(asset=>lineCategoryOf(asset)===category);
@@ -45,7 +51,7 @@ export function VectorStudio({fa}:{fa:boolean}) {
           <span aria-hidden="true" dangerouslySetInnerHTML={{__html:nativePresetSvg({...preset.settings,stroke:'#40515c',strokeWidth:3})}}/>
         </button>)}
       </div>
-      {assets.length>0&&<div className="bp-line-gallery-grid bp-published-lines">{assets.map(asset=><button type="button" key={asset.id} title={fa?asset.nameFa||asset.name:asset.name} aria-label={fa?`افزودن ${asset.nameFa||asset.name}`:`Add ${asset.name}`} onClick={()=>insertAsset(asset)}><span aria-hidden="true" dangerouslySetInnerHTML={{__html:asset.svg}}/></button>)}</div>}
+      {assets.length>0&&<div className="bp-line-gallery-grid bp-published-lines">{assets.map(asset=><button type="button" key={asset.id} title={fa?asset.nameFa||asset.name:asset.name} aria-label={fa?`افزودن ${asset.nameFa||asset.name}`:`Add ${asset.name}`} onClick={()=>insertAsset(asset)}><span aria-hidden="true"><AssetPreviewImage svg={asset.svg} previewUrl={asset.artworkLoaded===false?asset.previewUrl:undefined} cacheKey={`${asset.id}:${asset.version}`}/></span></button>)}</div>}
     </section>
     <p className="bp-line-browser-status" role="status">{message}</p>
   </div>;

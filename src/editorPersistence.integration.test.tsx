@@ -3,7 +3,7 @@ import {act} from 'react';
 import {createRoot,type Root} from 'react-dom/client';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {createBlankDocument} from './model';
-const mocks=vi.hoisted(()=>({load:vi.fn(),save:vi.fn(),publish:vi.fn(),receive:null as null|((event:unknown)=>void)}));
+const mocks=vi.hoisted(()=>({load:vi.fn(),save:vi.fn(),publish:vi.fn(),observe:vi.fn(),receive:null as null|((event:unknown)=>void)}));
 vi.mock('./persistence',()=>({projects:{loadForEditor:mocks.load,save:mocks.save}}));
 vi.mock('./cloudAssetLibrary',async importOriginal=>({...await importOriginal<typeof import('./cloudAssetLibrary')>(),reloadRuntimeCloudAssetsFromBrowserCache:()=>[]}));
 vi.mock('./collaboration',()=>({createAnonymousPresence:()=>({id:'test',name:'Test',color:'#000'}),createCollaborationSession:()=>({connect:async()=>{},subscribe:(receive:(event:unknown)=>void)=>{mocks.receive=receive;return()=>{mocks.receive=null;};},disconnect:()=>{},publishDocument:mocks.publish})}));
@@ -13,7 +13,7 @@ let currentDocument:ReturnType<typeof createBlankDocument>;
 beforeEach(()=>{
  vi.useFakeTimers();vi.clearAllMocks();mocks.save.mockResolvedValue(undefined);
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
- vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});
+ vi.stubGlobal('ResizeObserver',class{observe(){mocks.observe();}disconnect(){}});
  localStorage.clear();sessionStorage.clear();currentDocument=createBlankDocument();mocks.load.mockResolvedValue({document:currentDocument});history.replaceState(null,'',`/editor?id=${currentDocument.id}`);
  host=document.createElement('div');document.body.append(host);root=createRoot(host);
 });
@@ -26,7 +26,7 @@ async function rename(value:string){
 const exit=()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;};
 describe('editor persistence lifecycle',()=>{
  it('warns before leaving unsaved edits and clears the warning after a successful save',async()=>{
-  await mount();expect(exit()).toBe(false);
+  await mount();expect(exit()).toBe(false);expect(mocks.observe).toHaveBeenCalled();
   await rename('My figure');expect(exit()).toBe(true);
   await act(async()=>{await vi.advanceTimersByTimeAsync(500);});
   expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({title:'My figure'}));

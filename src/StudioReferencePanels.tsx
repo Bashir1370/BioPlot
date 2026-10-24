@@ -9,18 +9,19 @@ import { StudioIcon } from './StudioIcon';
 import { ShineBorder } from './components/ui/shine-border';
 import type { CanvasSettings } from './studioPages';
 
-export function AssetCatalogView({fa,assets,grouped,favorites,onAdd,onFavorite,onCategory}:{fa:boolean;assets:ScientificAsset[];grouped:boolean;favorites:Set<string>;onAdd:(asset:ScientificAsset)=>void;onFavorite:(id:string)=>void;onCategory:(category:string)=>void}){
+export function AssetCatalogView({loading=false,fa,assets,grouped,favorites,onAdd,onFavorite,onCategory}:{loading?:boolean;fa:boolean;assets:ScientificAsset[];grouped:boolean;favorites:Set<string>;onAdd:(asset:ScientificAsset)=>void;onFavorite:(id:string)=>void;onCategory:(category:string)=>void}){
   const categories=[...new Set(assets.map(asset=>asset.category))];
   const addFromLibrary=(asset:ScientificAsset)=>{markAssetStyleAutoOpenFromLibrary();onAdd(asset);};
   const card=(asset:ScientificAsset,eager=false)=>{
     const displayName=fa&&asset.nameFa?asset.nameFa:asset.name;
     return <div className="asset-card-wrap" key={asset.id}>
       <button className="asset-main" onClick={()=>addFromLibrary(asset)} title={displayName} aria-label={fa?`افزودن ${displayName}`:`Add ${displayName}`}>
-        <span><AssetPreviewImage svg={asset.svg} cacheKey={`${asset.id}:${asset.version}`} alt="" eager={eager}/></span>
+        <span><AssetPreviewImage svg={asset.svg} previewUrl={asset.artworkLoaded===false?asset.previewUrl:undefined} cacheKey={`${asset.id}:${asset.version}`} alt="" eager={eager}/></span>
       </button>
       <button className={`asset-favorite ${favorites.has(asset.id)?'active':''}`} aria-pressed={favorites.has(asset.id)} aria-label={fa?`علاقه‌مندی: ${displayName}`:`Favorite ${displayName}`} onClick={()=>onFavorite(asset.id)}><StudioIcon name="star"/></button>
     </div>;
   };
+  if(!assets.length&&loading)return null;
   if(!assets.length)return <p className="asset-empty">{fa?'المانی پیدا نشد.':'No matching assets.'}</p>;
   if(!grouped)return <div className="catalog-results"><span>{assets.length} {fa?'المان':'icons'}</span><div className="studio-assets">{assets.map((asset,index)=>card(asset,index<8))}</div></div>;
   return <div className="catalog-browse">
@@ -31,7 +32,7 @@ export function AssetCatalogView({fa,assets,grouped,favorites,onAdd,onFavorite,o
 }
 
 export function StudioPagesPanel({fa,documentState,onSelect,onAdd,onClose}:{fa:boolean;documentState:BioPlotDocument;onSelect:(id:string)=>void;onAdd:()=>void;onClose:()=>void}){
-  const previews=useMemo(()=>documentState.pages.map(page=>({page,src:`data:image/svg+xml;charset=utf-8,${encodeURIComponent(documentToSvg({...documentState,activePageId:page.id}))}`})),[documentState]);
+  const previews=useMemo(()=>documentState.pages.map(page=>({page,src:`data:image/svg+xml;charset=utf-8,${encodeURIComponent(documentToSvg({...documentState,activePageId:page.id},{embedFonts:false}))}`})),[documentState]);
   return <ShineBorder as="aside" className="reference-pages" dir={fa?'rtl':'ltr'} borderRadius={12} borderWidth={1.25} duration={20} color={['#d9e9e6','#74beb4','#d9e9e6']}><div className="reference-panel-title"><h2>{fa?'صفحه‌ها':'Slides'}</h2><button onClick={onClose} aria-label={fa?'بستن صفحه‌ها':'Close slides'}><StudioIcon name="close"/></button></div><div className="page-actions"><button onClick={onAdd}><StudioIcon name="plus"/><span>{fa?'صفحه جدید':'New slide'}</span></button><span>{documentState.pages.length}</span></div><div className="page-list">{previews.map(({page,src},index)=><button key={page.id} className={`page-card ${page.id===documentState.activePageId?'active':''}`} aria-current={page.id===documentState.activePageId?'page':undefined} onClick={()=>onSelect(page.id)}><span>{index+1}<b>{page.name}</b></span><img src={src} alt={fa?`پیش‌نمایش ${page.name}`:`Preview of ${page.name}`} style={{aspectRatio:`${page.width}/${page.height}`}}/></button>)}</div></ShineBorder>;
 }
 

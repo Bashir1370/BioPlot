@@ -45,6 +45,9 @@ const CLOUD_IDB_PUBLISHED_KEY = 'published-assets';
 const CLOUD_IDB_ADMIN_KEY = 'admin-assets';
 
 let memoryPublishedCloudAssets: CloudAsset[] | null = null;
+let publishedCatalogRevision=0;
+let publishedSync:Promise<CloudAsset[]>|null=null;
+const artworkRequests=new Map<string,Promise<ScientificAsset>>();
 let memoryAdminCloudAssets: CloudAsset[] | null = null;
 let cloudDbPromise: Promise<IDBDatabase | null> | null = null;
 
@@ -121,7 +124,7 @@ function rowToAsset(row: Record<string, any>): CloudAsset {
     version: Number(row.version ?? 1),
     storagePath: String(row.storage_path ?? ''),
     cloudManaged: true,
-    stylePresets: stylePresets(metadata.style_presets),
+    stylePresets: stylePresets(row.style_presets??metadata.style_presets),
   };
 }
 
@@ -132,6 +135,13 @@ function sortCloudAssets(assets: CloudAsset[]) {
     if (order !== 0) return order;
     return a.name.localeCompare(b.name);
   });
+}
+
+function catalogAsset(asset:CloudAsset):CloudAsset{
+  // Old browser caches may contain the entire raster library. Reuse their
+  // metadata and originals without re-parsing every base64 SVG wrapper.
+  if(!asset.storagePath)return asset;
+  return {...asset,svg:'',artworkLoaded:false,previewUrl:supabase.storage.from('public-assets').getPublicUrl(asset.storagePath).data.publicUrl};
 }
 
 function isCloudManagedAsset(asset: ScientificAsset): asset is CloudAsset {
@@ -237,7 +247,7 @@ export function loadCachedPublishedCloudAssets(): CloudAsset[] {
   const cached = sortCloudAssets(
     loadCustomAssets()
       .filter(isCloudManagedAsset)
-      .filter(asset => asset.active !== false && Boolean(asset.svg)),
+      .filter(asset => asset.active !== false && Boolean(asset.svg||asset.artworkLoaded===false)),
   );
   memoryPublishedCloudAssets = cached;
   return cached;
@@ -245,9 +255,10 @@ export function loadCachedPublishedCloudAssets(): CloudAsset[] {
 
 function writePublishedCloudAssetsCache(assets: CloudAsset[]) {
   const published = sortCloudAssets(
-    assets.filter(asset => asset.active !== false && Boolean(asset.svg)),
+    assets.filter(asset => asset.active !== false && Boolean(asset.svg||asset.artworkLoaded===false)),
   );
 
+  publishedCatalogRevision++;
   memoryPublishedCloudAssets = published;
 
   // Runtime is refreshed first so an already-open editor updates immediately.
@@ -257,6 +268,12 @@ function writePublishedCloudAssetsCache(assets: CloudAsset[]) {
   // Keep the old localStorage cache when it fits. Large raster libraries can
   // exceed localStorage quota; IndexedDB below is the authoritative browser cache.
   try {
+    // Full raster wrappers can be megabytes each. Keep only the lightweight
+    // catalog here; full artwork belongs to the selected document and IndexedDB.
+    if(published.some(asset=>asset.artworkLoaded===false)||published.reduce((total,asset)=>total+asset.svg.length,0)>500_000){
+      void writeCloudCacheToIndexedDb(CLOUD_IDB_PUBLISHED_KEY,published);
+      return;
+    }
     const localOnly = loadCustomAssets().filter(asset => !isCloudManagedAsset(asset));
     replaceCustomAssets([...published, ...localOnly]);
   } catch {
@@ -327,12 +344,15 @@ export function reloadRuntimeCloudAssetsFromBrowserCache() {
  * when the SVG/raster payload is too large for localStorage.
  */
 export async function hydratePublishedCloudAssetsFromIndexedDb() {
+  const revision=publishedCatalogRevision;
   const cached = await readCloudCacheFromIndexedDb(CLOUD_IDB_PUBLISHED_KEY);
+  // A slow disk read must never replace a newer network response.
+  if(revision!==publishedCatalogRevision)return loadCachedPublishedCloudAssets();
   if (!cached.length) return loadCachedPublishedCloudAssets();
 
   memoryPublishedCloudAssets = cached.filter(
-    asset => asset.active !== false && Boolean(asset.svg),
-  );
+    asset => asset.active !== false && Boolean(asset.svg||asset.artworkLoaded===false),
+  ).map(catalogAsset);
   setRuntimeCloudAssets(memoryPublishedCloudAssets);
   notifyAssetLibraryChanged();
   return sortCloudAssets(memoryPublishedCloudAssets);
@@ -345,7 +365,7 @@ export async function hydrateAdminCloudAssetsFromIndexedDb() {
 
   memoryAdminCloudAssets = sortCloudAssets(cached);
   memoryPublishedCloudAssets = memoryAdminCloudAssets.filter(
-    asset => asset.active !== false && Boolean(asset.svg),
+    asset => asset.active !== false && Boolean(asset.svg||asset.artworkLoaded===false),
   );
   setRuntimeCloudAssets(memoryPublishedCloudAssets);
   notifyAssetLibraryChanged();
@@ -508,25 +528,57 @@ export async function loadAdminCloudAssets(): Promise<CloudAsset[]> {
   return assets;
 }
 
-export async function loadPublishedCloudAssets(): Promise<CloudAsset[]> {
-  const { data, error } = await supabase
-    .from('assets')
-    .select('*')
-    .eq('is_published', true);
-
-  if (error) throw error;
-
-  return sortCloudAssets(
-    (data ?? []).map(rowToAsset).filter(asset => Boolean(asset.svg)),
-  );
+// Catalog requests deliberately exclude render_svg and metadata.render_svg.
+// Existing PNG wrappers can exceed 1 MB per row and time out as a single query.
+const CATALOG_COLUMNS='id,name,name_fa,category,description_en,description_fa,keywords,keywords_fa,color_slots,is_reviewed,is_premium,is_published,featured,sort_order,asset_type,version,storage_path,style_presets:metadata->style_presets';
+const CATALOG_PAGE_SIZE=100;
+export async function loadPublishedCloudAssets(onPage?:(assets:CloudAsset[])=>void): Promise<CloudAsset[]> {
+  const catalog:CloudAsset[]=[];
+  for(let offset=0;;offset+=CATALOG_PAGE_SIZE){
+    const {data,error}=await supabase.from('assets').select(CATALOG_COLUMNS)
+      .eq('is_published',true).order('id',{ascending:true})
+      .range(offset,offset+CATALOG_PAGE_SIZE-1).abortSignal(AbortSignal.timeout(15_000));
+    if(error)throw error;
+    const rows=data??[];
+    for(const row of rows){
+      const asset=catalogAsset({...rowToAsset(row),artworkLoaded:false});
+      catalog.push(asset);
+    }
+    if(rows.length)onPage?.(sortCloudAssets(catalog));
+    if(rows.length<CATALOG_PAGE_SIZE)break;
+  }
+  return sortCloudAssets(catalog);
 }
 
-export async function syncPublishedCloudAssetsToBrowserCache() {
-  const cloud = await loadPublishedCloudAssets();
-  // Runtime + UI update synchronously here; IndexedDB persistence runs in the
-  // background from writePublishedCloudAssetsCache. Do not await a second write.
-  writePublishedCloudAssetsCache(cloud);
-  return cloud;
+export function syncPublishedCloudAssetsToBrowserCache():Promise<CloudAsset[]> {
+  // StrictMode, focus and retry must share one request, not download duplicates.
+  if(publishedSync)return publishedSync;
+  publishedSync=loadPublishedCloudAssets(page=>{
+    // Preserve cached items while later catalog pages are still in flight.
+    const merged=new Map(loadCachedPublishedCloudAssets().map(asset=>[asset.id,asset]));
+    page.forEach(asset=>merged.set(asset.id,asset));
+    writePublishedCloudAssetsCache([...merged.values()]);
+  }).then(cloud=>{writePublishedCloudAssetsCache(cloud);return cloud;})
+    .finally(()=>{publishedSync=null;});
+  return publishedSync;
+}
+
+/** Download exact editable artwork only when the user inserts that asset. */
+export function loadCloudAssetArtwork(asset:ScientificAsset):Promise<ScientificAsset>{
+  if(asset.artworkLoaded!==false)return Promise.resolve(asset);
+  const key=`${asset.id}:${asset.version}`;
+  const existing=artworkRequests.get(key);if(existing)return existing;
+  const job=(async()=>{
+    const {data,error}=await supabase.from('assets').select('render_svg,metadata')
+      .eq('id',asset.id).eq('is_published',true).abortSignal(AbortSignal.timeout(20_000)).single();
+    if(error)throw error;
+    const svg=String(data?.render_svg||data?.metadata?.render_svg||'');
+    if(!svg)throw new Error('Asset artwork is unavailable.');
+    return {...asset,svg:sanitizeSvg(svg),artworkLoaded:true};
+  })().catch(error=>{artworkRequests.delete(key);throw error;});
+  artworkRequests.set(key,job);
+  while(artworkRequests.size>24)artworkRequests.delete(artworkRequests.keys().next().value!);
+  return job;
 }
 
 function safeFileName(name: string) {

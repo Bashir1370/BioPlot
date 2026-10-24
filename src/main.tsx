@@ -16,6 +16,9 @@ const AccountPage=lazy(()=>import('./AccountPage').then(module=>({default:module
 import { createRoot } from 'react-dom/client';
 import { isDashboardPath, isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
 import './styles-v3.css';
+// Base editor CSS must precede its global refinements even when the route is
+// lazy-loaded. Otherwise its old grid slots collapse the canvas and toolbar.
+import './editor-studio.css';
 import './editor-pro.css';
 import './template-previews-pro.css';
 import './studio-polish.css';
