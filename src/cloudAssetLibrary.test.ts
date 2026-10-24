@@ -72,6 +72,15 @@ describe('lightweight cloud catalog and on-demand artwork',()=>{
   expect((await library.loadCloudAssetArtwork(asset)).svg).toContain('<path');
   expect(server.requests.map(request=>request.columns)).toEqual(['render_svg','legacy_svg:metadata->>render_svg']);
  });
+ it('does not wait indefinitely for a stalled browser cache',async()=>{
+  const library=await import('./cloudAssetLibrary');const [asset]=await library.loadPublishedCloudAssets();server.requests=[];
+  const realIndexedDb=globalThis.indexedDB;
+  vi.stubGlobal('indexedDB',{open:()=>({})});vi.useFakeTimers();
+  try {
+   const load=library.loadCloudAssetArtwork(asset);await vi.advanceTimersByTimeAsync(150);
+   expect((await load).svg).toContain('<path');expect(server.requests).toHaveLength(1);
+  } finally {vi.useRealTimers();vi.stubGlobal('indexedDB',realIndexedDb);}
+ });
  it('recovers from corrupt cached SVG instead of leaving an asset unusable',async()=>{
   const library=await import('./cloudAssetLibrary');const [asset]=await library.loadPublishedCloudAssets();
   const db=await cacheDb();await new Promise<void>(resolve=>{const tx=db.transaction('library','readwrite');tx.objectStore('library').put('<invalid>',`artwork:${JSON.stringify([asset.id,asset.version,asset.storagePath])}`);tx.oncomplete=()=>resolve();});db.close();server.requests=[];

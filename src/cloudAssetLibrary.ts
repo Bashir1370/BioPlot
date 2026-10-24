@@ -617,7 +617,12 @@ export function loadCloudAssetArtwork(asset:ScientificAsset):Promise<ScientificA
   const key=`artwork:${JSON.stringify([asset.id,asset.version,(asset as Partial<CloudAsset>).storagePath??''])}`;
   const existing=artworkRequests.get(key);if(existing)return existing;
   const job=(async()=>{
-    const cached = await readCachedArtwork(key);
+    // Browser storage can stall in private/low-disk environments. Start the
+    // network request promptly rather than waiting indefinitely for the cache.
+    let cacheTimer: ReturnType<typeof setTimeout> | undefined;
+    const cached = await Promise.race([readCachedArtwork(key), new Promise<undefined>(resolve => {
+      cacheTimer = setTimeout(() => resolve(undefined), 150);
+    })]).finally(() => clearTimeout(cacheTimer));
     if (cached) {
       try { return {...asset, svg: sanitizeSvg(cached), artworkLoaded: true}; }
       catch { /* A corrupt cache entry must fall through to the server. */ }
