@@ -28,6 +28,7 @@ type Props = {
   alt?: string;
   className?: string;
   eager?: boolean;
+  previewUrl?: string;
 };
 
 /**
@@ -41,8 +42,9 @@ export const AssetPreviewImage = memo(function AssetPreviewImage({
   alt = '',
   className,
   eager = false,
+  previewUrl,
 }: Props) {
-  const src = getSvgObjectUrl(cacheKey, svg);
+  const src = previewUrl || getSvgObjectUrl(cacheKey, svg||'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" rx="12" fill="#dcece9"/></svg>');
   return (
     <img
       className={className}

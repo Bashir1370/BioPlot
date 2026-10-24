@@ -11,6 +11,11 @@ describe('selection export geometry',()=>{
   expect(box[2]).toBeCloseTo(22);expect(box[3]).toBeCloseTo(102);
   expect(svg).toContain('translate(-39 41)');
  });
+ it('omits embedded fonts from page thumbnails while retaining them in normal exports',()=>{
+  const doc=createBlankDocument();
+  expect(documentToSvg(doc)).toContain('<style>');
+  expect(documentToSvg(doc,{embedFonts:false})).not.toContain('<style>');
+ });
  it('keeps the whole artboard when selection cropping is disabled',()=>{
   const doc=createBlankDocument();doc.pages[0].objects=[makeShape('rect')];
   expect(documentToSvg(doc)).toContain('viewBox="0 0 960 620"');
