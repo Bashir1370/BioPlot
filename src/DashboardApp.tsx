@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import {createBlankDocument} from './model';
 import {openFigureDraft} from './figureDraft';
 import './home.css';
+// Keep the horizontal navigation overrides after the legacy Home styles in
+// the same lazy-loaded route chunk, rather than the earlier global bundle.
+import './home-top-nav.css';
 import { StudioIcon } from './StudioIcon';
 
 type Locale = 'en' | 'fa';
