@@ -131,10 +131,14 @@ export function AccountPage() {
 
   async function logout() {
     setBusy(true);
-    await signOutUser();
-    setAccount(emptyState);
-    setBusy(false);
-    setMessage('');
+    try {
+      await signOutUser();
+      setAccount(emptyState);
+      authSubmitted.current = false;
+      setMessage('');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : t.error);
+    } finally { setBusy(false); }
   }
 
   const joined = useMemo(() => {

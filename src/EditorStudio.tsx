@@ -101,7 +101,7 @@ export function EditorStudio({onReady}:{onReady?:()=>void}={}){
   const artboardRef=useRef<HTMLDivElement>(null);
   const canvasViewportRef=useRef<HTMLDivElement>(null);
   const collaborationRef=useRef<CollaborationSession|null>(null);
-  const suppressBroadcast=useRef(false);
+  const receivedContent=useRef<string|null>(null);
   const zoomRef=useRef(.82);
   const autoFitRef=useRef(true);
   const pendingZoomAnchorRef=useRef<PendingZoomAnchor|null>(null);
@@ -351,16 +351,22 @@ export function EditorStudio({onReady}:{onReady?:()=>void}={}){
     if(!documentReady)return;
     const session=createCollaborationSession();
     collaborationRef.current=session;
+    let alive=true;
     let unsubscribe=()=>{};
     void session.connect(documentState.id,createAnonymousPresence()).then(()=>{
+      if(!alive){session.disconnect();return;}
       unsubscribe=session.subscribe(event=>{
         if(event.type!=='document')return;
-        suppressBroadcast.current=true;
+        if(event.document.id!==storeRef.current.snapshot.id||event.document.ownerId!==storeRef.current.snapshot.ownerId)return;
+        // Whole-document broadcasts cannot merge simultaneous edits. Preserve
+        // unsaved local work instead of replacing it with another tab's copy.
+        if(pendingWrites.current>0||figureContent(storeRef.current.snapshot)!==savedContent.current)return;
+        receivedContent.current=figureContent(event.document);
         storeRef.current.replace(migrateDocument(event.document));
         setSaveState(fa?'همگام شد':'Synced');
       });
-    }).catch(()=>{});
-    return()=>{unsubscribe();session.disconnect();collaborationRef.current=null;};
+    }).catch(()=>{session.disconnect();});
+    return()=>{alive=false;unsubscribe();session.disconnect();collaborationRef.current=null;};
   },[documentState.id,fa,documentReady]);
   useEffect(()=>{setSelected(current=>new Set([...current].filter(id=>objects.some(object=>object.id===id&&!object.hidden))));},[objects]);
   useEffect(()=>{
@@ -385,13 +391,24 @@ export function EditorStudio({onReady}:{onReady?:()=>void}={}){
           history.replaceState(null,'',`/editor?id=${encodeURIComponent(documentState.id)}`);
           saveRecoverySnapshot(documentState);
           if(current)setSaveState(fa?'ذخیره شد':'Saved');
-          if(suppressBroadcast.current)suppressBroadcast.current=false;else collaborationRef.current?.publishDocument(documentState);
+          if(receivedContent.current!==content)collaborationRef.current?.publishDocument(documentState);
+          receivedContent.current=null;
         }catch{if(current){setSaveFailed(true);setSaveState(fa?'ذخیره ناموفق':'Save failed');}}
         finally{pendingWrites.current--;}
       });
     },420);
     return()=>{current=false;window.clearTimeout(timer);};
   },[documentState,fa,documentReady,saveAttempt]);
+  useEffect(()=>{
+    if(!documentReady)return;
+    const beforeUnload=(event:BeforeUnloadEvent)=>{
+      if(pendingWrites.current===0&&figureContent(storeRef.current.snapshot)===savedContent.current)return;
+      event.preventDefault();
+      event.returnValue='';
+    };
+    window.addEventListener('beforeunload',beforeUnload);
+    return()=>window.removeEventListener('beforeunload',beforeUnload);
+  },[documentReady]);
   useEffect(()=>{const close=()=>setContextMenu(null);window.addEventListener('pointerdown',close);return()=>window.removeEventListener('pointerdown',close);},[]);
   useEffect(()=>{
     const onKey=(event:KeyboardEvent)=>{
@@ -655,7 +672,7 @@ export function EditorStudio({onReady}:{onReady?:()=>void}={}){
 
   function setTitle(title:string){const next=cloneDocument(documentState);next.title=title;next.updatedAt=new Date().toISOString();storeRef.current.replace(next);}
   function toggleLocale(){const next=cloneDocument(documentState);next.metadata.locale=fa?'en':'fa';storeRef.current.replace(next);}
-  async function share(){await navigator.clipboard?.writeText(window.location.href);setShareState(fa?'کپی شد':'Copied');setTimeout(()=>setShareState(fa?'اشتراک':'Share'),1500);}
+  async function share(){try{if(!navigator.clipboard)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(window.location.href);setShareState(fa?'کپی شد':'Copied');}catch{setShareState(fa?'کپی نشد':'Copy failed');}setTimeout(()=>setShareState(fa?'اشتراک':'Share'),1500);}
   async function importSvg(file?:File){if(!file)return;try{const safe=sanitizeSvg(await file.text());const asset=saveCustomAsset({name:file.name.replace(/\.svg$/i,''),category:'Custom',synonyms:{en:[file.name],fa:[]},svg:safe,colorSlots:[],reviewStatus:'draft',premium:false});addObject(assetToObject(asset));setPanel('assets');}catch(error){alert(error instanceof Error?error.message:'Could not import SVG.');}}
   function importImage(file?:File){if(!file)return;const reader=new FileReader();reader.onload=()=>{if(typeof reader.result!=='string')return;const image=new Image();image.onload=()=>addObject(makeImage(reader.result as string,file.name,340,230,image.naturalWidth,image.naturalHeight));image.onerror=()=>addObject(makeImage(reader.result as string,file.name));image.src=reader.result;};reader.readAsDataURL(file);}
   function resizePanel(side:'library'|'inspector',event:ReactPointerEvent){event.preventDefault();const start=event.clientX,initial=side==='library'?libraryWidth:inspectorWidth,direction=side==='library'?1:-1;const move=(pointer:PointerEvent)=>{const value=initial+(pointer.clientX-start)*direction;if(side==='library')setLibraryWidth(Math.max(220,Math.min(420,value)));else setInspectorWidth(Math.max(290,Math.min(440,value)));};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}

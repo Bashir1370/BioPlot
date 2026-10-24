@@ -1,25 +1,20 @@
-import {AdminStudioContent} from './orders/AdminStudioContent';
 import {StudioContentProvider} from './orders/StudioContent';
-import { DesignServices } from './orders/DesignServices';
-import { OrdersPage } from './orders/OrdersPage';
 import { isDesignPath, isOrdersPath, isAdminOrdersPath } from './routing';
-import textFontCss from './fonts/text-fonts.txt?raw';
-const textFontStyle=document.createElement('style');
-textFontStyle.textContent=textFontCss;
-document.head.appendChild(textFontStyle);
-import { StrictMode } from 'react';
+import { lazy, StrictMode, Suspense } from 'react';
+const AdminStudioContent=lazy(()=>import('./orders/AdminStudioContent').then(module=>({default:module.AdminStudioContent})));
+const DesignServices=lazy(()=>import('./orders/DesignServices').then(module=>({default:module.DesignServices})));
+const OrdersPage=lazy(()=>import('./orders/OrdersPage').then(module=>({default:module.OrdersPage})));
+const HomeRoute=lazy(()=>import('./HomeRoute').then(module=>({default:module.HomeRoute})));
+const EditorRoute=lazy(()=>import('./EditorRoute').then(module=>({default:module.EditorRoute})));
+const AdminLibraryPage=lazy(()=>import('./AdminLibraryPage').then(module=>({default:module.AdminLibraryPage})));
+const AdminLinesPage=lazy(()=>import('./AdminLinesPage').then(module=>({default:module.AdminLinesPage})));
+const AdminLinesShortcut=lazy(()=>import('./AdminLinesShortcut').then(module=>({default:module.AdminLinesShortcut})));
+const AdminShowcasePage=lazy(()=>import('./AdminShowcasePage').then(module=>({default:module.AdminShowcasePage})));
+const AdminShowcaseAccountPortal=lazy(()=>import('./AdminShowcaseAccountPortal').then(module=>({default:module.AdminShowcaseAccountPortal})));
+const UserDashboard=lazy(()=>import('./UserDashboard').then(module=>({default:module.UserDashboard})));
+const AccountPage=lazy(()=>import('./AccountPage').then(module=>({default:module.AccountPage})));
 import { createRoot } from 'react-dom/client';
-import { HomeRoute } from './HomeRoute';
-import { EditorRoute } from './EditorRoute';
-import { AdminLibraryPage } from './AdminLibraryPage';
-import { AdminLinesPage } from './AdminLinesPage';
-import { AdminLinesShortcut } from './AdminLinesShortcut';
-import { AdminShowcasePage } from './AdminShowcasePage';
-import { AdminShowcaseAccountPortal } from './AdminShowcaseAccountPortal';
-import {UserDashboard} from './UserDashboard';
-import { AccountPage } from './AccountPage';
 import { isDashboardPath, isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
-import { installTightAssetSelection } from './tightAssetSelection';
 import './styles-v3.css';
 import './home-top-nav.css';
 import './editor-pro.css';
@@ -52,10 +47,10 @@ const isAccount = isAccountPath(window.location.pathname);
 const isEditor = isEditorPath(window.location.pathname);
 
 if (isEditor) {
-  installTightAssetSelection();
+  void import('./tightAssetSelection').then(module=>module.installTightAssetSelection());
 }
 createRoot(root).render(
-  <StrictMode><StudioContentProvider>
+  <StrictMode><Suspense fallback={<p role="status" style={{padding:32,textAlign:'center'}}>BioPlot…</p>}><StudioContentProvider>
     {location.pathname.replace(/\/+$/,'')==='/admin/studio' ? <AdminStudioContent/> : isDesignPath(location.pathname) ? <DesignServices/> : isOrdersPath(location.pathname) ? <OrdersPage/> : isAdminOrdersPath(location.pathname) ? <OrdersPage admin/> : isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
-  </StudioContentProvider></StrictMode>
+  </StudioContentProvider></Suspense></StrictMode>
 );

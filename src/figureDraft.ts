@@ -8,8 +8,11 @@ export function openFigureDraft(document:BioPlotDocument){
  window.location.href=`/editor?draft=${encodeURIComponent(document.id)}`;
 }
 export function readFigureDraft(id:string):BioPlotDocument|null{
- const value=sessionStorage.getItem(`${prefix}${id}`);
- return value?JSON.parse(value):null;
+ try{
+  const value=sessionStorage.getItem(`${prefix}${id}`);
+  const parsed=value?JSON.parse(value):null;
+  return parsed&&parsed.id===id&&Array.isArray(parsed.pages)&&parsed.pages.length>0?parsed:null;
+ }catch{return null;}
 }
 export function clearFigureDraft(id:string){
  try{sessionStorage.removeItem(`${prefix}${id}`);}catch{/* Saving must not depend on session storage. */}

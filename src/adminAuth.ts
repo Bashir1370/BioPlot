@@ -34,12 +34,14 @@ export async function claimAdmin(token: string) {
 }
 
 export async function signOutAdmin() {
-  await supabase.auth.signOut();
+  const {error}=await supabase.auth.signOut();
+  if(error)throw error;
 }
 
 export function subscribeAdminState(callback: (state: AdminSessionState) => void) {
   const { data } = supabase.auth.onAuthStateChange(() => {
-    void getAdminSessionState().then(callback);
+    // Defer Supabase calls until its auth event lock is released.
+    setTimeout(()=>{void getAdminSessionState().then(callback).catch(()=>{});},0);
   });
   return () => data.subscription.unsubscribe();
 }

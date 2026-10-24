@@ -9,14 +9,15 @@ function center(object:BioPlotObject):Point{
 export function objectPortPoint(object:BioPlotObject,port:ConnectorPort='auto',toward?:Point):Point{
   const c=center(object);
   if(port==='center') return c;
-  if(port==='top') return {x:c.x,y:object.y};
-  if(port==='right') return {x:object.x+object.width,y:c.y};
-  if(port==='bottom') return {x:c.x,y:object.y+object.height};
-  if(port==='left') return {x:object.x,y:c.y};
-  if(!toward) return {x:object.x+object.width,y:c.y};
-  const dx=toward.x-c.x,dy=toward.y-c.y;
-  if(Math.abs(dx)>=Math.abs(dy)) return dx>=0?{x:object.x+object.width,y:c.y}:{x:object.x,y:c.y};
-  return dy>=0?{x:c.x,y:object.y+object.height}:{x:c.x,y:object.y};
+  const angle=object.rotation*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
+  if(port==='auto'){
+    const dx=toward?((toward.x-c.x)*cos+(toward.y-c.y)*sin):1;
+    const dy=toward?(-(toward.x-c.x)*sin+(toward.y-c.y)*cos):0;
+    port=Math.abs(dx)>=Math.abs(dy)?(dx>=0?'right':'left'):(dy>=0?'bottom':'top');
+  }
+  const dx=port==='left'?-object.width/2:port==='right'?object.width/2:0;
+  const dy=port==='top'?-object.height/2:port==='bottom'?object.height/2:0;
+  return {x:c.x+dx*cos-dy*sin,y:c.y+dx*sin+dy*cos};
 }
 
 export function resolveConnector(connector:ConnectorObject,objects:BioPlotObject[]):ConnectorObject{
@@ -31,11 +32,20 @@ export function resolveConnector(connector:ConnectorObject,objects:BioPlotObject
   const y=Math.min(start.y,end.y)-18;
   const width=Math.max(24,Math.abs(end.x-start.x));
   const height=Math.max(36,Math.abs(end.y-start.y)+36);
-  const reverse=end.x<start.x;
-  return {...connector,x,y,width,height,rotation:reverse?180:0};
+  return {...connector,x,y,width,height,rotation:0,
+    startPoint:{x:(start.x-x)/width,y:(start.y-y)/height},
+    endPoint:{x:(end.x-x)/width,y:(end.y-y)/height}};
 }
 
 export function connectorPath(object:ConnectorObject){
+  if(object.startPoint&&object.endPoint){
+    const start={x:object.startPoint.x*object.width,y:object.startPoint.y*object.height};
+    const end={x:object.endPoint.x*object.width,y:object.endPoint.y*object.height};
+    const mid=(start.x+end.x)/2;
+    if(object.route==='elbow')return `M${start.x} ${start.y} H${mid} V${end.y} H${end.x}`;
+    if(object.route==='curved')return `M${start.x} ${start.y} C${mid} ${start.y} ${mid} ${end.y} ${end.x} ${end.y}`;
+    return `M${start.x} ${start.y} L${end.x} ${end.y}`;
+  }
   const mid=object.height/2;
   if(object.route==='elbow') return `M4 ${mid} H${object.width/2} V${Math.max(8,object.height-8)} H${object.width-9}`;
   if(object.route==='curved') return `M4 ${mid} C${object.width*.3} 3 ${object.width*.7} ${object.height-3} ${object.width-9} ${mid}`;

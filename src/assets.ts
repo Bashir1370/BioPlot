@@ -1,5 +1,6 @@
 import { AssetObject, makeId } from './model';
 import { scientificStarterAssets } from './scientificAssetPack';
+import DOMPurify from 'dompurify';
 
 export interface ScientificAsset {
   id: string;
@@ -83,7 +84,12 @@ export function sanitizeSvg(source: string): string {
     });
   });
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  return new XMLSerializer().serializeToString(svg);
+  return DOMPurify.sanitize(new XMLSerializer().serializeToString(svg),{
+    USE_PROFILES:{svg:true,svgFilters:true},
+    ADD_DATA_URI_TAGS:['image'],
+    FORBID_TAGS:['style','animate','animateMotion','animateTransform','set'],
+    FORBID_ATTR:['xml:base'],
+  });
 }
 
 function normalizeAsset(asset: ScientificAsset, index = 0): ScientificAsset {

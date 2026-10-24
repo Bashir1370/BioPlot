@@ -1,5 +1,6 @@
 import { createClient, RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import { BioPlotDocument } from './model';
+import {supabase} from './supabaseClient';
 
 export interface PresenceUser {
   id: string;
@@ -64,12 +65,21 @@ export class SupabaseRealtimeCollaboration implements CollaborationSession {
   private channel: RealtimeChannel | null = null;
   private listeners = new Set<(event: CollaborationEvent) => void>();
   private user: PresenceUser | null = null;
+  private unsubscribeAuth: (()=>void) | null = null;
 
   constructor(private client: SupabaseClient) {}
 
   async connect(documentId: string, user: PresenceUser) {
+    const {data:{session},error}=await supabase.auth.getSession();
+    if(error||!session)throw new Error('Sign in before connecting to remote collaboration.');
+    await this.client.realtime.setAuth(session.access_token);
+    const {data}=supabase.auth.onAuthStateChange((_event,next)=>{
+      if(!next){this.disconnect();return;}
+      void this.client.realtime.setAuth(next.access_token);
+    });
+    this.unsubscribeAuth=()=>data.subscription.unsubscribe();
     this.user = user;
-    this.channel = this.client.channel(`bioplot:${documentId}`, { config: { presence: { key: user.id } } });
+    this.channel = this.client.channel(`bioplot:${documentId}`, { config: { private: true, presence: { key: user.id } } });
     this.channel
       .on('broadcast', { event: 'document' }, ({ payload }) => {
         const event = payload as CollaborationEvent;
@@ -105,6 +115,8 @@ export class SupabaseRealtimeCollaboration implements CollaborationSession {
   }
 
   disconnect() {
+    this.unsubscribeAuth?.();
+    this.unsubscribeAuth=null;
     if (this.channel) void this.client.removeChannel(this.channel);
     this.channel = null;
     this.listeners.clear();
@@ -114,12 +126,15 @@ export class SupabaseRealtimeCollaboration implements CollaborationSession {
 export function createCollaborationSession(): CollaborationSession {
   const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-  if (url && anon) return new SupabaseRealtimeCollaboration(createClient(url, anon));
+  if (url && anon && import.meta.env.VITE_BIOPLOT_REMOTE_COLLABORATION==='true') {
+    return new SupabaseRealtimeCollaboration(createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}));
+  }
   return new BroadcastChannelCollaboration();
 }
 
 export function createAnonymousPresence(): PresenceUser {
-  const id = sessionStorage.getItem('bioplot_presence_id') ?? `guest_${Math.random().toString(36).slice(2, 9)}`;
-  sessionStorage.setItem('bioplot_presence_id', id);
+  // Duplicating a browser tab copies sessionStorage; using that ID made the
+  // duplicate discard every message from the original as its own message.
+  const id = `guest_${crypto.randomUUID()}`;
   return { id, name: 'BioPlot collaborator', color: '#0b7a75' };
 }

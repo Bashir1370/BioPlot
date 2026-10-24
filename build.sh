@@ -3,7 +3,7 @@ set -euo pipefail
 rm -rf dist
 
 if [ -f package.json ]; then
-  npm install
+  npm ci
   npm run build
 else
   mkdir -p dist
