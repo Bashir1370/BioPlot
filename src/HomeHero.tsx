@@ -22,5 +22,5 @@ export function HomeHero({locale,eyebrow,title,highlight,description,primaryText
   homeShell.style.fontFamily=HOME_FONT_STACKS[selectedFont];
   return()=>{homeShell.style.fontFamily=previousFont;};
  },[selectedFont]);
- return <ShuffleHero fontFamily={HOME_FONT_STACKS[selectedFont]} loading={loading} loadFailed={failed} onRetry={()=>setAttempt(value=>value+1)} locale={locale} secondaryHref="/design" {...(content?.[locale] ?? {eyebrow:eyebrow ?? (locale==='fa'?'خدمات طراحی شکل علمی':'SCIENTIFIC FIGURE DESIGN'),title,highlight,description,socialProof,primaryText,secondaryText})} images={slots.map((image,i)=>({id:i+1,...image}))} onCreate={onCreate}/>;
+ return <ShuffleHero fontStack={HOME_FONT_STACKS[selectedFont]} loading={loading} loadFailed={failed} onRetry={()=>setAttempt(value=>value+1)} locale={locale} secondaryHref="/design" {...(content?.[locale] ?? {eyebrow:eyebrow ?? (locale==='fa'?'خدمات طراحی شکل علمی':'SCIENTIFIC FIGURE DESIGN'),title,highlight,description,socialProof,primaryText,secondaryText})} images={slots.map((image,i)=>({id:i+1,...image}))} onCreate={onCreate}/>;
 }
