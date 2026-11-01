@@ -65,7 +65,7 @@ export function ShuffleHero({
   images = [],
   primaryText = 'Create scientific figure', secondaryText = 'My dashboard',
   secondaryHref = '/dashboard',
-  fontFamily,
+  fontStack,
   socialProof, onCreate, locale = 'en',
 }: ShuffleHeroProps) {
   const [order, setOrder] = useState(() => Array.from({ length: 16 }, (_, i) => i));
