@@ -5,6 +5,8 @@ import './shuffle-grid.css';
 export type ShuffleImage = { id: number; src: string; alt: string; fallbackSrc?: string };
 export type ShuffleHeroProps = {
   loading?: boolean;
+  copyLoading?: boolean;
+  copyFailed?: boolean;
   loadFailed?: boolean;
   onRetry?: () => void;
   title?: string;
@@ -58,7 +60,7 @@ function decodeImage(src: string): Promise<boolean> {
 }
 
 export function ShuffleHero({
-  loading = false, loadFailed = false, onRetry,
+  loading = false, copyLoading = false, copyFailed = false, loadFailed = false, onRetry,
   title = 'Your science.', highlight = 'Clearly illustrated.',
   description = 'Turn complex biology into clear, editable, publication-ready figures.',
   eyebrow = 'BIOPLOT FIGURE STUDIO',
@@ -117,7 +119,8 @@ export function ShuffleHero({
   }, [paused, reducedMotion, imagesLoading]);
 
   return <section className="shuffle-hero" id="home" aria-labelledby="shuffle-hero-title" style={fontStack ? {fontFamily:fontStack} : undefined}>
-    <div className="shuffle-hero-copy">
+    <div className="shuffle-hero-copy" aria-busy={copyLoading}>
+      {copyLoading ? <div className="shuffle-copy-skeleton" aria-hidden="true"><i className="skeleton-eyebrow"/><i className="skeleton-title"/><i className="skeleton-highlight"/><i className="skeleton-description"/><i className="skeleton-description short"/><div className="skeleton-actions"><i/><i/></div></div> : copyFailed ? <div className="shuffle-copy-error" role="alert"><p>{fa?'دریافت نوشته‌های صفحه انجام نشد.':'Home page text could not be loaded.'}</p><button type="button" className="shuffle-cta secondary" onClick={onRetry}>{fa?'تلاش دوباره':'Try again'}</button></div> : <>
       <span className="shuffle-hero-eyebrow">{eyebrow}</span>
       <h1 id="shuffle-hero-title">{title}<br/><span>{highlight}</span></h1>
       <p>{description}</p>
@@ -126,6 +129,7 @@ export function ShuffleHero({
         <a className="shuffle-cta secondary" href={secondaryHref}>{secondaryText}</a>
       </div>
       {socialProof && <small>{socialProof}</small>}
+      </>}
     </div>
     <div className="shuffle-hero-visual">
       <div ref={grid} className="shuffle-grid" aria-busy={imagesLoading && !loadFailed} dir="ltr" aria-label={fa ? 'گالری تصاویر BioPlot' : 'BioPlot image gallery'}>
