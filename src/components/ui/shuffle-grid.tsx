@@ -14,6 +14,7 @@ export type ShuffleHeroProps = {
   images?: ShuffleImage[];
   primaryText?: string;
   secondaryText?: string;
+  secondaryHref?: string;
   socialProof?: string;
   onCreate?: () => void;
   locale?: 'en' | 'fa';
@@ -62,6 +63,7 @@ export function ShuffleHero({
   eyebrow = 'BIOPLOT FIGURE STUDIO',
   images = [],
   primaryText = 'Create scientific figure', secondaryText = 'My dashboard',
+  secondaryHref = '/dashboard',
   socialProof, onCreate, locale = 'en',
 }: ShuffleHeroProps) {
   const [order, setOrder] = useState(() => Array.from({ length: 16 }, (_, i) => i));
@@ -119,7 +121,7 @@ export function ShuffleHero({
       <p>{description}</p>
       <div className="shuffle-hero-actions">
         {onCreate ? <button className="shuffle-cta" onClick={onCreate}>{primaryText}</button> : <a className="shuffle-cta" href="/editor">{primaryText}</a>}
-        <a className="shuffle-cta secondary" href="/dashboard">{secondaryText}</a>
+        <a className="shuffle-cta secondary" href={secondaryHref}>{secondaryText}</a>
       </div>
       {socialProof && <small>{socialProof}</small>}
     </div>

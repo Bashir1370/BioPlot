@@ -15,11 +15,12 @@ type IconName = 'home' | 'templates' | 'figure' | 'search' | 'plus' | 'arrow' | 
 const copy = {
   en: {
     home: 'Home', templates: 'Templates', editor: 'Figure Studio',
+    eyebrow: 'SCIENTIFIC FIGURE DESIGN',
     search: 'Search figure templates…',
-    heroTitle: 'Your science.', heroAccent: 'Clearly illustrated.',
-    heroText: 'Turn complex biology into clear, editable, publication-ready figures. One focused workspace for your next discovery.',
-    createFigure: 'Create scientific figure', browseTemplates: 'Browse templates',
-    vector: 'Native vector export', autosave: 'Structured autosave', bilingual: 'Persian + English',
+    heroTitle: 'Turn your research idea', heroAccent: 'into a clear scientific figure.',
+    heroText: 'Design it yourself in the BioPlot Studio, or submit a design request for support from a specialist. Follow your work and order updates through your account.',
+    createFigure: 'Design in the Studio', browseTemplates: 'Request a design',
+    vector: 'Editable vector tools', autosave: 'Custom design service', bilingual: 'Order tracking',
     templatesTitle: 'Figure templates', templatesSub: 'Start with a strong scientific composition, then edit every object.',
     searchTemplates: 'Templates', noSearch: 'No matching templates.',
     created: 'New figure created',
@@ -29,11 +30,12 @@ const copy = {
   },
   fa: {
     home: 'خانه', templates: 'قالب‌ها', editor: 'استودیو شکل علمی',
+    eyebrow: 'خدمات طراحی شکل علمی',
     search: 'جست‌وجوی قالب‌های شکل علمی…',
-    heroTitle: 'علم شما؛', heroAccent: 'روشن و تماشایی.',
-    heroText: 'ایده‌های پیچیده زیستی را به شکل‌هایی روشن، قابل‌ویرایش و آماده انتشار تبدیل کن؛ در یک فضای طراحی علمی.',
-    createFigure: 'ساخت شکل علمی', browseTemplates: 'مشاهده قالب‌ها',
-    vector: 'خروجی وکتور واقعی', autosave: 'ذخیره ساختاریافته', bilingual: 'فارسی + انگلیسی',
+    heroTitle: 'ایدهٔ پژوهشی‌ات را', heroAccent: 'به شکل علمی تبدیل کن',
+    heroText: 'خودت در استودیوی BioPlot طراحی کن، یا درخواست طراحی ثبت کن تا طراح متخصص در کنارت باشد. روند کار و به‌روزرسانی سفارش را از حساب کاربری‌ات دنبال کن.',
+    createFigure: 'شروع طراحی در استودیو', browseTemplates: 'ثبت درخواست طراحی',
+    vector: 'ابزارهای وکتور قابل‌ویرایش', autosave: 'طراحی سفارشی', bilingual: 'پیگیری سفارش',
     templatesTitle: 'قالب‌های شکل علمی', templatesSub: 'با یک ترکیب‌بندی علمی قوی شروع کن و بعد همه اجزا را آزادانه تغییر بده.',
     searchTemplates: 'قالب‌ها', noSearch: 'قالبی با این عبارت پیدا نشد.',
     created: 'شکل علمی جدید ساخته شد',
@@ -95,8 +97,8 @@ export function DashboardApp() {
     <main className="home-main">
       <div className="home-content">
 
-        <HomeHero locale={locale} title={t.heroTitle} highlight={t.heroAccent} description={t.heroText} primaryText={t.createFigure} secondaryText={fa?'داشبورد من':'My dashboard'} onCreate={()=>void createFigure().catch(()=>notify(fa?'ذخیره انجام نشد؛ دوباره تلاش کنید.':'Could not save. Please retry.'))} socialProof={`${t.vector} · ${t.autosave} · ${t.bilingual}`}/>
-        <section className="design-teaser"><div><h2>{fa?'خودتان بسازید؛ یا طراحی را به ما بسپارید.':'Create it yourself, or work with our design team.'}</h2><p>{fa?'از یک ایده یا طرح اولیه تا تصویر علمی، چکیده تصویری و پوستر؛ با برآورد هزینه و پیگیری سفارش.':'From a brief or sketch to scientific illustrations, graphical abstracts and posters, with a tailored quote and order tracking.'}</p></div><a href="/design">{fa?'آشنایی با خدمات طراحی':'Explore design services'}</a></section>
+        <HomeHero locale={locale} eyebrow={t.eyebrow} title={t.heroTitle} highlight={t.heroAccent} description={t.heroText} primaryText={t.createFigure} secondaryText={t.browseTemplates} onCreate={()=>void createFigure().catch(()=>notify(fa?'ذخیره انجام نشد؛ دوباره تلاش کنید.':'Could not save. Please retry.'))} socialProof={`${t.vector} · ${t.autosave} · ${t.bilingual}`}/>
+        <section className="design-teaser"><div><h2>{fa?'دو مسیر برای ساخت شکل علمی':'Two ways to create your scientific figure'}</h2><p>{fa?'اگر می‌خواهی کنترل طراحی دست خودت باشد، از استودیو استفاده کن. اگر همراهی متخصص می‌خواهی، درخواست طراحی ثبت کن و روند سفارش را در حساب کاربری‌ات دنبال کن.':'Keep the design in your hands with the Studio, or request help from a specialist and follow the order through your account.'}</p></div><a href="/design">{fa?'مشاهده خدمات و ثبت درخواست':'Explore services & request a design'}</a></section>
 
 
       </div>
