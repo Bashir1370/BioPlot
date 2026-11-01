@@ -15,6 +15,7 @@ export type ShuffleHeroProps = {
   primaryText?: string;
   secondaryText?: string;
   secondaryHref?: string;
+  fontFamily?: string;
   socialProof?: string;
   onCreate?: () => void;
   locale?: 'en' | 'fa';
@@ -64,6 +65,7 @@ export function ShuffleHero({
   images = [],
   primaryText = 'Create scientific figure', secondaryText = 'My dashboard',
   secondaryHref = '/dashboard',
+  fontFamily,
   socialProof, onCreate, locale = 'en',
 }: ShuffleHeroProps) {
   const [order, setOrder] = useState(() => Array.from({ length: 16 }, (_, i) => i));
@@ -114,7 +116,7 @@ export function ShuffleHero({
     return () => { window.clearInterval(timer); observer.disconnect(); };
   }, [paused, reducedMotion, imagesLoading]);
 
-  return <section className="shuffle-hero" id="home" aria-labelledby="shuffle-hero-title">
+  return <section className="shuffle-hero" id="home" aria-labelledby="shuffle-hero-title" style={fontFamily ? {fontFamily} : undefined}>
     <div className="shuffle-hero-copy">
       <span className="shuffle-hero-eyebrow">{eyebrow}</span>
       <h1 id="shuffle-hero-title">{title}<br/><span>{highlight}</span></h1>
