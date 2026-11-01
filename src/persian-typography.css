@@ -1,6 +1,6 @@
-/* Persian typography system — B Nazanin first, with safe web fallbacks. */
+/* Persian typography system — use the bundled Vazirmatn font consistently. */
 html[lang="fa"],html[dir="rtl"]{
-  --fa-font:"B Nazanin","BNazanin","Nazanin","Vazirmatn",Tahoma,sans-serif;
+  --fa-font:"Vazirmatn Variable",sans-serif;
 }
 
 html[lang="fa"] body,html[dir="rtl"] body,
