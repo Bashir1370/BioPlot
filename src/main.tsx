@@ -2,7 +2,7 @@ import {StudioContentProvider} from './orders/StudioContent';
 import { isDesignPath, isOrdersPath, isAdminOrdersPath } from './routing';
 import { lazy, StrictMode, Suspense } from 'react';
 const AdminStudioContent=lazy(()=>import('./orders/AdminStudioContent').then(module=>({default:module.AdminStudioContent})));
-const DesignServices=lazy(()=>import('./orders/DesignServices').then(module=>({default:module.DesignServices})));
+
 const OrdersPage=lazy(()=>import('./orders/OrdersPage').then(module=>({default:module.OrdersPage})));
 const HomeRoute=lazy(()=>import('./HomeRoute').then(module=>({default:module.HomeRoute})));
 const EditorRoute=lazy(()=>import('./EditorRoute').then(module=>({default:module.EditorRoute})));
@@ -53,6 +53,6 @@ if (isEditor) {
 }
 createRoot(root).render(
   <StrictMode><Suspense fallback={<p role="status" style={{padding:32,textAlign:'center'}}>BioPlot…</p>}><StudioContentProvider>
-    {location.pathname.replace(/\/+$/,'')==='/admin/studio' ? <AdminStudioContent/> : isDesignPath(location.pathname) ? <DesignServices/> : isOrdersPath(location.pathname) ? <OrdersPage/> : isAdminOrdersPath(location.pathname) ? <OrdersPage admin/> : isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
+    {location.pathname.replace(/\/+$/,'')==='/admin/studio' ? <AdminStudioContent/> : isDesignPath(location.pathname) ? <OrdersPage initialNewOrder/> : isOrdersPath(location.pathname) ? <OrdersPage/> : isAdminOrdersPath(location.pathname) ? <OrdersPage admin/> : isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
   </StudioContentProvider></Suspense></StrictMode>
 );

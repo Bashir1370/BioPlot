@@ -204,6 +204,13 @@ export function AccountPage() {
           <a className="account-secondary" href="/dashboard"><StudioIcon name="canvas"/>{fa?'داشبورد من':'My dashboard'}</a>
         </section>
 
+        <section className="account-card account-workspace-card">
+          <span className="account-card-icon"><StudioIcon name="check"/></span>
+          <h2>{fa ? 'سفارش‌های طراحی' : 'Design requests'}</h2>
+          <p>{fa ? 'پاسخ تیم، پیشنهاد قیمت و ادامهٔ کار را در پروندهٔ سفارش ببین.' : 'View team replies, quotes and continue your work in each order.'}</p>
+          <a className="account-secondary" href="/orders">{fa ? 'مشاهدهٔ سفارش‌ها' : 'View orders'}</a>
+        </section>
+
         {account.isAdmin && <section className="account-card account-admin-card">
           <div className="account-admin-accent"><StudioIcon name="settings"/></div>
           <span className="account-kicker">ADMIN ACCESS</span>
