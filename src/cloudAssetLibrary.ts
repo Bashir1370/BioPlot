@@ -2,6 +2,8 @@ import type { ScientificAsset } from './assets';
 import { loadCustomAssets, replaceCustomAssets, sanitizeSvg, setRuntimeCloudAssets } from './assets';
 import type { AssetStylePresetConfig } from './assetStyling';
 import { supabase } from './supabaseClient';
+import previewManifest from './generated/asset-previews.json';
+import {createAssetThumbnail} from './assetThumbnail';
 
 export type CloudCategory = {
   slug: string;
@@ -13,6 +15,7 @@ export type CloudCategory = {
 
 export type CloudAsset = ScientificAsset & {
   storagePath: string;
+  thumbnailPath?: string;
   cloudManaged: true;
   stylePresets?: AssetStylePresetConfig[];
 };
@@ -126,6 +129,7 @@ function rowToAsset(row: Record<string, any>): CloudAsset {
     sourceType: sourceType(row.asset_type),
     version: Number(row.version ?? 1),
     storagePath: String(row.storage_path ?? ''),
+    thumbnailPath: typeof (row.thumbnail_path??metadata.thumbnail_path)==='string' ? (row.thumbnail_path??metadata.thumbnail_path) : undefined,
     cloudManaged: true,
     stylePresets: stylePresets(row.style_presets??metadata.style_presets),
   };
@@ -144,7 +148,11 @@ function catalogAsset(asset:CloudAsset):CloudAsset{
   // Old browser caches may contain the entire raster library. Reuse their
   // metadata and originals without re-parsing every base64 SVG wrapper.
   if(!asset.storagePath)return asset;
-  return {...asset,svg:'',artworkLoaded:false,previewUrl:supabase.storage.from('public-assets').getPublicUrl(asset.storagePath).data.publicUrl};
+  const original=supabase.storage.from('public-assets').getPublicUrl(asset.storagePath).data.publicUrl;
+  const entry=(previewManifest as Record<string,{version:number;storagePath:string;url:string}>)[asset.id];
+  const staticPreview=entry?.version===asset.version&&entry.storagePath===asset.storagePath?entry.url:undefined;
+  const uploadedPreview=asset.thumbnailPath?supabase.storage.from('public-assets').getPublicUrl(asset.thumbnailPath).data.publicUrl:undefined;
+  return {...asset,svg:'',artworkLoaded:false,previewUrl:staticPreview||uploadedPreview||original,previewFallbackUrl:staticPreview||uploadedPreview?original:undefined};
 }
 
 function isCloudManagedAsset(asset: ScientificAsset): asset is CloudAsset {
@@ -533,7 +541,7 @@ export async function loadAdminCloudAssets(): Promise<CloudAsset[]> {
 
 // Catalog requests deliberately exclude render_svg and metadata.render_svg.
 // Existing PNG wrappers can exceed 1 MB per row and time out as a single query.
-const CATALOG_COLUMNS='id,name,name_fa,category,description_en,description_fa,keywords,keywords_fa,color_slots,is_reviewed,is_premium,is_published,featured,sort_order,asset_type,version,storage_path,style_presets:metadata->style_presets';
+const CATALOG_COLUMNS='id,name,name_fa,category,description_en,description_fa,keywords,keywords_fa,color_slots,is_reviewed,is_premium,is_published,featured,sort_order,asset_type,version,storage_path,style_presets:metadata->style_presets,thumbnail_path:metadata->>thumbnail_path';
 const CATALOG_PAGE_SIZE=100;
 export async function loadPublishedCloudAssets(onPage?:(assets:CloudAsset[])=>void): Promise<CloudAsset[]> {
   const catalog:CloudAsset[]=[];
@@ -660,13 +668,8 @@ function safeFileName(name: string) {
   );
 }
 
-async function uploadOriginal(file: File) {
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
-
-  if (!user) throw new Error('Authentication required.');
-
-  const path = `library/${user.id}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+async function uploadOriginal(file: File, userId: string) {
+  const path = `library/${userId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
 
   const { error } = await supabase.storage.from('public-assets').upload(path, file, {
     cacheControl: '3600',
@@ -692,10 +695,25 @@ export async function saveCloudAsset(
   const renderSvg = sanitizeSvg(draft.renderSvg);
   let storagePath = existing?.storagePath ?? '';
   let uploadedPath: string | null = null;
+  let thumbnailPath = file ? undefined : existing?.thumbnailPath;
+  let uploadedThumbnail: string | null = null;
 
   if (file) {
-    uploadedPath = await uploadOriginal(file);
+    uploadedPath = await uploadOriginal(file, user.id);
     storagePath = uploadedPath;
+  }
+
+  // New and edited uploads receive a small derivative immediately. Original
+  // artwork remains the source for insertion, editing and export.
+  if (file || !thumbnailPath) {
+    try {
+      const thumbnail = await createAssetThumbnail(renderSvg);
+      const path = `library/${user.id}/previews/${crypto.randomUUID()}.${thumbnail.type==='image/webp'?'webp':'png'}`;
+      const {error} = await supabase.storage.from('public-assets').upload(path, thumbnail, {
+        cacheControl:'31536000',contentType:thumbnail.type,upsert:false,
+      });
+      if (!error) {thumbnailPath=path;uploadedThumbnail=path;}
+    } catch { /* A missing thumbnail must never prevent saving the original. */ }
   }
 
   // Prefer the already-warm admin cache for ordering. If this is the first ever
@@ -707,6 +725,7 @@ export async function saveCloudAsset(
   );
 
   const metadata: Record<string, unknown> = { source: 'admin-library' };
+  if (thumbnailPath) metadata.thumbnail_path=thumbnailPath;
   if (file?.name) metadata.original_file = file.name;
   if (draft.stylePresets !== undefined) metadata.style_presets = draft.stylePresets;
 
@@ -744,8 +763,9 @@ export async function saveCloudAsset(
       .single();
 
     if (error) {
-      if (uploadedPath) {
-        await supabase.storage.from('public-assets').remove([uploadedPath]);
+      const uploaded=[uploadedPath,uploadedThumbnail].filter((path):path is string=>Boolean(path));
+      if (uploaded.length) {
+        await supabase.storage.from('public-assets').remove(uploaded);
       }
       throw error;
     }
@@ -758,6 +778,9 @@ export async function saveCloudAsset(
     ) {
       await supabase.storage.from('public-assets').remove([existing.storagePath]);
     }
+    if (existing.thumbnailPath&&existing.thumbnailPath!==thumbnailPath) {
+      await supabase.storage.from('public-assets').remove([existing.thumbnailPath]);
+    }
   } else {
     const { data, error } = await supabase
       .from('assets')
@@ -766,8 +789,9 @@ export async function saveCloudAsset(
       .single();
 
     if (error) {
-      if (uploadedPath) {
-        await supabase.storage.from('public-assets').remove([uploadedPath]);
+      const uploaded=[uploadedPath,uploadedThumbnail].filter((path):path is string=>Boolean(path));
+      if (uploaded.length) {
+        await supabase.storage.from('public-assets').remove(uploaded);
       }
       throw error;
     }
@@ -817,7 +841,8 @@ export async function deleteCloudAsset(asset: CloudAsset) {
 
   removeAdminCloudAssetCache(asset.id);
 
-  if (asset.storagePath) {
-    await supabase.storage.from('public-assets').remove([asset.storagePath]);
+  const paths=[asset.storagePath,asset.thumbnailPath].filter((path):path is string=>Boolean(path));
+  if (paths.length) {
+    await supabase.storage.from('public-assets').remove(paths);
   }
 }

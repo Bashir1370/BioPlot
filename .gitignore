@@ -5,3 +5,4 @@ dist/
 .env.*
 !.env.example
 __design-qa.html
+.asset-preview-cache/
