@@ -1,8 +1,14 @@
 import {supabase} from '../supabaseClient';
 import {validateOrderFile,type DesignOrder,type OrderBrief,type OrderEvent,type OrderFile,type OrderMessage,type OrderStatus,type Quote,type ServiceKind} from './orderModel';
 const bucket='bioplot-order-files';
+export interface OrderInboxItem {
+ id:string;title:string;status:DesignOrder['status'];updated_at:string;last_message_at:string|null;
+ last_message_author_id:string|null;last_message_body:string|null;unread_count:number;
+}
 function check(error:unknown){if(error)throw error;}
 export async function listOrders(ownerId?:string){let request=supabase.from('design_orders').select('*').order('updated_at',{ascending:false}).limit(200);if(ownerId)request=request.eq('user_id',ownerId);const {data,error}=await request;check(error);return data as DesignOrder[];}
+export async function getOrderInbox(){const {data,error}=await supabase.rpc('get_design_order_inbox');check(error);return (data??[]) as OrderInboxItem[];}
+export async function markOrderRead(orderId:string){const {error}=await supabase.rpc('mark_design_order_read',{p_order_id:orderId});check(error);}
 export async function loadOrder(id:string){
  const results=await Promise.all([supabase.from('design_orders').select('*').eq('id',id).single(),supabase.from('design_order_files').select('*').eq('order_id',id).order('created_at',{ascending:false}),supabase.from('design_order_messages').select('*').eq('order_id',id).order('created_at'),supabase.from('design_order_events').select('*').eq('order_id',id).order('created_at')]);
  results.forEach(result=>check(result.error));return {order:results[0].data as DesignOrder,files:results[1].data as OrderFile[],messages:results[2].data as OrderMessage[],events:results[3].data as OrderEvent[]};
@@ -21,7 +27,8 @@ export async function uploadOrderFile(orderId:string,userId:string,file:File,kin
 }
 export async function downloadOrderFile(file:OrderFile){const {data,error}=await supabase.storage.from(bucket).createSignedUrl(file.path,60,{download:file.name});check(error);if(!data)throw new Error('DOWNLOAD_FAILED');const link=document.createElement('a');link.href=data.signedUrl;link.rel='noopener';link.target='_blank';link.click();}
 export function orderError(error:unknown,fa:boolean){
- const message=String((error as {message?:string})?.message??'');
+ const code=String((error as {code?:string})?.code??'');const message=String((error as {message?:string})?.message??'');
+ if(['42P01','PGRST202','PGRST205'].includes(code))return fa?'سامانه سفارش هنوز فعال نشده است. لطفاً کمی بعد دوباره مراجعه کنید.':'Ordering is not available yet. Please try again later.';
  if(message.includes('ORDER_CHANGED'))return fa?'این سفارش به‌روزرسانی شده است. تازه‌سازی کنید و دوباره تلاش کنید.':'This order changed. Refresh before trying again.';
  if(message.includes('FILES_REQUIRED'))return fa?'ابتدا فایل مربوط به پیش‌نمایش یا تحویل نهایی را بارگذاری کنید.':'Upload the preview or final files first.';
  if(message.includes('FILE_INVALID'))return fa?'فایل باید یکی از قالب‌های مجاز و حداکثر ۲۰ مگابایت باشد.':'Choose a supported file up to 20 MB.';
