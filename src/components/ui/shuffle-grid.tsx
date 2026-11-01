@@ -116,7 +116,7 @@ export function ShuffleHero({
     return () => { window.clearInterval(timer); observer.disconnect(); };
   }, [paused, reducedMotion, imagesLoading]);
 
-  return <section className="shuffle-hero" id="home" aria-labelledby="shuffle-hero-title" style={fontFamily ? {fontFamily} : undefined}>
+  return <section className="shuffle-hero" id="home" aria-labelledby="shuffle-hero-title" style={fontStack ? {fontFamily:fontStack} : undefined}>
     <div className="shuffle-hero-copy">
       <span className="shuffle-hero-eyebrow">{eyebrow}</span>
       <h1 id="shuffle-hero-title">{title}<br/><span>{highlight}</span></h1>
