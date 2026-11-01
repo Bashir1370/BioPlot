@@ -16,9 +16,9 @@ describe('Home hero images',()=>{
   expect(html.match(/class="shuffle-tile shuffle-placeholder"/g)).toHaveLength(16);
   expect(html).not.toContain('data:image/svg+xml');
  });
- it('renders sixteen tiles and working template entry point',()=>{
+ it('renders sixteen tiles without default template copy',()=>{
   const html=renderToStaticMarkup(createElement(ShuffleHero,{loading:true}));
-  expect(html.match(/class="shuffle-tile shuffle-placeholder"/g)).toHaveLength(16);expect(html).toContain('href="/dashboard"');expect(html).not.toContain('Trusted by');
+  expect(html.match(/class="shuffle-tile shuffle-placeholder"/g)).toHaveLength(16);expect(html).not.toContain('href="/dashboard"');expect(html).not.toContain('My dashboard');expect(html).not.toContain('Trusted by');
  });
  it('renders an independently labelled upload input for every admin image',()=>{
   const html=renderToStaticMarkup(createElement(AdminHomeHero));

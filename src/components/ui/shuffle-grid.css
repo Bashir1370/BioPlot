@@ -12,3 +12,18 @@
 [dir=rtl] .shuffle-hero h1{font-size:clamp(38px,4.2vw,64px);font-weight:800;line-height:1.32;letter-spacing:0}
 [dir=rtl] .shuffle-hero-copy>p{line-height:2;max-width:640px}
 [dir=rtl] .shuffle-hero .shuffle-cta{font-weight:700}
+
+.shuffle-copy-skeleton{display:grid;gap:16px;padding:8px 0;min-height:315px;align-content:center}
+.shuffle-copy-skeleton i{display:block;border-radius:9px;background:linear-gradient(90deg,#e6edef 22%,#f4f7f8 38%,#e6edef 64%);background-size:400% 100%;animation:shuffle-copy-shimmer 1.35s ease infinite}
+.shuffle-copy-skeleton .skeleton-eyebrow{width:34%;height:12px;margin-bottom:8px}
+.shuffle-copy-skeleton .skeleton-title,.shuffle-copy-skeleton .skeleton-highlight{width:76%;height:clamp(38px,4vw,62px);border-radius:12px}
+.shuffle-copy-skeleton .skeleton-highlight{width:92%;margin-bottom:12px}
+.shuffle-copy-skeleton .skeleton-description{width:100%;height:15px;margin-top:8px}
+.shuffle-copy-skeleton .skeleton-description.short{width:68%}
+.shuffle-copy-skeleton .skeleton-actions{display:flex;gap:12px;margin-top:14px}
+.shuffle-copy-skeleton .skeleton-actions i{width:164px;height:48px;border-radius:10px}
+.shuffle-copy-error{min-height:240px;display:grid;align-content:center;justify-items:start;gap:12px;color:#6a7f88}
+.shuffle-copy-error p{margin:0;font-size:15px;line-height:1.8}
+@keyframes shuffle-copy-shimmer{to{background-position:-100% 0}}
+@media(prefers-reduced-motion:reduce){.shuffle-copy-skeleton i{animation:none}}
+@media(max-width:480px){.shuffle-copy-skeleton{min-height:260px}.shuffle-copy-skeleton .skeleton-title,.shuffle-copy-skeleton .skeleton-highlight{height:38px}.shuffle-copy-skeleton .skeleton-actions i{width:132px;height:44px}}
