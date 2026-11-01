@@ -6,3 +6,9 @@
 @media(max-width:900px){.shuffle-hero{grid-template-columns:1fr;gap:32px;padding:30px 0 54px}.shuffle-hero-copy{padding:0}.shuffle-hero h1{font-size:clamp(38px,7vw,64px)}.shuffle-hero-copy>p{margin:22px 0}.shuffle-hero-visual{width:100%;max-width:660px;margin-inline:auto}}
 @media(max-width:480px){.shuffle-hero{padding-top:20px}.shuffle-hero h1{font-size:38px}.shuffle-hero-eyebrow{font-size:11px;margin-bottom:16px}.shuffle-hero .shuffle-cta{font-size:12px;padding:11px 14px;min-height:44px}.shuffle-tile{border-radius:6px}.shuffle-hero-copy>small{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.shuffle-tile{transition:none}}
+
+/* A crisp, modern Persian face for the Home hero. */
+[dir=rtl] .shuffle-hero{font-family:Vazirmatn,Tahoma,Arial,sans-serif}
+[dir=rtl] .shuffle-hero h1{font-size:clamp(38px,4.2vw,64px);font-weight:800;line-height:1.32;letter-spacing:0}
+[dir=rtl] .shuffle-hero-copy>p{line-height:2;max-width:640px}
+[dir=rtl] .shuffle-hero .shuffle-cta{font-weight:700}
