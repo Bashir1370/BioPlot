@@ -15,12 +15,7 @@ type IconName = 'home' | 'templates' | 'figure' | 'search' | 'plus' | 'arrow' | 
 const copy = {
   en: {
     home: 'Home', templates: 'Templates', editor: 'Figure Studio',
-    eyebrow: 'SCIENTIFIC FIGURE DESIGN',
     search: 'Search figure templates…',
-    heroTitle: 'Turn your research idea', heroAccent: 'into a clear scientific figure.',
-    heroText: 'Design it yourself in the BioPlot Studio, or submit a design request for support from a specialist. Follow your work and order updates through your account.',
-    createFigure: 'Design in the Studio', browseTemplates: 'Request a design',
-    vector: 'Editable vector tools', autosave: 'Custom design service', bilingual: 'Order tracking',
     templatesTitle: 'Figure templates', templatesSub: 'Start with a strong scientific composition, then edit every object.',
     searchTemplates: 'Templates', noSearch: 'No matching templates.',
     created: 'New figure created',
@@ -30,12 +25,7 @@ const copy = {
   },
   fa: {
     home: 'خانه', templates: 'قالب‌ها', editor: 'استودیو شکل علمی',
-    eyebrow: 'خدمات طراحی شکل علمی',
     search: 'جست‌وجوی قالب‌های شکل علمی…',
-    heroTitle: 'ایدهٔ پژوهشی‌ات را', heroAccent: 'به شکل علمی تبدیل کن',
-    heroText: 'خودت در استودیوی BioPlot طراحی کن، یا درخواست طراحی ثبت کن تا طراح متخصص در کنارت باشد. روند کار و به‌روزرسانی سفارش را از حساب کاربری‌ات دنبال کن.',
-    createFigure: 'شروع طراحی در استودیو', browseTemplates: 'ثبت درخواست طراحی',
-    vector: 'ابزارهای وکتور قابل‌ویرایش', autosave: 'طراحی سفارشی', bilingual: 'پیگیری سفارش',
     templatesTitle: 'قالب‌های شکل علمی', templatesSub: 'با یک ترکیب‌بندی علمی قوی شروع کن و بعد همه اجزا را آزادانه تغییر بده.',
     searchTemplates: 'قالب‌ها', noSearch: 'قالبی با این عبارت پیدا نشد.',
     created: 'شکل علمی جدید ساخته شد',
@@ -97,7 +87,7 @@ export function DashboardApp() {
     <main className="home-main">
       <div className="home-content">
 
-        <HomeHero locale={locale} eyebrow={t.eyebrow} title={t.heroTitle} highlight={t.heroAccent} description={t.heroText} primaryText={t.createFigure} secondaryText={t.browseTemplates} onCreate={()=>void createFigure().catch(()=>notify(fa?'ذخیره انجام نشد؛ دوباره تلاش کنید.':'Could not save. Please retry.'))} socialProof={`${t.vector} · ${t.autosave} · ${t.bilingual}`}/>
+        <HomeHero locale={locale} onCreate={()=>void createFigure().catch(()=>notify(fa?'ذخیره انجام نشد؛ دوباره تلاش کنید.':'Could not save. Please retry.'))}/>
         <section className="design-teaser"><div><h2>{fa?'دو مسیر برای ساخت شکل علمی':'Two ways to create your scientific figure'}</h2><p>{fa?'اگر می‌خواهی کنترل طراحی دست خودت باشد، از استودیو استفاده کن. اگر همراهی متخصص می‌خواهی، درخواست طراحی ثبت کن و روند سفارش را در حساب کاربری‌ات دنبال کن.':'Keep the design in your hands with the Studio, or request help from a specialist and follow the order through your account.'}</p></div><a href="/design">{fa?'مشاهده خدمات و ثبت درخواست':'Explore services & request a design'}</a></section>
 
 
