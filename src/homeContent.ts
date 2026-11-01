@@ -4,10 +4,10 @@ export type HomeText = Record<typeof HOME_TEXT_FIELDS[number], string>;
 export const HOME_FONT_FAMILIES = ['vazirmatn','estedad','inter','tahoma'] as const;
 export type HomeFontFamily = typeof HOME_FONT_FAMILIES[number];
 export const HOME_FONT_OPTIONS: {value:HomeFontFamily;label:string}[] = [
- {value:'vazirmatn',label:'Vazirmatn'},
- {value:'estedad',label:'Estedad'},
- {value:'inter',label:'Inter'},
- {value:'tahoma',label:'Tahoma'},
+ {value:'vazirmatn',label:'وزیرمتن — رسمی و خوانا'},
+ {value:'estedad',label:'استعداد — مدرن و نرم'},
+ {value:'inter',label:'Inter — ساده و مدرن'},
+ {value:'tahoma',label:'Tahoma — کلاسیک'},
 ];
 export const HOME_FONT_STACKS: Record<HomeFontFamily,string> = {
  vazirmatn:'Vazirmatn,Tahoma,Arial,sans-serif',
