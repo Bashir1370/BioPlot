@@ -118,9 +118,9 @@ export function ShuffleHero({
     return () => { window.clearInterval(timer); observer.disconnect(); };
   }, [paused, reducedMotion, imagesLoading]);
 
-  return <section className="shuffle-hero" id="home" aria-labelledby="shuffle-hero-title" style={fontStack ? {fontFamily:fontStack} : undefined}>
+  return <section className="shuffle-hero" id="home" aria-labelledby={!copyLoading&&!copyFailed?'shuffle-hero-title':undefined} aria-label={copyLoading?(fa?'در حال دریافت نوشته‌های صفحهٔ اصلی':'Loading Home page text'):undefined} style={fontStack ? {fontFamily:fontStack} : undefined}>
     <div className="shuffle-hero-copy" aria-busy={copyLoading}>
-      {copyLoading ? <div className="shuffle-copy-skeleton" aria-hidden="true"><i className="skeleton-eyebrow"/><i className="skeleton-title"/><i className="skeleton-highlight"/><i className="skeleton-description"/><i className="skeleton-description short"/><div className="skeleton-actions"><i/><i/></div></div> : copyFailed ? <div className="shuffle-copy-error" role="alert"><p>{fa?'دریافت نوشته‌های صفحه انجام نشد.':'Home page text could not be loaded.'}</p><button type="button" className="shuffle-cta secondary" onClick={onRetry}>{fa?'تلاش دوباره':'Try again'}</button></div> : <>
+      {copyLoading ? <div className="shuffle-copy-skeleton" role="status" aria-label={fa?'در حال دریافت نوشته‌های صفحهٔ اصلی':'Loading Home page text'}><i className="skeleton-eyebrow"/><i className="skeleton-title"/><i className="skeleton-highlight"/><i className="skeleton-description"/><i className="skeleton-description short"/><div className="skeleton-actions"><i/><i/></div></div> : copyFailed ? <div className="shuffle-copy-error" role="alert"><p>{fa?'دریافت نوشته‌های صفحه انجام نشد.':'Home page text could not be loaded.'}</p><button type="button" className="shuffle-cta secondary" onClick={onRetry}>{fa?'تلاش دوباره':'Try again'}</button></div> : <>
       <span className="shuffle-hero-eyebrow">{eyebrow}</span>
       <h1 id="shuffle-hero-title">{title}<br/><span>{highlight}</span></h1>
       <p>{description}</p>
