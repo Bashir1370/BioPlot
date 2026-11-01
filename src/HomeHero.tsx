@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {loadHomeContent,HOME_FONT_STACKS,type HomeContent,type HomeFontFamily} from './homeContent';
+import {loadHomeContent,HOME_FONT_STACKS,type HomeContent} from './homeContent';
 import {ShuffleHero} from './components/ui/shuffle-grid';
 import {HOME_HERO_SLOTS,loadHomeHeroImages,homeHeroPublicUrl,homeHeroPreviewPublicUrl,type HomeHeroImage} from './homeHero';
 
