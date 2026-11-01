@@ -61,11 +61,9 @@ function decodeImage(src: string): Promise<boolean> {
 
 export function ShuffleHero({
   loading = false, copyLoading = false, copyFailed = false, loadFailed = false, onRetry,
-  title = 'Your science.', highlight = 'Clearly illustrated.',
-  description = 'Turn complex biology into clear, editable, publication-ready figures.',
-  eyebrow = 'BIOPLOT FIGURE STUDIO',
+  title = '', highlight = '', description = '', eyebrow = '',
   images = [],
-  primaryText = 'Create scientific figure', secondaryText = 'My dashboard',
+  primaryText = '', secondaryText = '',
   secondaryHref = '/dashboard',
   fontStack,
   socialProof, onCreate, locale = 'en',
@@ -79,6 +77,7 @@ export function ShuffleHero({
   const fa = locale === 'fa';
   const sourceKey = images.slice(0, 16).map(image => `${image.id}:${image.src}:${image.fallbackSrc ?? ''}`).join('|');
   const imagesLoading = loading || readyKey !== sourceKey;
+  const hasHeading = Boolean(title || highlight);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,16 +117,16 @@ export function ShuffleHero({
     return () => { window.clearInterval(timer); observer.disconnect(); };
   }, [paused, reducedMotion, imagesLoading]);
 
-  return <section className="shuffle-hero" id="home" aria-labelledby={!copyLoading&&!copyFailed?'shuffle-hero-title':undefined} aria-label={copyLoading?(fa?'در حال دریافت نوشته‌های صفحهٔ اصلی':'Loading Home page text'):undefined} style={fontStack ? {fontFamily:fontStack} : undefined}>
+  return <section className="shuffle-hero" id="home" aria-labelledby={!copyLoading&&!copyFailed&&hasHeading?'shuffle-hero-title':undefined} aria-label={copyLoading?(fa?'در حال دریافت نوشته‌های صفحهٔ اصلی':'Loading Home page text'):undefined} style={fontStack ? {fontFamily:fontStack} : undefined}>
     <div className="shuffle-hero-copy" aria-busy={copyLoading}>
       {copyLoading ? <div className="shuffle-copy-skeleton" role="status" aria-label={fa?'در حال دریافت نوشته‌های صفحهٔ اصلی':'Loading Home page text'}><i className="skeleton-eyebrow"/><i className="skeleton-title"/><i className="skeleton-highlight"/><i className="skeleton-description"/><i className="skeleton-description short"/><div className="skeleton-actions"><i/><i/></div></div> : copyFailed ? <div className="shuffle-copy-error" role="alert"><p>{fa?'دریافت نوشته‌های صفحه انجام نشد.':'Home page text could not be loaded.'}</p><button type="button" className="shuffle-cta secondary" onClick={onRetry}>{fa?'تلاش دوباره':'Try again'}</button></div> : <>
-      <span className="shuffle-hero-eyebrow">{eyebrow}</span>
-      <h1 id="shuffle-hero-title">{title}<br/><span>{highlight}</span></h1>
-      <p>{description}</p>
-      <div className="shuffle-hero-actions">
-        {onCreate ? <button className="shuffle-cta" onClick={onCreate}>{primaryText}</button> : <a className="shuffle-cta" href="/editor">{primaryText}</a>}
-        <a className="shuffle-cta secondary" href={secondaryHref}>{secondaryText}</a>
-      </div>
+      {eyebrow && <span className="shuffle-hero-eyebrow">{eyebrow}</span>}
+      {hasHeading && <h1 id="shuffle-hero-title">{title}{title && highlight && <br/>}{highlight && <span>{highlight}</span>}</h1>}
+      {description && <p>{description}</p>}
+      {(primaryText || secondaryText) && <div className="shuffle-hero-actions">
+        {primaryText && (onCreate ? <button className="shuffle-cta" onClick={onCreate}>{primaryText}</button> : <a className="shuffle-cta" href="/editor">{primaryText}</a>)}
+        {secondaryText && <a className="shuffle-cta secondary" href={secondaryHref}>{secondaryText}</a>}
+      </div>}
       {socialProof && <small>{socialProof}</small>}
       </>}
     </div>
