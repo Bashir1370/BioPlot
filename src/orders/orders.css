@@ -21,3 +21,13 @@ html .design-hub :is(button,input,textarea,select),html .orders-shell :is(button
 @media(max-width:760px){.studio-request-layout{grid-template-columns:1fr}.studio-request-guide{position:static;padding:24px}.studio-request-guide h2{font-size:22px;margin:8px 0}.studio-request-guide ol{display:none}.studio-request-guide small{padding-top:12px}.studio-request-guide img{max-height:180px}.studio-request-layout .order-form{padding:22px}.design-hero{grid-template-columns:1fr;padding:28px 0 44px}.design-hero h1{font-size:38px}.design-story{max-width:440px;margin:auto;width:100%;min-height:300px}.design-process{padding:26px;margin:38px 0}.design-process h2{font-size:23px}.service-grid{grid-template-columns:1fr}.cms-container{padding:24px 16px}.cms-layout{grid-template-columns:1fr}.cms-sidebar{position:static;grid-template-columns:1fr 1fr}.cms-sidebar>strong,.cms-sidebar small{grid-column:1/-1}.cms-sidebar small{margin-top:10px}.cms-editor{padding:20px}.cms-heading h1{font-size:24px}.cms-block-editor{padding:16px}.cms-preview{inset:8px}.cms-preview>header{padding:12px;font-size:12px}.cms-preview-body{padding:6px}.order-nav nav{gap:14px;font-size:13px}.order-form-steps button{font-size:12px}.order-card .order-choice-grid label{min-height:auto;font-size:14px}.order-summary-grid span{font-size:12px}.studio-content-blocks details{padding:17px}.studio-content-blocks summary{font-size:15px}.order-page-heading h1{font-size:28px}}
 @media(prefers-reduced-motion:reduce){.service-card{transition:none}.service-card:hover{transform:none}}
 @media(max-width:760px){.studio-request-guide{order:2}.studio-request-layout .order-form{order:1}.order-form-steps li{display:flex}.order-form-steps button{height:100%}}
+
+/* Compact, direct customer request form. */
+.order-form-compact{max-width:760px;margin:12px auto 0;padding:clamp(20px,4vw,36px)}
+.order-form-compact h1{font-size:clamp(22px,3vw,28px);margin:0 0 26px}
+.order-form-compact .order-date-field{max-width:320px}
+.order-form-compact .order-upload{margin-top:4px}
+.quote-payment-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 20px}
+.quote-payment-split span{display:grid;gap:4px;border:1px solid var(--order-line);border-radius:12px;padding:13px;color:var(--order-muted);font-size:12px}
+.quote-payment-split b{color:var(--order-ink);font-size:15px}
+@media(max-width:600px){.quote-payment-split{grid-template-columns:1fr}}
