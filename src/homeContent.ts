@@ -11,11 +11,11 @@ export const HOME_FONT_OPTIONS: {value:HomeFontFamily;label:string}[] = [
  {value:'bnazanin',label:'B Nazanin — نیازمند نصب روی دستگاه'},
 ];
 export const HOME_FONT_STACKS: Record<HomeFontFamily,string> = {
- vazirmatn:'Vazirmatn,Tahoma,Arial,sans-serif',
- estedad:'Estedad,Vazirmatn,Tahoma,Arial,sans-serif',
- inter:'Inter,Vazirmatn,Arial,sans-serif',
+ vazirmatn:'"Vazirmatn Variable",Tahoma,Arial,sans-serif',
+ estedad:'Estedad,"Vazirmatn Variable",Tahoma,Arial,sans-serif',
+ inter:'Inter,"Vazirmatn Variable",Arial,sans-serif',
  tahoma:'Tahoma,Arial,sans-serif',
- bnazanin:'"B Nazanin","BNazanin","Nazanin",Vazirmatn,Tahoma,Arial,sans-serif',
+ bnazanin:'"B Nazanin","BNazanin","Nazanin","Vazirmatn Variable",Tahoma,Arial,sans-serif',
 };
 export type HomeLocaleContent = HomeText & {fontFamily:HomeFontFamily};
 export type HomeContent = Record<'en'|'fa', HomeLocaleContent>;
