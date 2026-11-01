@@ -5,21 +5,20 @@ import {ShuffleHero,shuffleOrder} from './components/ui/shuffle-grid';
 import {AdminHomeHero} from './AdminHomeHero';
 const mocks=vi.hoisted(()=>({upload:vi.fn(),remove:vi.fn(),upsert:vi.fn(),deleteEq:vi.fn(),order:vi.fn(),user:vi.fn()}));
 vi.mock('./supabaseClient',()=>({supabase:{auth:{getUser:mocks.user},storage:{from:()=>({upload:mocks.upload,remove:mocks.remove,getPublicUrl:(p:string)=>({data:{publicUrl:`https://assets.test/${p}`}})})},from:()=>({upsert:mocks.upsert,delete:()=>({eq:mocks.deleteEq}),select:()=>({order:mocks.order})})}}));
-import {setHomeHeroImage,removeHomeHeroImage,loadHomeHeroImages,HOME_HERO_DEFAULTS} from './homeHero';
+import {setHomeHeroImage,removeHomeHeroImage,loadHomeHeroImages} from './homeHero';
 import {homeHeroSlots} from './HomeHero';
 import {HomeHero} from './HomeHero';
 const old={slot:2 as const,storagePath:'home-hero/old.png',altEn:'Old',altFa:'قبلی',updatedAt:''};
 beforeEach(()=>{vi.resetAllMocks();mocks.user.mockResolvedValue({data:{user:{id:'admin'}}});mocks.upload.mockResolvedValue({error:null});mocks.upsert.mockResolvedValue({error:null});mocks.remove.mockResolvedValue({error:null});mocks.deleteEq.mockResolvedValue({error:null});});
 describe('Home hero images',()=>{
- it('shows bundled scientific images before a cloud response',()=>{
+ it('shows neutral loading tiles until uploaded images arrive',()=>{
   const html=renderToStaticMarkup(createElement(HomeHero,{locale:'en',title:'Science',highlight:'Figures',description:'Create',primaryText:'Start',secondaryText:'Dashboard',socialProof:'',onCreate:()=>{}}));
-  expect(html.match(/class="shuffle-tile"/g)).toHaveLength(16);
-  expect(html).not.toContain('shuffle-placeholder');
-  expect(HOME_HERO_DEFAULTS.every(src=>src.startsWith('data:image/svg+xml,'))).toBe(true);
+  expect(html.match(/class="shuffle-tile shuffle-placeholder"/g)).toHaveLength(16);
+  expect(html).not.toContain('data:image/svg+xml');
  });
  it('renders sixteen tiles and working template entry point',()=>{
-  const html=renderToStaticMarkup(createElement(ShuffleHero));
-  expect(html.match(/class="shuffle-tile"/g)).toHaveLength(16);expect(html).toContain('href="/dashboard"');expect(html).not.toContain('Trusted by');
+  const html=renderToStaticMarkup(createElement(ShuffleHero,{loading:true}));
+  expect(html.match(/class="shuffle-tile shuffle-placeholder"/g)).toHaveLength(16);expect(html).toContain('href="/dashboard"');expect(html).not.toContain('Trusted by');
  });
  it('renders an independently labelled upload input for every admin image',()=>{
   const html=renderToStaticMarkup(createElement(AdminHomeHero));
@@ -43,8 +42,8 @@ describe('Home hero images',()=>{
   mocks.order.mockResolvedValue({data:[{slot:3,storage_path:'home-hero/3.png'},{slot:16,storage_path:'home-hero/16.png'},{slot:17,storage_path:'home-hero/17.png'}],error:null});
   expect((await loadHomeHeroImages()).map(i=>i.slot)).toEqual([3,16]);
  });
- it('maps sparse saved slots in fixed order and falls back independently',()=>{
-  const slots=homeHeroSlots([old],'fa');expect(slots).toHaveLength(16);expect(slots[15].src).toBe(HOME_HERO_DEFAULTS[15]);expect(slots[0].src).toBe(HOME_HERO_DEFAULTS[0]);expect(slots[1]).toEqual({src:'https://assets.test/home-hero/old.png',alt:'قبلی'});expect(slots[2].src).toBe(HOME_HERO_DEFAULTS[2]);
+ it('maps sparse saved slots in fixed order without bundled fallback images',()=>{
+  const slots=homeHeroSlots([old],'fa');expect(slots).toHaveLength(16);expect(slots[15].src).toBe('');expect(slots[0].src).toBe('');expect(slots[1]).toEqual({src:'https://assets.test/home-hero/old.png',alt:'قبلی'});expect(slots[2].src).toBe('');
  });
  it('replaces an image only after saving its new path',async()=>{
   await setHomeHeroImage(2,new File(['png'],'test.png',{type:'image/png'}),old);
