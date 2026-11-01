@@ -88,7 +88,6 @@ export function DashboardApp() {
       <div className="home-content">
 
         <HomeHero locale={locale} onCreate={()=>void createFigure().catch(()=>notify(fa?'ذخیره انجام نشد؛ دوباره تلاش کنید.':'Could not save. Please retry.'))}/>
-        <section className="design-teaser"><div><h2>{fa?'دو مسیر برای ساخت شکل علمی':'Two ways to create your scientific figure'}</h2><p>{fa?'اگر می‌خواهی کنترل طراحی دست خودت باشد، از استودیو استفاده کن. اگر همراهی متخصص می‌خواهی، درخواست طراحی ثبت کن و روند سفارش را در حساب کاربری‌ات دنبال کن.':'Keep the design in your hands with the Studio, or request help from a specialist and follow the order through your account.'}</p></div><a href="/design">{fa?'مشاهده خدمات و ثبت درخواست':'Explore services & request a design'}</a></section>
 
 
       </div>
