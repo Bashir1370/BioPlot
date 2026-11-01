@@ -16,7 +16,7 @@ export function AssetCatalogView({loading=false,fa,assets,grouped,favorites,onAd
     const displayName=fa&&asset.nameFa?asset.nameFa:asset.name;
     return <div className="asset-card-wrap" key={asset.id}>
       <button className="asset-main" onClick={()=>addFromLibrary(asset)} title={displayName} aria-label={fa?`افزودن ${displayName}`:`Add ${displayName}`}>
-        <span><AssetPreviewImage svg={asset.svg} previewUrl={asset.artworkLoaded===false?asset.previewUrl:undefined} cacheKey={`${asset.id}:${asset.version}`} alt="" eager={eager}/></span>
+        <span><AssetPreviewImage svg={asset.svg} previewUrl={asset.artworkLoaded===false?asset.previewUrl:undefined} fallbackUrl={asset.previewFallbackUrl} cacheKey={`${asset.id}:${asset.version}`} alt="" eager={eager}/></span>
       </button>
       <button className={`asset-favorite ${favorites.has(asset.id)?'active':''}`} aria-pressed={favorites.has(asset.id)} aria-label={fa?`علاقه‌مندی: ${displayName}`:`Favorite ${displayName}`} onClick={()=>onFavorite(asset.id)}><StudioIcon name="star"/></button>
     </div>;
@@ -27,7 +27,7 @@ export function AssetCatalogView({loading=false,fa,assets,grouped,favorites,onAd
   return <div className="catalog-browse">
     <div className="catalog-intro"><strong>{fa?'کتابخانهٔ علمی BioPlot':'Explore BioPlot icons'}</strong><span>{fa?'برای افزودن به بوم، روی المان کلیک کن.':'Click an icon to add it to your canvas.'}</span></div>
     {categories.slice(0,3).map(category=><section className="catalog-section" key={category}><div><h3>{categoryLabel(category,fa)}</h3><button onClick={()=>onCategory(category)}>{fa?'مشاهده همه':'View all'}<StudioIcon name="chevron"/></button></div><div className="studio-assets">{assets.filter(asset=>asset.category===category).slice(0,4).map(asset=>card(asset,true))}</div></section>)}
-    <section className="catalog-categories"><h3>{fa?'مرور دسته‌ها':'Browse categories'}</h3>{categories.map(category=>{const matching=assets.filter(asset=>asset.category===category);const first=matching[0];return <button key={category} onClick={()=>onCategory(category)}><span className="category-preview">{first&&<AssetPreviewImage svg={first.svg} previewUrl={first.artworkLoaded===false?first.previewUrl:undefined} cacheKey={`${first.id}:${first.version}`} alt=""/>}</span><span>{categoryLabel(category,fa)}<small>{matching.length} {fa?'المان':'icons'}</small></span><StudioIcon name="chevron"/></button>;})}</section>
+    <section className="catalog-categories"><h3>{fa?'مرور دسته‌ها':'Browse categories'}</h3>{categories.map(category=>{const matching=assets.filter(asset=>asset.category===category);const first=matching[0];return <button key={category} onClick={()=>onCategory(category)}><span className="category-preview">{first&&<AssetPreviewImage svg={first.svg} previewUrl={first.artworkLoaded===false?first.previewUrl:undefined} fallbackUrl={first.previewFallbackUrl} cacheKey={`${first.id}:${first.version}`} alt=""/>}</span><span>{categoryLabel(category,fa)}<small>{matching.length} {fa?'المان':'icons'}</small></span><StudioIcon name="chevron"/></button>;})}</section>
   </div>;
 }
 

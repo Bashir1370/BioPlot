@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { StudioIcon } from '../../StudioIcon';
-import { HOME_HERO_DEFAULTS } from '../../homeHeroDefaults';
 import './shuffle-grid.css';
 
 export type ShuffleImage = { id: number; src: string; alt: string };
@@ -36,7 +35,7 @@ export function ShuffleHero({
   title = 'Your science.', highlight = 'Clearly illustrated.',
   description = 'Turn complex biology into clear, editable, publication-ready figures.',
   eyebrow = 'BIOPLOT FIGURE STUDIO',
-  images = HOME_HERO_DEFAULTS.map((src, i) => ({ id: i + 1, src, alt: 'Scientific inspiration' })),
+  images = [],
   primaryText = 'Create scientific figure', secondaryText = 'My dashboard',
   socialProof, onCreate, locale = 'en',
 }: ShuffleHeroProps) {
@@ -82,10 +81,7 @@ export function ShuffleHero({
         {!loading && images.slice(0, 16).map((image, i) => {
           const position = order.indexOf(i);
           return <div key={image.id} className="shuffle-tile" data-image-slot={image.id} style={{ '--column': position % 4, '--row': Math.floor(position / 4) } as CSSProperties}>
-            <img src={image.src} alt={image.alt} decoding="async" onError={event=>{
-              const fallback=HOME_HERO_DEFAULTS[i];
-              if(event.currentTarget.src!==fallback)event.currentTarget.src=fallback;
-            }}/>
+            {image.src && <img src={image.src} alt={image.alt} decoding="async" onError={event=>{event.currentTarget.remove();}}/>}
           </div>;
         })}
       </div>

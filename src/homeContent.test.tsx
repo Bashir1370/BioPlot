@@ -8,9 +8,9 @@ import {HomeHero} from './HomeHero';
 import {ShuffleHero} from './components/ui/shuffle-grid';
 beforeEach(()=>{vi.resetAllMocks();mocks.user.mockResolvedValue({data:{user:{id:'admin'}},error:null});mocks.upsert.mockResolvedValue({error:null});});
 describe('Home content and image loading',()=>{
- it('renders local fallback images without external requests on the initial Home render',()=>{
+ it('keeps the initial Home render free of bundled previews while uploaded images load',()=>{
  const html=renderToStaticMarkup(createElement(HomeHero,{locale:'fa',title:'title',highlight:'highlight',description:'description',primaryText:'create',secondaryText:'templates',socialProof:'',onCreate:()=>{}}));
- expect(html.match(/<img /g)).toHaveLength(16);expect(html).toContain('data:image/svg+xml,');expect(html).not.toContain('unsplash');expect(html).toContain('aria-busy="false"');
+ expect(html).not.toContain('<img ');expect(html).not.toContain('data:image/svg+xml,');expect(html).not.toContain('unsplash');expect(html).toContain('aria-busy="true"');
  });
  it('keeps failed loads neutral and offers retry instead of stock images',()=>{
  const html=renderToStaticMarkup(createElement(ShuffleHero,{loading:true,loadFailed:true}));expect(html).not.toContain('<img');expect(html).toContain('Retry loading images');expect(html).not.toContain('Pause animation');

@@ -14,6 +14,7 @@ export interface ScientificAsset {
   svg: string;
   /** Published cloud rows can be listed without downloading their full artwork. */
   previewUrl?: string;
+  previewFallbackUrl?: string;
   artworkLoaded?: boolean;
   colorSlots: Array<{ key: string; label: string; defaultValue: string }>;
   reviewStatus: 'draft' | 'reviewed';

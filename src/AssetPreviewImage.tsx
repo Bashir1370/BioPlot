@@ -29,6 +29,7 @@ type Props = {
   className?: string;
   eager?: boolean;
   previewUrl?: string;
+  fallbackUrl?: string;
 };
 
 /**
@@ -43,6 +44,7 @@ export const AssetPreviewImage = memo(function AssetPreviewImage({
   className,
   eager = false,
   previewUrl,
+  fallbackUrl,
 }: Props) {
   const src = previewUrl || getSvgObjectUrl(cacheKey, svg||'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" rx="12" fill="#dcece9"/></svg>');
   return (
@@ -52,6 +54,12 @@ export const AssetPreviewImage = memo(function AssetPreviewImage({
       alt={alt}
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
+      // Static/uploaded derivatives are optional. A failed derivative must
+      // still show the original, without entering an endless retry loop.
+      onError={event => {
+        const image=event.currentTarget;
+        if(fallbackUrl&&image.getAttribute('src')!==fallbackUrl) image.src=fallbackUrl;
+      }}
       draggable={false}
       style={{
         display: 'block',

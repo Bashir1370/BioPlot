@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import 'fake-indexeddb/auto';
 import {beforeEach,describe,expect,it,vi} from 'vitest';
+import {assetPreviewManifest} from './assetPreviewManifest';
 const server=vi.hoisted(()=>({rows:[] as Record<string,any>[],requests:[] as Array<{columns:string;from:number;to:number;id?:string}>,failPage:false,failArtwork:false}));
 vi.mock('./supabaseClient',()=>({supabase:{storage:{from:()=>({getPublicUrl:(path:string)=>({data:{publicUrl:`https://assets.test/${path}`}})})},from:()=>{
  const request={columns:'',from:0,to:99,id:undefined as string|undefined};
@@ -22,6 +23,20 @@ async function cacheDb(){return new Promise<IDBDatabase>((resolve,reject)=>{cons
 async function storedArtwork(){const db=await cacheDb();return new Promise<Array<[IDBValidKey,unknown]>>(resolve=>{const entries:Array<[IDBValidKey,unknown]>=[];const tx=db.transaction('library','readonly');const request=tx.objectStore('library').openCursor();request.onsuccess=()=>{const cursor=request.result;if(cursor){entries.push([cursor.key,cursor.value]);cursor.continue();}};tx.oncomplete=()=>{db.close();resolve(entries);};});}
 beforeEach(async()=>{vi.resetModules();localStorage.clear();server.rows=Array.from({length:67},(_,i)=>row(i));server.requests=[];server.failPage=false;server.failArtwork=false;const db=await cacheDb();await new Promise<void>(resolve=>{const tx=db.transaction('library','readwrite');tx.objectStore('library').clear();tx.oncomplete=()=>resolve();});db.close();});
 describe('lightweight cloud catalog and on-demand artwork',()=>{
+ it('uses deployed small previews only for the matching original and version',async()=>{
+  const [id,entry]=Object.entries(assetPreviewManifest)[0];
+  server.rows=[{...row(0),id,version:entry.version,storage_path:entry.storagePath}];
+  const library=await import('./cloudAssetLibrary');
+  const [asset]=await library.loadPublishedCloudAssets();expect(asset.previewUrl).toBe(entry.url);expect(asset.previewFallbackUrl).toBe(`https://assets.test/${entry.storagePath}`);
+  server.rows[0].version++;
+  const [updated]=await library.loadPublishedCloudAssets();expect(updated.previewUrl).toBe(`https://assets.test/${entry.storagePath}`);
+ });
+ it('uses uploaded thumbnail metadata for new assets without downloading artwork',async()=>{
+  server.rows[0].thumbnail_path='library/previews/small.webp';
+  const library=await import('./cloudAssetLibrary');const assets=await library.loadPublishedCloudAssets();
+  const asset=assets.find(asset=>asset.id===server.rows[0].id)!;
+  expect(asset.previewUrl).toBe('https://assets.test/library/previews/small.webp');expect(asset.previewFallbackUrl).toBe('https://assets.test/library/0.svg');expect(asset.svg).toBe('');
+ });
  it('makes all 67 assets searchable without downloading their full SVG payloads',async()=>{
   const library=await import('./cloudAssetLibrary');const assets=await library.syncPublishedCloudAssetsToBrowserCache();
   expect(assets).toHaveLength(67);expect(assets.every(asset=>asset.svg===''&&asset.artworkLoaded===false&&asset.previewUrl)).toBe(true);
