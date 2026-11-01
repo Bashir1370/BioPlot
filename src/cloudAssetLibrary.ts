@@ -2,7 +2,7 @@ import type { ScientificAsset } from './assets';
 import { loadCustomAssets, replaceCustomAssets, sanitizeSvg, setRuntimeCloudAssets } from './assets';
 import type { AssetStylePresetConfig } from './assetStyling';
 import { supabase } from './supabaseClient';
-import previewManifest from './generated/asset-previews.json';
+import {assetPreviewManifest} from './assetPreviewManifest';
 import {createAssetThumbnail} from './assetThumbnail';
 
 export type CloudCategory = {
@@ -149,7 +149,7 @@ function catalogAsset(asset:CloudAsset):CloudAsset{
   // metadata and originals without re-parsing every base64 SVG wrapper.
   if(!asset.storagePath)return asset;
   const original=supabase.storage.from('public-assets').getPublicUrl(asset.storagePath).data.publicUrl;
-  const entry=(previewManifest as Record<string,{version:number;storagePath:string;url:string}>)[asset.id];
+  const entry=assetPreviewManifest[asset.id];
   const staticPreview=entry?.version===asset.version&&entry.storagePath===asset.storagePath?entry.url:undefined;
   const uploadedPreview=asset.thumbnailPath?supabase.storage.from('public-assets').getPublicUrl(asset.thumbnailPath).data.publicUrl:undefined;
   return {...asset,svg:'',artworkLoaded:false,previewUrl:staticPreview||uploadedPreview||original,previewFallbackUrl:staticPreview||uploadedPreview?original:undefined};
