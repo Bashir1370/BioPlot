@@ -21,8 +21,7 @@ export async function uploadOrderFile(orderId:string,userId:string,file:File,kin
 }
 export async function downloadOrderFile(file:OrderFile){const {data,error}=await supabase.storage.from(bucket).createSignedUrl(file.path,60,{download:file.name});check(error);if(!data)throw new Error('DOWNLOAD_FAILED');const link=document.createElement('a');link.href=data.signedUrl;link.rel='noopener';link.target='_blank';link.click();}
 export function orderError(error:unknown,fa:boolean){
- const code=String((error as {code?:string})?.code??'');const message=String((error as {message?:string})?.message??'');
- if(['42P01','PGRST202','PGRST205'].includes(code))return fa?'سامانه سفارش هنوز فعال نشده است. لطفاً کمی بعد دوباره مراجعه کنید.':'Ordering is not available yet. Please try again later.';
+ const message=String((error as {message?:string})?.message??'');
  if(message.includes('ORDER_CHANGED'))return fa?'این سفارش به‌روزرسانی شده است. تازه‌سازی کنید و دوباره تلاش کنید.':'This order changed. Refresh before trying again.';
  if(message.includes('FILES_REQUIRED'))return fa?'ابتدا فایل مربوط به پیش‌نمایش یا تحویل نهایی را بارگذاری کنید.':'Upload the preview or final files first.';
  if(message.includes('FILE_INVALID'))return fa?'فایل باید یکی از قالب‌های مجاز و حداکثر ۲۰ مگابایت باشد.':'Choose a supported file up to 20 MB.';
