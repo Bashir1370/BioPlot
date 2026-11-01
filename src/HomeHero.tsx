@@ -6,7 +6,7 @@ import {HOME_HERO_SLOTS,loadHomeHeroImages,homeHeroPublicUrl,homeHeroPreviewPubl
 export function homeHeroSlots(items:HomeHeroImage[],locale:'en'|'fa'){
  return HOME_HERO_SLOTS.map(slot=>{const item=items.find(image=>image.slot===slot);return {src:item?homeHeroPreviewPublicUrl(item.storagePath):'',fallbackSrc:item?homeHeroPublicUrl(item.storagePath):'',alt:item?(locale==='fa'?item.altFa:item.altEn):(locale==='fa'?'تصویر الهام‌بخش':'Visual inspiration')};});
 }
-export function HomeHero({locale,eyebrow,title,highlight,description,primaryText,secondaryText,socialProof,onCreate}:{locale:'en'|'fa';eyebrow?:string;title:string;highlight:string;description:string;primaryText:string;secondaryText:string;socialProof:string;onCreate:()=>void}){
+export function HomeHero({locale,onCreate}:{locale:'en'|'fa';onCreate:()=>void}){
  const [items,setItems]=useState<HomeHeroImage[]>([]);
  const [loading,setLoading]=useState(true);
  const [content,setContent]=useState<HomeContent|null>(null);
@@ -25,5 +25,5 @@ export function HomeHero({locale,eyebrow,title,highlight,description,primaryText
   homeShell.style.fontFamily=HOME_FONT_STACKS[selectedFont];
   return()=>{homeShell.style.fontFamily=previousFont;};
  },[selectedFont]);
- return <ShuffleHero fontStack={HOME_FONT_STACKS[selectedFont]} copyLoading={contentLoading} copyFailed={contentFailed} loading={loading} loadFailed={failed} onRetry={()=>{if(contentFailed)setContentLoading(true);setAttempt(value=>value+1);}} locale={locale} secondaryHref="/design" {...(content?.[locale] ?? {eyebrow:eyebrow ?? (locale==='fa'?'خدمات طراحی شکل علمی':'SCIENTIFIC FIGURE DESIGN'),title,highlight,description,socialProof,primaryText,secondaryText})} images={slots.map((image,i)=>({id:i+1,...image}))} onCreate={onCreate}/>;
+ return <ShuffleHero fontStack={HOME_FONT_STACKS[selectedFont]} copyLoading={contentLoading} copyFailed={contentFailed} loading={loading} loadFailed={failed} onRetry={()=>{if(contentFailed)setContentLoading(true);setAttempt(value=>value+1);}} locale={locale} secondaryHref="/design" {...(content?.[locale] ?? {})} images={slots.map((image,i)=>({id:i+1,...image}))} onCreate={onCreate}/>;
 }
