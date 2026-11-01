@@ -22,22 +22,22 @@ const emptyState: AccountState = { user: null, profile: null, isAdmin: false };
 const copy = {
   en: {
     title: 'Your BioPlot account', subtitle: 'One account for projects, preferences and administration.',
-    signIn: 'Sign in', create: 'Create account', email: 'Email', password: 'Password', name: 'Display name',
+    signIn: 'Sign in', create: 'Create account', email: 'Email', password: 'Password', confirmPassword: 'Confirm password', name: 'Display name',
     signInText: 'Sign in to continue to your BioPlot workspace.', createText: 'Create your BioPlot account and keep your workspace identity in one place.',
     have: 'Already have an account?', new: 'New to BioPlot?', switchSignIn: 'Sign in instead', switchCreate: 'Create an account',
     profile: 'Profile', role: 'Role', plan: 'Plan', language: 'Preferred language', save: 'Save profile', saved: 'Profile updated.',
-    user: 'User', admin: 'Administrator', verified: 'Authenticated with Supabase', signOut: 'Sign out', home: 'Back to BioPlot',
+    user: 'User', admin: 'Administrator', verified: 'Authenticated with Supabase', signOut: 'Sign out', home: 'Back to BioPlot', passwordMismatch: 'Passwords do not match.',
     adminTitle: 'BioPlot administration', adminText: 'Your account has administrator privileges. Manage the scientific asset library and publish content for all users.',
     openAdmin: 'Open admin panel', openEditor: 'Open Figure Studio', member: 'Member since',
     confirm: 'Account created. Check your email if confirmation is required, then sign in.', error: 'Something went wrong. Please try again.',
   },
   fa: {
     title: 'حساب کاربری BioPlot', subtitle: 'یک حساب برای پروژه‌ها، تنظیمات و دسترسی مدیریت.',
-    signIn: 'ورود', create: 'ساخت حساب', email: 'ایمیل', password: 'رمز عبور', name: 'نام نمایشی',
+    signIn: 'ورود', create: 'ساخت حساب', email: 'ایمیل', password: 'رمز عبور', confirmPassword: 'تکرار رمز عبور', name: 'نام نمایشی',
     signInText: 'برای ورود به فضای کاری BioPlot وارد حساب خود شو.', createText: 'حساب BioPlot خودت را بساز تا هویت و تنظیمات فضای کاری در یک جا نگه‌داری شود.',
     have: 'از قبل حساب داری؟', new: 'هنوز حساب نداری؟', switchSignIn: 'ورود به حساب', switchCreate: 'ساخت حساب جدید',
     profile: 'پروفایل', role: 'نقش', plan: 'پلن', language: 'زبان ترجیحی', save: 'ذخیره پروفایل', saved: 'پروفایل به‌روزرسانی شد.',
-    user: 'کاربر', admin: 'مدیر سیستم', verified: 'ورود امن با Supabase', signOut: 'خروج از حساب', home: 'بازگشت به BioPlot',
+    user: 'کاربر', admin: 'مدیر سیستم', verified: 'ورود امن با Supabase', signOut: 'خروج از حساب', home: 'بازگشت به BioPlot', passwordMismatch: 'رمزهای عبور با هم مطابقت ندارند.',
     adminTitle: 'مدیریت BioPlot', adminText: 'این حساب دسترسی مدیر دارد. از اینجا کتابخانه علمی را مدیریت و محتوا را برای همه کاربران منتشر کن.',
     openAdmin: 'ورود به پنل مدیریت', openEditor: 'باز کردن Figure Studio', member: 'عضویت از',
     confirm: 'حساب ساخته شد. اگر تأیید ایمیل لازم است، ایمیلت را تأیید کن و سپس وارد شو.', error: 'خطایی رخ داد. دوباره تلاش کن.',
@@ -50,6 +50,7 @@ export function AccountPage() {
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState<Locale>(locale);
   const [busy, setBusy] = useState(false);
@@ -88,6 +89,7 @@ export function AccountPage() {
   async function submitAuth(event: FormEvent) {
     event.preventDefault();
     if (!email.trim() || !password) return;
+    if (mode === 'signup' && password !== confirmPassword) { setMessage(t.passwordMismatch); return; }
     setBusy(true); setMessage('');
     try {
       let signedIn = false;
@@ -168,12 +170,13 @@ export function AccountPage() {
         </div>
       </section>
       <section className="account-auth-card">
-        <div className="account-auth-tabs"><button className={mode === 'signin' ? 'active' : ''} onClick={() => { setMode('signin'); setMessage(''); }}>{t.signIn}</button><button className={mode === 'signup' ? 'active' : ''} onClick={() => { setMode('signup'); setMessage(''); }}>{t.create}</button></div>
+        <div className="account-auth-tabs"><button className={mode === 'signin' ? 'active' : ''} onClick={() => { setMode('signin'); setConfirmPassword(''); setMessage(''); }}>{t.signIn}</button><button className={mode === 'signup' ? 'active' : ''} onClick={() => { setMode('signup'); setConfirmPassword(''); setMessage(''); }}>{t.create}</button></div>
         <div className="account-auth-heading"><h2>{mode === 'signin' ? t.signIn : t.create}</h2><p>{mode === 'signin' ? t.signInText : t.createText}</p></div>
         <form onSubmit={submitAuth}>
           {mode === 'signup' && <label>{t.name}<input value={displayName} onChange={event => setDisplayName(event.target.value)} autoComplete="name"/></label>}
           <label>{t.email}<input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required/></label>
           <label>{t.password}<input type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} minLength={6} required/></label>
+          {mode === 'signup' && <label>{t.confirmPassword}<input type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={6} required aria-invalid={confirmPassword.length>0&&password!==confirmPassword}/></label>}
           <button className="account-primary" type="submit" disabled={busy}>{busy ? '…' : mode === 'signin' ? t.signIn : t.create}</button>
         </form>
         {message && <div className="account-message">{message}</div>}
