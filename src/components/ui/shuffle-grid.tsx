@@ -15,7 +15,7 @@ export type ShuffleHeroProps = {
   primaryText?: string;
   secondaryText?: string;
   secondaryHref?: string;
-  fontFamily?: string;
+  fontStack?: string;
   socialProof?: string;
   onCreate?: () => void;
   locale?: 'en' | 'fa';
