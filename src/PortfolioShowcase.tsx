@@ -70,7 +70,7 @@ export function PortfolioShowcasePortal() {
   if (!target || slides.length === 0) return null;
   const previous = () => setActive(current => (current - 1 + slides.length) % slides.length);
   const next = () => setActive(current => (current + 1) % slides.length);
-  const title = locale === 'fa' ? 'تصاویر سفارشی' : 'Custom client visuals';
+  const title = locale === 'fa' ? 'نمونه‌کارهای طراحی شکل علمی' : 'Scientific figure design examples';
   const previousLabel = locale === 'fa' ? 'تصویر قبلی' : 'Previous image';
   const nextLabel = locale === 'fa' ? 'تصویر بعدی' : 'Next image';
 
@@ -78,7 +78,7 @@ export function PortfolioShowcasePortal() {
     <section className="portfolio-showcase home-section" aria-labelledby="portfolio-showcase-title" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
       <div className="portfolio-showcase-heading">
         <h2 id="portfolio-showcase-title">{title}</h2>
-        {slides.length > 1 && <div className="portfolio-showcase-controls" aria-label={locale === 'fa' ? 'کنترل تصاویر سفارشی' : 'Custom visuals carousel controls'}>
+        {slides.length > 1 && <div className="portfolio-showcase-controls" aria-label={locale === 'fa' ? 'کنترل نمونه‌کارها' : 'Design examples carousel controls'}>
           <button type="button" onClick={previous} aria-label={previousLabel}><StudioIcon name="arrow"/></button>
           <button type="button" onClick={next} aria-label={nextLabel}><StudioIcon name="arrow"/></button>
         </div>}
@@ -94,7 +94,7 @@ export function PortfolioShowcasePortal() {
         {slides.map((slide, index) => {
           const isActive = index === active;
           const style = { '--slide-ratio': String(ratios[slide.id] ?? 1.65) } as CSSProperties;
-          return <button type="button" key={slide.id} style={style} className={`portfolio-slide ${isActive ? 'active' : ''}`} aria-label={locale === 'fa' ? 'تصویر سفارشی' : 'Custom visual'} aria-current={isActive ? 'true' : undefined} onClick={() => setActive(index)}>
+          return <button type="button" key={slide.id} style={style} className={`portfolio-slide ${isActive ? 'active' : ''}`} aria-label={locale === 'fa' ? 'نمونه‌کار طراحی علمی' : 'Scientific design example'} aria-current={isActive ? 'true' : undefined} onClick={() => setActive(index)}>
             <img src={showcasePublicUrl(slide.storagePath)} alt="" loading={isActive ? 'eager' : 'lazy'} onLoad={event => {
               const ratio = safeImageRatio(event.currentTarget);
               setRatios(current => current[slide.id] === ratio ? current : { ...current, [slide.id]: ratio });
