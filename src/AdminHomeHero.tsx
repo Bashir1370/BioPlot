@@ -8,6 +8,7 @@ import {
   removeHomeHeroImage,
   setHomeHeroImage,
   homeHeroPublicUrl,
+  createStoredHomeHeroPreview,
   type HomeHeroImage,
 } from './homeHero';
 import './admin-template-hero.css';
@@ -46,12 +47,38 @@ export function AdminHomeHero() {
       .finally(() => setBusySlot(null));
   };
 
+  const optimizeExisting = async () => {
+    if (busySlot !== null || images.length === 0) return;
+    setMessage('در حال ساخت نسخه‌های سبک برای تصاویر فعلی…');
+    let optimized = 0;
+    const failed: number[] = [];
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      setBusySlot(image.slot);
+      setMessage(`در حال بهینه‌سازی تصویر ${i + 1} از ${images.length}…`);
+      try {
+        await createStoredHomeHeroPreview(image);
+        optimized++;
+      } catch {
+        failed.push(image.slot);
+      }
+    }
+    setBusySlot(null);
+    setMessage(failed.length
+      ? `${optimized} تصویر بهینه شد؛ برای تصاویر ${failed.join('، ')} ساخت نسخهٔ سبک ناموفق بود.`
+      : `نسخهٔ سبک هر ${optimized} تصویر ساخته شد.`);
+  };
+
 
   return <section className="admin-template-hero admin-home-shuffle">
     <div className="admin-template-hero-head">
       <div><span>HOME HERO</span><h2>مدیریت تصاویر بالای صفحه Home</h2><p>هر کدام از ۱۶ تصویر را جداگانه جایگزین کن. شمارهٔ تصویر ثابت است؛ جای آن در صفحهٔ اصلی با حرکت تصاویر تغییر می‌کند.</p></div>
       <a href="/" target="_blank" rel="noreferrer">مشاهده صفحه <StudioIcon name="arrow" size={15}/></a>
     </div>
+
+    {images.length > 0 && <button type="button" disabled={busySlot !== null} onClick={() => void optimizeExisting()}>
+      {busySlot !== null ? 'در حال بهینه‌سازی…' : 'ساخت نسخهٔ سبک برای تصاویر فعلی'}
+    </button>}
 
     {message && <div role="status" className="admin-template-hero-message">{message}</div>}
 

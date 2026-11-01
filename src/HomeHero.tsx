@@ -1,10 +1,10 @@
 import {useEffect,useState} from 'react';
 import {loadHomeContent,type HomeContent} from './homeContent';
 import {ShuffleHero} from './components/ui/shuffle-grid';
-import {HOME_HERO_DEFAULTS,HOME_HERO_SLOTS,loadHomeHeroImages,homeHeroPublicUrl,type HomeHeroImage} from './homeHero';
+import {HOME_HERO_SLOTS,loadHomeHeroImages,homeHeroPublicUrl,homeHeroPreviewPublicUrl,type HomeHeroImage} from './homeHero';
 
 export function homeHeroSlots(items:HomeHeroImage[],locale:'en'|'fa'){
- return HOME_HERO_SLOTS.map(slot=>{const item=items.find(image=>image.slot===slot);return {src:item?homeHeroPublicUrl(item.storagePath):'',alt:item?(locale==='fa'?item.altFa:item.altEn):(locale==='fa'?'تصویر الهام‌بخش':'Visual inspiration')};});
+ return HOME_HERO_SLOTS.map(slot=>{const item=items.find(image=>image.slot===slot);return {src:item?homeHeroPreviewPublicUrl(item.storagePath):'',fallbackSrc:item?homeHeroPublicUrl(item.storagePath):'',alt:item?(locale==='fa'?item.altFa:item.altEn):(locale==='fa'?'تصویر الهام‌بخش':'Visual inspiration')};});
 }
 export function HomeHero({locale,title,highlight,description,primaryText,secondaryText,socialProof,onCreate}:{locale:'en'|'fa';title:string;highlight:string;description:string;primaryText:string;secondaryText:string;socialProof:string;onCreate:()=>void}){
  const [items,setItems]=useState<HomeHeroImage[]>([]);

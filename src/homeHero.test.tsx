@@ -43,12 +43,12 @@ describe('Home hero images',()=>{
   expect((await loadHomeHeroImages()).map(i=>i.slot)).toEqual([3,16]);
  });
  it('maps sparse saved slots in fixed order without bundled fallback images',()=>{
-  const slots=homeHeroSlots([old],'fa');expect(slots).toHaveLength(16);expect(slots[15].src).toBe('');expect(slots[0].src).toBe('');expect(slots[1]).toEqual({src:'https://assets.test/home-hero/old.png',alt:'قبلی'});expect(slots[2].src).toBe('');
+  const slots=homeHeroSlots([old],'fa');expect(slots).toHaveLength(16);expect(slots[15].src).toBe('');expect(slots[0].src).toBe('');expect(slots[1]).toEqual({src:'https://assets.test/home-hero/old.png.preview.webp',fallbackSrc:'https://assets.test/home-hero/old.png',alt:'قبلی'});expect(slots[2].src).toBe('');
  });
  it('replaces an image only after saving its new path',async()=>{
   await setHomeHeroImage(2,new File(['png'],'test.png',{type:'image/png'}),old);
   expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({slot:2,storage_path:expect.stringContaining('home-hero/admin/'),updated_by:'admin'}),{onConflict:'slot'});
-  expect(mocks.remove).toHaveBeenCalledWith([old.storagePath]);
+  expect(mocks.remove).toHaveBeenCalledWith([old.storagePath,`${old.storagePath}.preview.webp`]);
   expect(mocks.upsert.mock.invocationCallOrder[0]).toBeLessThan(mocks.remove.mock.invocationCallOrder[0]);
  });
  it('cleans failed uploads without removing the published image',async()=>{
@@ -61,7 +61,7 @@ describe('Home hero images',()=>{
   mocks.user.mockResolvedValue({data:{user:null}});await expect(setHomeHeroImage(1,new File(['png'],'x.png',{type:'image/png'}))).rejects.toThrow();
  });
  it('deletes the saved slot before storage cleanup and reports load errors',async()=>{
-  await removeHomeHeroImage(old);expect(mocks.deleteEq).toHaveBeenCalledWith('slot',2);expect(mocks.remove).toHaveBeenCalledWith([old.storagePath]);
+  await removeHomeHeroImage(old);expect(mocks.deleteEq).toHaveBeenCalledWith('slot',2);expect(mocks.remove).toHaveBeenCalledWith([old.storagePath,`${old.storagePath}.preview.webp`]);
   mocks.order.mockResolvedValue({error:new Error('Offline')});await expect(loadHomeHeroImages()).rejects.toThrow('Offline');
  });
 });
