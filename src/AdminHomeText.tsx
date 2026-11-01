@@ -1,5 +1,5 @@
 import {useEffect,useState,type FormEvent} from 'react';
-import {HOME_TEXT_FIELDS,HOME_TEXT_DEFAULTS,loadHomeContent,saveHomeContent,type HomeContent} from './homeContent';
+import {HOME_TEXT_FIELDS,HOME_TEXT_DEFAULTS,HOME_FONT_OPTIONS,HOME_FONT_STACKS,loadHomeContent,saveHomeContent,type HomeContent,type HomeFontFamily} from './homeContent';
 import './admin-home-text.css';
 const labels={eyebrow:'نوشتهٔ بالای عنوان',title:'عنوان اصلی',highlight:'عنوان رنگی',description:'توضیحات',primaryText:'متن دکمهٔ ساخت شکل',secondaryText:'متن دکمهٔ ثبت سفارش طراحی',socialProof:'متن زیر دکمه‌ها'};
 export function AdminHomeText(){
@@ -15,7 +15,7 @@ export function AdminHomeText(){
   {message && <p role="status">{message}</p>}
   {!content ? <button onClick={load}>دریافت متن‌ها</button> : <form onSubmit={submit}>
    <div className="home-text-languages">{(['fa','en'] as const).map(lang=><button key={lang} type="button" aria-pressed={locale===lang} onClick={()=>setLocale(lang)}>{lang==='fa'?'فارسی':'English'}</button>)}</div>
-   <fieldset disabled={busy}><div className="home-text-fields">{HOME_TEXT_FIELDS.map(key=><label key={key}><span>{labels[key]}</span><textarea rows={key==='description'?4:2} maxLength={2000} dir={locale==='fa'?'rtl':'ltr'} value={content[locale][key]} onChange={event=>{setMessage('');setContent({...content,[locale]:{...content[locale],[key]:event.target.value}});}}/></label>)}</div>
+   <fieldset disabled={busy}><div className="home-text-fields">{HOME_TEXT_FIELDS.map(key=><label key={key}><span>{labels[key]}</span><textarea rows={key==='description'?4:2} maxLength={2000} dir={locale==='fa'?'rtl':'ltr'} value={content[locale][key]} onChange={event=>{setMessage('');setContent({...content,[locale]:{...content[locale],[key]:event.target.value}});}}/></label>)}<label className="home-font-setting"><span>فونت نوشته‌های {locale==='fa'?'فارسی':'انگلیسی'}</span><select value={content[locale].fontFamily} onChange={event=>{setMessage('');setContent({...content,[locale]:{...content[locale],fontFamily:event.target.value as HomeFontFamily}});}}>{HOME_FONT_OPTIONS.filter(option=>locale==='fa'?option.value!=='inter':option.value!=='estedad').map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select><small className="home-font-preview" style={{fontFamily:HOME_FONT_STACKS[content[locale].fontFamily]}}>{locale==='fa'?'نمونهٔ فونت: علم شما؛ سریع، دقیق و باکیفیت.':'Font preview: Clear scientific figures.'}</small></label></div>
    <div className="home-text-actions"><button type="submit">{busy?'در حال ذخیره…':'ذخیره متن‌ها'}</button><button type="button" onClick={()=>{setContent({...content,[locale]:{...HOME_TEXT_DEFAULTS[locale]}});setMessage('متن پیش‌فرض در فرم قرار گرفت؛ برای اعمال، ذخیره کنید.');}}>متن پیش‌فرض این زبان</button></div></fieldset>
   </form>}
  </section>;
