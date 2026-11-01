@@ -1,21 +1,15 @@
 import { supabase } from './supabaseClient';
 export const HOME_TEXT_FIELDS = ['eyebrow','title','highlight','description','primaryText','secondaryText','socialProof'] as const;
 export type HomeText = Record<typeof HOME_TEXT_FIELDS[number], string>;
-export const HOME_FONT_FAMILIES = ['vazirmatn','estedad','inter','tahoma','bnazanin'] as const;
+export const HOME_FONT_FAMILIES = ['vazirmatn','inter'] as const;
 export type HomeFontFamily = typeof HOME_FONT_FAMILIES[number];
 export const HOME_FONT_OPTIONS: {value:HomeFontFamily;label:string}[] = [
- {value:'vazirmatn',label:'وزیرمتن — رسمی و خوانا'},
- {value:'estedad',label:'استعداد — مدرن و نرم'},
- {value:'inter',label:'Inter — ساده و مدرن'},
- {value:'tahoma',label:'Tahoma — کلاسیک'},
- {value:'bnazanin',label:'B Nazanin — نیازمند نصب روی دستگاه'},
+ {value:'vazirmatn',label:'وزیرمتن — فارسی خوانا و حرفه‌ای'},
+ {value:'inter',label:'Inter — مدرن و خوانا'},
 ];
 export const HOME_FONT_STACKS: Record<HomeFontFamily,string> = {
- vazirmatn:'"Vazirmatn Variable",Tahoma,Arial,sans-serif',
- estedad:'Estedad,"Vazirmatn Variable",Tahoma,Arial,sans-serif',
- inter:'Inter,"Vazirmatn Variable",Arial,sans-serif',
- tahoma:'Tahoma,Arial,sans-serif',
- bnazanin:'"B Nazanin","BNazanin","Nazanin","Vazirmatn Variable",Tahoma,Arial,sans-serif',
+ vazirmatn:'"Vazirmatn Variable",sans-serif',
+ inter:'"Inter Variable","Vazirmatn Variable",sans-serif',
 };
 export type HomeLocaleContent = HomeText & {fontFamily:HomeFontFamily};
 export type HomeContent = Record<'en'|'fa', HomeLocaleContent>;
