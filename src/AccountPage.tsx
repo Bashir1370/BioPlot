@@ -29,7 +29,7 @@ const copy = {
     user: 'User', admin: 'Administrator', verified: 'Authenticated with Supabase', signOut: 'Sign out', home: 'Back to BioPlot', passwordMismatch: 'Passwords do not match.',
     adminTitle: 'BioPlot administration', adminText: 'Your account has administrator privileges. Manage the scientific asset library and publish content for all users.',
     openAdmin: 'Open admin panel', openEditor: 'Open Figure Studio', member: 'Member since',
-    confirm: 'Account created. Check your email if confirmation is required, then sign in.', error: 'Something went wrong. Please try again.',
+    accountCreated: 'Your account was created. Sign in below with the same email and password.', confirm: 'Your account was created. If you receive an email confirmation link, confirm your email, then sign in below with the same email and password.', error: 'Something went wrong. Please try again.',
   },
   fa: {
     title: 'حساب کاربری BioPlot', subtitle: 'یک حساب برای پروژه‌ها، تنظیمات و دسترسی مدیریت.',
@@ -40,7 +40,7 @@ const copy = {
     user: 'کاربر', admin: 'مدیر سیستم', verified: 'ورود امن با Supabase', signOut: 'خروج از حساب', home: 'بازگشت به BioPlot', passwordMismatch: 'رمزهای عبور با هم مطابقت ندارند.',
     adminTitle: 'مدیریت BioPlot', adminText: 'این حساب دسترسی مدیر دارد. از اینجا کتابخانه علمی را مدیریت و محتوا را برای همه کاربران منتشر کن.',
     openAdmin: 'ورود به پنل مدیریت', openEditor: 'باز کردن Figure Studio', member: 'عضویت از',
-    confirm: 'حساب ساخته شد. اگر تأیید ایمیل لازم است، ایمیلت را تأیید کن و سپس وارد شو.', error: 'خطایی رخ داد. دوباره تلاش کن.',
+    accountCreated: 'حساب شما ساخته شد؛ اکنون با همین ایمیل و رمز عبور وارد شوید.', confirm: 'حساب شما ساخته شد. اگر پیام تأیید ایمیل دریافت کردید، ایمیلتان را تأیید کنید؛ سپس با همین ایمیل و رمز عبور وارد شوید.', error: 'خطایی رخ داد. دوباره تلاش کن.',
   },
 };
 
@@ -56,6 +56,7 @@ export function AccountPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const authSubmitted = useRef(false);
+  const requireExplicitSignIn = useRef(false);
   const t = copy[locale];
   const fa = locale === 'fa';
 
@@ -75,7 +76,7 @@ export function AccountPage() {
       setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
     }).catch(() => {/* Keep the sign-in form usable when session lookup fails. */});
     const unsubscribe = subscribeAccountState(state => {
-      if (!mounted) return;
+      if (!mounted || (requireExplicitSignIn.current && state.user)) return;
       setAccount(state);
       if (state.user) {
         const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(destination){window.location.href=destination;return;}
@@ -90,21 +91,30 @@ export function AccountPage() {
     event.preventDefault();
     if (!email.trim() || !password) return;
     if (mode === 'signup' && password !== confirmPassword) { setMessage(t.passwordMismatch); return; }
+    authSubmitted.current = true;
     setBusy(true); setMessage('');
     try {
-      let signedIn = false;
       if (mode === 'signup') {
         const { data, error } = await signUpUser(email, password, displayName, new URLSearchParams(window.location.search).get('next'));
         if (error) throw error;
-        if (!data.session) { setMessage(t.confirm); return; }
-        if (data.session?.user) { setAccount({user:data.session.user,profile:null,isAdmin:false}); signedIn = true; }
-      } else {
-        const { data, error } = await signInUser(email, password);
-        if (error) throw error;
-        if (data.session?.user) { setAccount({user:data.session.user,profile:null,isAdmin:false}); signedIn = true; }
+        if (!data.user) throw new Error(t.error);
+
+        if (data.session) {
+          requireExplicitSignIn.current = true;
+          try { await signOutUser(); } catch { /* Keep the sign-in form available if session cleanup fails. */ }
+          setAccount(emptyState);
+        }
+        setMode('signin');
+        setConfirmPassword('');
+        setMessage(data.session ? t.accountCreated : t.confirm);
+        return;
       }
-      if (!signedIn) throw new Error(t.error);
-      authSubmitted.current = true;
+
+      requireExplicitSignIn.current = false;
+      const { data, error } = await signInUser(email, password);
+      if (error) throw error;
+      if (!data.session?.user) throw new Error(t.error);
+      setAccount({user:data.session.user,profile:null,isAdmin:false});
       const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));
       if(destination){window.location.href=destination;return;}
       void getAccountState().then(state=>{
