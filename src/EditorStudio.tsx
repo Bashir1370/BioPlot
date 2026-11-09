@@ -447,7 +447,10 @@ export function EditorStudio({onReady,loadingLibrary=false,libraryError=false,on
   function pasteClipboard(){if(!clipboardRef.current.length)return;const pasted=duplicateObjects(clipboardRef.current,28,28);clipboardRef.current=cloneObjects(pasted);storeRef.current.dispatch(new AddObjectsCommand('Paste objects',pasted));setSelected(new Set(pasted.map(object=>object.id)));setAssetEditOpen(pasted.length===1&&pasted[0].type==='asset');}
   function duplicateSelection(){if(!selectedObjects.length)return;const copies=duplicateObjects(selectedObjects);storeRef.current.dispatch(new AddObjectsCommand('Duplicate objects',copies));setSelected(new Set(copies.map(object=>object.id)));setAssetEditOpen(copies.length===1&&copies[0].type==='asset');}
   function deleteSelection(){const doomed=cloneObjects(selectedObjects.filter(object=>!object.locked));if(!doomed.length)return;storeRef.current.dispatch(new DeleteObjectsCommand('Delete objects',doomed));setSelected(new Set());setAssetEditOpen(false);}
-  function nudge(dx:number,dy:number){commitSelected('Nudge objects',object=>object.locked?object:{...object,x:object.x+dx,y:object.y+dy});}
+  function nudge(dx:number,dy:number){
+    const movement = limitArtworkMove(artworkBounds(selectedObjects.filter(object => !object.locked)), dx, dy);
+    commitSelected('Nudge objects', object => object.locked ? object : {...object, x: object.x + movement.dx, y: object.y + movement.dy});
+  }
   function groupSelection(){if(selectedObjects.length<2||grouped||selectedObjects.some(object=>object.locked))return;const before=cloneObjects(selectedObjects);const groupId=makeId('group');storeRef.current.dispatch(new ObjectStateCommand('Group objects',before,before.map(object=>({...object,groupId}))));setAssetEditOpen(false);}
   function ungroupSelection(){if(!selectedObjects.some(object=>object.groupId)||selectedObjects.some(object=>object.locked))return;const before=cloneObjects(selectedObjects);storeRef.current.dispatch(new ObjectStateCommand('Ungroup objects',before,before.map(object=>({...object,groupId:undefined}))));}
   function setLocked(locked:boolean){commitSelected(locked?'Lock objects':'Unlock objects',object=>({...object,locked}));}
@@ -458,7 +461,36 @@ export function EditorStudio({onReady,loadingLibrary=false,libraryError=false,on
   function zOrder(action:ZOrderAction){if(selected.size)zOrderFor(selected,action);}
   function reorderLayer(draggedId:string,targetId:string){const before=cloneObjects(objects),dragged=before.find(object=>object.id===draggedId),targetIndex=before.findIndex(object=>object.id===targetId);if(!dragged||targetIndex<0)return;const after=before.filter(object=>object.id!==draggedId);after.splice(Math.min(targetIndex,after.length),0,dragged);storeRef.current.dispatch(new PageObjectsCommand('Reorder layer',before,after));}
   function changeBounds(field:'x'|'y'|'width'|'height',value:number){if(!bounds||!Number.isFinite(value))return;const before=cloneObjects(selectedObjects.filter(object=>!object.locked));if(!before.length)return;if(field==='x'||field==='y'){const delta=value-bounds[field];storeRef.current.dispatch(new ObjectStateCommand(`Change ${field}`,before,before.map(object=>field==='x'?{...object,x:object.x+delta}:{...object,y:object.y+delta})));}else{const next={x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height,[field]:Math.max(8,value)};storeRef.current.dispatch(new ObjectStateCommand(`Change ${field}`,before,resizeObjects(before,next)));}}
-  function beginMove(event:ReactPointerEvent<HTMLDivElement>,object:BioPlotObject){artboardRef.current?.focus({preventScroll:true});if(!event.shiftKey){if(object.type==='arrow'||object.type==='shape'){setInspectorTab('properties');}setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);}if(object.locked){setSelected(idsFor(object,event.shiftKey));return;}event.preventDefault();event.stopPropagation();const ids=!event.shiftKey&&selected.has(object.id)&&selected.size>1?new Set(selected):idsFor(object,event.shiftKey);setSelected(ids);if(event.shiftKey)return;const before=cloneObjects(objects.filter(item=>ids.has(item.id)&&!item.locked));const startBounds=selectionBounds(before);if(!before.length||!startBounds)return;const targets=buildSnapTargets(storeRef.current.snapshot,ids),sx=event.clientX,sy=event.clientY;const move=(pointer:PointerEvent)=>{const snapped=snapDelta(startBounds,(pointer.clientX-sx)/zoom,(pointer.clientY-sy)/zoom,targets);storeRef.current.preview(before.map(item=>({...item,x:item.x+snapped.dx,y:item.y+snapped.dy})));setGuides({x:snapped.guideX,y:snapped.guideY});};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const after=cloneObjects(activePage(storeRef.current.snapshot).objects.filter(item=>ids.has(item.id)&&!item.locked));storeRef.current.commitObjectState(before,after,'Move objects');setGuides({});if(object.type==='arrow'||object.type==='shape')setInspectorCollapsed(false);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
+  function readTightSelection(objectsToEdit: BioPlotObject[]): TightSelectionBounds | null {
+    if (objectsToEdit.length !== 1 || objectsToEdit[0].type !== 'asset' ||
+        selected.size !== 1 || !selected.has(objectsToEdit[0].id)) return null;
+    const frame = artboardRef.current?.querySelector<HTMLElement>('.studio-selection.studio-selection-tight');
+    if (!frame) return null;
+    const x = Number.parseFloat(frame.style.getPropertyValue('--bioplot-tight-left'));
+    const y = Number.parseFloat(frame.style.getPropertyValue('--bioplot-tight-top'));
+    const width = Number.parseFloat(frame.style.getPropertyValue('--bioplot-tight-width'));
+    const height = Number.parseFloat(frame.style.getPropertyValue('--bioplot-tight-height'));
+    if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return null;
+    return {x, y, width, height, right: x + width, bottom: y + height};
+  }
+
+  function artworkBounds(objectsToEdit: BioPlotObject[]): TightSelectionBounds | null {
+    const artwork = objectsToEdit.filter(object =>
+      object.type === 'image' || (object.type === 'asset' && !object.lineAsset));
+    return readTightSelection(artwork.length === objectsToEdit.length ? artwork : []) ?? selectionBounds(artwork);
+  }
+
+  function limitArtworkMove(frame: TightSelectionBounds | null, dx: number, dy: number) {
+    if (!frame) return {dx, dy};
+    const limit = (delta: number, min: number, max: number) =>
+      Math.max(Math.min(min, max), Math.min(Math.max(min, max), delta));
+    return {
+      dx: limit(dx, -frame.x, page.width - frame.right),
+      dy: limit(dy, -frame.y, page.height - frame.bottom),
+    };
+  }
+
+  function beginMove(event:ReactPointerEvent<HTMLDivElement>,object:BioPlotObject){artboardRef.current?.focus({preventScroll:true});if(!event.shiftKey){if(object.type==='arrow'||object.type==='shape'){setInspectorTab('properties');}setAssetEditOpen(object.type==='asset');if(object.type==='asset')setLibraryCollapsed(false);}if(object.locked){setSelected(idsFor(object,event.shiftKey));return;}event.preventDefault();event.stopPropagation();const ids=!event.shiftKey&&selected.has(object.id)&&selected.size>1?new Set(selected):idsFor(object,event.shiftKey);setSelected(ids);if(event.shiftKey)return;const before=cloneObjects(objects.filter(item=>ids.has(item.id)&&!item.locked));const startBounds=selectionBounds(before);if(!before.length||!startBounds)return;const artwork=artworkBounds(before);const targets=buildSnapTargets(storeRef.current.snapshot,ids),sx=event.clientX,sy=event.clientY;const move=(pointer:PointerEvent)=>{const snapped=snapDelta(startBounds,(pointer.clientX-sx)/zoom,(pointer.clientY-sy)/zoom,targets);const {dx,dy}=limitArtworkMove(artwork,snapped.dx,snapped.dy);storeRef.current.preview(before.map(item=>({...item,x:item.x+dx,y:item.y+dy})));setGuides({x:dx===snapped.dx?snapped.guideX:undefined,y:dy===snapped.dy?snapped.guideY:undefined});};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const after=cloneObjects(activePage(storeRef.current.snapshot).objects.filter(item=>ids.has(item.id)&&!item.locked));storeRef.current.commitObjectState(before,after,'Move objects');setGuides({});if(object.type==='arrow'||object.type==='shape')setInspectorCollapsed(false);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});}
 
   function beginResize(event:ReactPointerEvent,handle:string){
     event.preventDefault();
@@ -469,15 +501,12 @@ export function EditorStudio({onReady,loadingLibrary=false,libraryError=false,on
     const start={...bounds};
     const sx=event.clientX;
     const sy=event.clientY;
-    const selection=artboardRef.current?.querySelector<HTMLElement>('.studio-selection.studio-selection-tight')??null;
-    let tight:TightSelectionBounds|null=null;
-    if(selection&&selectedObjects.length===1&&selectedObjects[0].type==='asset'){
-      const x=Number.parseFloat(selection.style.getPropertyValue('--bioplot-tight-left'));
-      const y=Number.parseFloat(selection.style.getPropertyValue('--bioplot-tight-top'));
-      const width=Number.parseFloat(selection.style.getPropertyValue('--bioplot-tight-width'));
-      const height=Number.parseFloat(selection.style.getPropertyValue('--bioplot-tight-height'));
-      if([x,y,width,height].every(Number.isFinite)&&width>0&&height>0)tight={x,y,width,height,right:x+width,bottom:y+height};
-    }
+    const tight = readTightSelection(before);
+    const artwork = before.length === 1 ? artworkBounds(before) : null;
+    const object = before[0];
+    const directionX = handle.includes('e') ? 1 : handle.includes('w') ? -1 : 0;
+    const directionY = handle.includes('s') ? 1 : handle.includes('n') ? -1 : 0;
+
     const tightMap=tight?{
       fx:(tight.x-start.x)/start.width,
       fy:(tight.y-start.y)/start.height,
@@ -488,6 +517,43 @@ export function EditorStudio({onReady,loadingLibrary=false,libraryError=false,on
     const move=(pointer:PointerEvent)=>{
       const dx=(pointer.clientX-sx)/zoom;
       const dy=(pointer.clientY-sy)/zoom;
+
+      if (artwork) {
+        // Scale the artwork uniformly about the opposite corner or side midpoint.
+        // Uniform scaling also preserves the mapping between SVG padding and artwork.
+        const anchorX = (1 - directionX) / 2;
+        const anchorY = (1 - directionY) / 2;
+        const pivotX = artwork.x + anchorX * artwork.width;
+        const pivotY = artwork.y + anchorY * artwork.height;
+        const axisX = directionX * artwork.width;
+        const axisY = directionY * artwork.height;
+        const requestedScale = 1 + (axisX * dx + axisY * dy) / (axisX ** 2 + axisY ** 2);
+        const scaleToEdge = (pivot: number, fraction: number, size: number, limit: number) => Math.min(
+          fraction > 0 ? pivot / (fraction * size) : Infinity,
+          fraction < 1 ? (limit - pivot) / ((1 - fraction) * size) : Infinity,
+        );
+        let maxScale = Math.min(page.width / artwork.width, page.height / artwork.height);
+        if (artwork.x >= -1e-6 && artwork.y >= -1e-6 &&
+            artwork.right <= page.width + 1e-6 && artwork.bottom <= page.height + 1e-6) {
+          maxScale = Math.min(maxScale,
+            scaleToEdge(pivotX, anchorX, artwork.width, page.width),
+            scaleToEdge(pivotY, anchorY, artwork.height, page.height));
+        }
+        const minScale = Math.max(12 / object.width, 12 / object.height);
+        const scale = Math.min(maxScale, Math.max(minScale, requestedScale));
+        const visualWidth = artwork.width * scale;
+        const visualHeight = artwork.height * scale;
+        const visualX = Math.max(0, Math.min(page.width - visualWidth, pivotX - anchorX * visualWidth));
+        const visualY = Math.max(0, Math.min(page.height - visualHeight, pivotY - anchorY * visualHeight));
+        storeRef.current.preview([{
+          ...object,
+          x: visualX + (object.x - artwork.x) * scale,
+          y: visualY + (object.y - artwork.y) * scale,
+          width: object.width * scale,
+          height: object.height * scale,
+        }]);
+        return;
+      }
 
       if(tight&&tightMap&&tightMap.fw>0&&tightMap.fh>0){
         const horizontal=handle.includes('e')||handle.includes('w');
