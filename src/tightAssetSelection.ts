@@ -69,6 +69,59 @@ function parseViewBox(svg: SVGSVGElement, fallbackWidth: number, fallbackHeight:
   return { x: 0, y: 0, width: numericAttribute(svg, 'width', fallbackWidth), height: numericAttribute(svg, 'height', fallbackHeight) };
 }
 
+function imageCropInSvgSpace(
+  image: SVGImageElement,
+  sourceWidth: number,
+  sourceHeight: number,
+  pixel: Pick<PixelBounds, 'minX' | 'minY' | 'maxX' | 'maxY'>,
+) {
+  const x = numericAttribute(image, 'x', 0);
+  const y = numericAttribute(image, 'y', 0);
+  const width = numericAttribute(image, 'width', sourceWidth);
+  const height = numericAttribute(image, 'height', sourceHeight);
+  if (!(sourceWidth > 0 && sourceHeight > 0 && width > 0 && height > 0)) return null;
+
+  const [align = 'xMidYMid', mode = 'meet'] = (image.getAttribute('preserveAspectRatio') ?? 'xMidYMid meet')
+    .trim().replace(/^defer\s+/i, '').split(/\s+/);
+  const sourceLeft = pixel.minX;
+  const sourceTop = pixel.minY;
+  const sourceRight = pixel.maxX + 1;
+  const sourceBottom = pixel.maxY + 1;
+
+  if (align.toLowerCase() === 'none') {
+    return {
+      x: x + sourceLeft / sourceWidth * width,
+      y: y + sourceTop / sourceHeight * height,
+      right: x + sourceRight / sourceWidth * width,
+      bottom: y + sourceBottom / sourceHeight * height,
+    };
+  }
+
+  const scale = mode.toLowerCase() === 'slice'
+    ? Math.max(width / sourceWidth, height / sourceHeight)
+    : Math.min(width / sourceWidth, height / sourceHeight);
+  const drawnWidth = sourceWidth * scale;
+  const drawnHeight = sourceHeight * scale;
+  const alignX = align.startsWith('xMin') ? 0 : align.startsWith('xMax') ? 1 : .5;
+  const alignY = align.includes('YMin') ? 0 : align.includes('YMax') ? 1 : .5;
+  const offsetX = (width - drawnWidth) * alignX;
+  const offsetY = (height - drawnHeight) * alignY;
+
+  // `slice` crops the source at the image viewport. Intersect the alpha crop
+  // with the actually visible part before mapping it to SVG user coordinates.
+  const left = Math.max(sourceLeft, -offsetX / scale);
+  const top = Math.max(sourceTop, -offsetY / scale);
+  const right = Math.min(sourceRight, (width - offsetX) / scale);
+  const bottom = Math.min(sourceBottom, (height - offsetY) / scale);
+  if (!(right > left && bottom > top)) return null;
+  return {
+    x: x + offsetX + left * scale,
+    y: y + offsetY + top * scale,
+    right: x + offsetX + right * scale,
+    bottom: y + offsetY + bottom * scale,
+  };
+}
+
 function setTightStyle(selection: HTMLElement, left: number, top: number, width: number, height: number) {
   const values = {
     '--bioplot-tight-left': `${left}px`,
@@ -187,14 +240,9 @@ export async function updateTightSelection() {
   if (!pixel || !object.isConnected || !selection.isConnected || !object.classList.contains('is-selected')) return;
 
   const viewBox = parseViewBox(svg, pixel.width, pixel.height);
-  const imageX = numericAttribute(imageNode, 'x', 0);
-  const imageY = numericAttribute(imageNode, 'y', 0);
-  const imageWidth = numericAttribute(imageNode, 'width', pixel.width);
-  const imageHeight = numericAttribute(imageNode, 'height', pixel.height);
-  const cropX = imageX + (pixel.minX / pixel.width) * imageWidth;
-  const cropY = imageY + (pixel.minY / pixel.height) * imageHeight;
-  const cropRight = imageX + ((pixel.maxX + 1) / pixel.width) * imageWidth;
-  const cropBottom = imageY + ((pixel.maxY + 1) / pixel.height) * imageHeight;
+  const imageCrop = imageCropInSvgSpace(imageNode, pixel.width, pixel.height, pixel);
+  if (!imageCrop) { clearTightStyle(selection); return; }
+  const {x:cropX,y:cropY,right:cropRight,bottom:cropBottom}=imageCrop;
   const fx = Math.max(0, Math.min(1, (cropX - viewBox.x) / viewBox.width));
   const fy = Math.max(0, Math.min(1, (cropY - viewBox.y) / viewBox.height));
   const fr = Math.max(0, Math.min(1, (cropRight - viewBox.x) / viewBox.width));
