@@ -3,6 +3,7 @@ import {JalaliDatePicker} from './JalaliDatePicker';
 import {readOrderSource} from './orderSource';
 import {useState,type FormEvent} from 'react';
 import {serviceLabels,validBrief,validateOrderFile,type OrderBrief,type ServiceKind} from './orderModel';
+import './order-form-polish.css';
 export function OrderForm({fa,userId,onSubmit,busy,onCancel,preview=false,allowAttachments=true}:{fa:boolean;userId:string;preview?:boolean;allowAttachments?:boolean;onSubmit:(input:{id:string;title:string;kind:ServiceKind;brief:OrderBrief;requested_date:string|null},files:File[])=>Promise<void>;busy:boolean;onCancel:()=>void}){
  const t=(faText:string,enText:string)=>fa?faText:enText;
  const key='bioplot-order-draft:'+userId;
@@ -15,6 +16,7 @@ export function OrderForm({fa,userId,onSubmit,busy,onCancel,preview=false,allowA
  const submit=(event:FormEvent)=>{event.preventDefault();if(preview)return;const briefWithDefaults={...draft.brief,formats:draft.brief.formats.length?draft.brief.formats:['PNG','SVG']};if(!validBrief(draft.title,briefWithDefaults)){setError(t('عنوان و توضیح درخواست را کامل کنید. توضیح باید حداقل ۲۰ نویسه باشد.','Enter a title and a description of at least 20 characters.'));return;}void onSubmit({...draft,brief:briefWithDefaults,requested_date:draft.requested_date||null},allowAttachments?files:[]);};
  return <form className="order-form order-form-compact order-card" onSubmit={submit}>
   <h1>{t('درخواست طراحی','Design request')}</h1>
+  <p className="order-form-intro">{t('جزئیات درخواستتان را ثبت کنید؛ هزینه و زمان اجرا پس از بررسی اعلام می‌شود.','Tell us what you need. We will confirm the price and timeline after reviewing your request.')}</p>
   <label>{t('نوع طراحی','Design type')}<select value={draft.kind} onChange={e=>update({kind:e.target.value as ServiceKind})}>{Object.entries(serviceLabels).map(([id,label])=><option value={id} key={id}>{t(label[0],label[1])}</option>)}</select></label>
   <label>{t('عنوان درخواست','Request title')}<input required minLength={3} maxLength={160} value={draft.title} onChange={e=>update({title:e.target.value})} placeholder={t('مثلاً: مکانیسم اثر دارو بر سلول توموری','e.g. Mechanism of a drug in tumor cells')}/></label>
   <label>{t('توضیح طرح','Describe the design')}<textarea required minLength={20} rows={6} maxLength={12000} value={draft.brief.message} onChange={e=>brief({message:e.target.value})} placeholder={t('موضوع و پیام علمی تصویر را توضیح دهید. اگر بخش‌ها، برچسب‌ها یا سبک مشخصی مدنظر دارید، همین‌جا بنویسید.','Describe the topic and scientific message. Include any required panels, labels or visual style.')}/></label>
