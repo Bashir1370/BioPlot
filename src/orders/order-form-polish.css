@@ -281,10 +281,6 @@
 }
 
 @media (max-width: 650px) {
-  .orders-content {
-    padding-inline: 16px;
-  }
-
   .orders-shell .order-form-compact {
     max-width: 100%;
     margin: 10px auto 24px;
