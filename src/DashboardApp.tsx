@@ -74,7 +74,7 @@ export function DashboardApp() {
         <nav className="home-nav" aria-label={t.home}>
           <a className="active" href="#home" aria-label={t.home}><Icon name="home"/><span>{t.home}</span></a>
           <a href="/dashboard"><Icon name="templates"/><span>{fa ? 'داشبورد من' : 'My dashboard'}</span></a>
-          <a href="editor.html" aria-label={t.editor}><Icon name="figure"/><span>{t.editor}</span></a>
+          <span className="home-nav-coming-soon" aria-disabled="true" title={fa ? "این بخش به‌زودی فعال می‌شود" : "This feature is coming soon"}><Icon name="figure"/><span>{t.editor}</span><small>{fa ? "به‌زودی" : "Coming soon"}</small></span>
         </nav>
         <div className="home-top-actions"><a href="/design">{fa?'سفارش طراحی':'Design services'}</a><button className="home-language" onClick={() => setLocale(fa ? 'en' : 'fa')}>{fa ? 'EN' : 'FA'}</button><span className="home-avatar" aria-label="BioPlot workspace">B</span></div>
       </div>
