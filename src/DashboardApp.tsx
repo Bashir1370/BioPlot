@@ -1,5 +1,6 @@
 import './orders/orders.css';
 import {HomeHero} from './HomeHero';
+import {HomeOrderServices} from './HomeOrderServices';
 import { useEffect, useState } from 'react';
 import {createBlankDocument} from './model';
 import {openFigureDraft} from './figureDraft';
@@ -88,6 +89,7 @@ export function DashboardApp() {
       <div className="home-content">
 
         <HomeHero locale={locale} onCreate={()=>void createFigure().catch(()=>notify(fa?'ذخیره انجام نشد؛ دوباره تلاش کنید.':'Could not save. Please retry.'))}/>
+        <HomeOrderServices locale={locale}/>
 
 
       </div>
