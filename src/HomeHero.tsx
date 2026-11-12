@@ -25,5 +25,5 @@ export function HomeHero({locale,onCreate}:{locale:'en'|'fa';onCreate:()=>void;e
   homeShell.style.fontFamily=HOME_FONT_STACKS[selectedFont];
   return()=>{homeShell.style.fontFamily=previousFont;};
  },[selectedFont]);
- return <ShuffleHero fontStack={HOME_FONT_STACKS[selectedFont]} copyLoading={contentLoading} copyFailed={contentFailed} loading={loading} loadFailed={failed} onRetry={()=>{if(contentFailed)setContentLoading(true);setAttempt(value=>value+1);}} locale={locale} secondaryHref="/design" {...(content?.[locale] ?? {})} images={slots.map((image,i)=>({id:i+1,...image}))} onCreate={onCreate}/>;
+ return <ShuffleHero fontStack={HOME_FONT_STACKS[selectedFont]} copyLoading={contentLoading} copyFailed={contentFailed} loading={loading} loadFailed={failed} onRetry={()=>{if(contentFailed)setContentLoading(true);setAttempt(value=>value+1);}} locale={locale} secondaryHref="/design" {...(content?.[locale] ?? {})} primaryText="" images={slots.map((image,i)=>({id:i+1,...image}))} onCreate={onCreate}/>;
 }
