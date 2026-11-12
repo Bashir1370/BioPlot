@@ -35,7 +35,7 @@ export function OrderForm({fa,userId,onSubmit,busy,onCancel,preview=false,allowA
   const kindFromUrl=queryKind&&Object.prototype.hasOwnProperty.call(serviceLabels,queryKind)?queryKind as ServiceKind:null;
   const fallback:RequestDraft={id:crypto.randomUUID(),title:source?.title==='Untitled scientific figure'?'':source?.title||'',kind:kindFromUrl??'figure',brief:{route:source?'polish':'idea',sourceProject:source?.projectId,message:'',audience:'',requirements:'',style:'',formats:['PNG','SVG']},requested_date:''};
   try{
-   const stored=preview?null:sessionStorage.getItem(key)??(userId==='guest'?null:sessionStorage.getItem('bioplot-order-draft:guest'));
+   const stored=preview?null:(userId==='guest'?sessionStorage.getItem(key):sessionStorage.getItem('bioplot-order-draft:guest')??sessionStorage.getItem(key));
    const saved=JSON.parse(stored||'null') as Partial<RequestDraft>|null;
    if(saved&&typeof saved.id==='string'&&typeof saved.title==='string'&&saved.brief&&typeof saved.brief.message==='string'&&Array.isArray(saved.brief.formats)&&typeof saved.kind==='string'&&Object.prototype.hasOwnProperty.call(serviceLabels,saved.kind)){
     return {...fallback,...saved,kind:kindFromUrl??saved.kind,brief:{...fallback.brief,...saved.brief,route:startingPoints.some(point=>point.id===saved.brief?.route)?saved.brief.route:fallback.brief.route},requested_date:typeof saved.requested_date==='string'?saved.requested_date:''};
