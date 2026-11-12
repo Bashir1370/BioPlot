@@ -269,3 +269,47 @@
     min-width:39px;
   }
 }
+
+
+/* Home Figure Studio is announced but not navigable until launch. */
+.home-nav .home-nav-coming-soon{
+  min-height:40px;
+  padding:0 12px;
+  border-radius:10px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  color:#93a3a8;
+  opacity:.75;
+  font-size:11px;
+  font-weight:600;
+  white-space:nowrap;
+  cursor:not-allowed;
+  user-select:none;
+}
+.home-nav .home-nav-coming-soon svg{
+  width:17px;
+  height:17px;
+  opacity:.7;
+}
+.home-nav .home-nav-coming-soon small{
+  padding:2px 7px;
+  border:1px solid #dce5e7;
+  border-radius:999px;
+  background:#f4f7f8;
+  color:#8a9ba0;
+  font-size:9px;
+  font-weight:650;
+  line-height:1.6;
+}
+@media(max-width:1100px){
+  .home-nav .home-nav-coming-soon{padding:0 9px}
+}
+@media(max-width:820px){
+  .home-nav .home-nav-coming-soon{min-height:38px;padding:0 8px;font-size:10px}
+}
+@media(max-width:560px){
+  .home-nav .home-nav-coming-soon{gap:4px;padding:0 4px}
+  .home-nav .home-nav-coming-soon > span{display:none}
+  .home-nav .home-nav-coming-soon small{font-size:9px;padding:2px 5px}
+}
