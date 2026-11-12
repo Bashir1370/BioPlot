@@ -1,0 +1,334 @@
+/*
+ * BioPlot design request form — presentation-only refresh.
+ * Scoped to .order-form-compact so orders, admin screens, quotes,
+ * file handling and request behavior remain untouched.
+ */
+
+.orders-shell .order-form-compact {
+  --form-ink: #173b43;
+  --form-muted: #687f85;
+  --form-line: #dae7e8;
+  --form-accent: #087c78;
+  --form-accent-dark: #075f60;
+  position: relative;
+  max-width: 790px;
+  margin: 18px auto 36px;
+  padding: clamp(24px, 4.6vw, 48px);
+  overflow: visible;
+  border: 1px solid #dde9e8;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(21, 65, 73, .035), 0 26px 72px rgba(21, 65, 73, .07);
+  color: var(--form-ink);
+}
+
+.orders-shell .order-form-compact::before {
+  content: "";
+  position: absolute;
+  inset-inline: 36px;
+  top: 0;
+  height: 3px;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(90deg, #0e8f83, #73bcb3);
+}
+
+.orders-shell .order-form-compact h1 {
+  margin: 0 0 12px;
+  padding: 0;
+  color: #153c43;
+  font-size: clamp(26px, 3vw, 32px);
+  line-height: 1.55;
+  font-weight: 790;
+  letter-spacing: -.025em;
+}
+
+.orders-shell .order-form-compact .order-form-intro {
+  max-width: 62ch;
+  margin: 0 0 30px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #e6eeee;
+  color: var(--form-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 2;
+}
+
+.orders-shell .order-form-compact > label,
+.orders-shell .order-form-compact .order-date-field > label {
+  display: grid;
+  gap: 9px;
+  margin: 0 0 23px;
+  color: #254950;
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 650;
+}
+
+.orders-shell .order-form-compact input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+.orders-shell .order-form-compact select,
+.orders-shell .order-form-compact textarea,
+.orders-shell .order-form-compact .jalali-date-trigger {
+  width: 100%;
+  min-height: 53px;
+  padding: 12px 16px;
+  border: 1px solid #d2e0e2;
+  border-radius: 12px;
+  background: #fbfdfd;
+  box-shadow: 0 1px 2px rgba(24, 59, 65, .025);
+  color: var(--form-ink);
+  font-size: 14px;
+  font-weight: 450;
+  line-height: 1.8;
+  transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+.orders-shell .order-form-compact textarea {
+  min-height: 162px;
+  padding-block: 13px;
+  resize: vertical;
+}
+
+.orders-shell .order-form-compact :is(input, select, textarea):not([type="file"]):hover,
+.orders-shell .order-form-compact .jalali-date-trigger:hover {
+  border-color: #a7c9c9;
+  background: #fff;
+}
+
+.orders-shell .order-form-compact :is(input, select, textarea):not([type="file"]):focus-visible,
+.orders-shell .order-form-compact .jalali-date-trigger:focus-visible {
+  outline: 0;
+  border-color: #198e86;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(15, 143, 130, .14);
+}
+
+.orders-shell .order-form-compact :is(input, textarea)::placeholder {
+  color: #899da1;
+  opacity: 1;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.orders-shell .order-form-compact .order-date-field {
+  max-width: 340px;
+  margin-bottom: 24px;
+}
+
+.orders-shell .order-form-compact .order-date-field > label {
+  margin-bottom: 10px;
+}
+
+.orders-shell .order-form-compact .jalali-date-trigger {
+  text-align: start;
+}
+
+.orders-shell .order-form-compact .order-upload {
+  margin: 6px 0 24px;
+  padding: clamp(17px, 3vw, 24px);
+  border: 1.5px dashed #9fc5c4;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f7fcfa 0%, #f1f8f7 100%);
+  transition: border-color .18s ease, background-color .18s ease;
+}
+
+.orders-shell .order-form-compact .order-upload:hover,
+.orders-shell .order-form-compact .order-upload:focus-within {
+  border-color: #27948b;
+  background: #f3fbf8;
+}
+
+.orders-shell .order-form-compact .order-file-picker {
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.orders-shell .order-form-compact .order-file-picker > span:first-child {
+  color: #254950;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.7;
+}
+
+.orders-shell .order-form-compact .order-file-picker-button {
+  min-width: 162px;
+  padding: 11px 18px;
+  border: 1px solid #a9cbca;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(26, 80, 79, .05);
+  color: #08766f !important;
+  font-size: 13px !important;
+  font-weight: 700;
+  transition: border-color .18s ease, background-color .18s ease, transform .18s ease;
+}
+
+.orders-shell .order-form-compact .order-file-picker-button:hover {
+  border-color: #3a9c93;
+  background: #f6fbfa;
+  transform: translateY(-1px);
+}
+
+.orders-shell .order-form-compact .order-file-picker-button:focus-within {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(15, 143, 130, .16);
+}
+
+.orders-shell .order-form-compact .order-upload > small {
+  color: #738b8c;
+  font-size: 11px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+
+.orders-shell .order-form-compact .order-picked-file {
+  margin-top: 9px;
+  padding: 10px 12px;
+  gap: 12px;
+  border: 1px solid #d7e7e4;
+  border-radius: 10px;
+  background: #fff;
+  color: #33565b;
+}
+
+.orders-shell .order-form-compact .order-picked-file bdi {
+  min-width: 0;
+  flex: 1;
+  font-size: 12px;
+}
+
+.orders-shell .order-form-compact .order-picked-file button {
+  flex-shrink: 0;
+  padding: 5px 11px;
+  border: 1px solid #f0d3d3;
+  border-radius: 8px;
+  background: #fff8f8;
+  color: #a45151;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.orders-shell .order-form-compact .order-picked-file button:hover {
+  border-color: #e2b4b4;
+  background: #fff0f0;
+}
+
+.orders-shell .order-form-compact > .order-hint {
+  margin: 6px 0 24px;
+  padding: 14px 18px;
+  border: 1px solid #d6e9e8;
+  border-radius: 12px;
+  background: #f4faf8;
+  color: #496d70;
+  font-size: 13px;
+  line-height: 2;
+}
+
+.orders-shell .order-form-compact > .order-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid #e6eeee;
+}
+
+.orders-shell .order-form-compact > .order-actions > button {
+  min-height: 48px;
+  padding: 11px 23px;
+  border: 1px solid #d7e3e4;
+  border-radius: 12px;
+  background: #fff;
+  color: #526e73;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.7;
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.orders-shell .order-form-compact > .order-actions > button:hover:not(:disabled) {
+  background: #f5f9f8;
+  border-color: #bdcfcf;
+}
+
+.orders-shell .order-form-compact > .order-actions > .order-primary {
+  min-width: 207px;
+  border-color: var(--form-accent);
+  background: linear-gradient(125deg, #0b8880, #08716f);
+  box-shadow: 0 8px 19px rgba(8, 114, 107, .14);
+  color: #fff;
+}
+
+.orders-shell .order-form-compact > .order-actions > .order-primary:hover:not(:disabled) {
+  border-color: var(--form-accent-dark);
+  background: linear-gradient(125deg, #0b7773, #075f60);
+  box-shadow: 0 11px 24px rgba(8, 114, 107, .18);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.orders-shell .order-form-compact > .order-actions > button:focus-visible {
+  outline: 3px solid rgba(15, 143, 130, .3);
+  outline-offset: 3px;
+}
+
+.orders-shell .order-form-compact button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 650px) {
+  .orders-content {
+    padding-inline: 16px;
+  }
+
+  .orders-shell .order-form-compact {
+    max-width: 100%;
+    margin: 10px auto 24px;
+    padding: 23px 18px;
+    border-radius: 18px;
+    box-shadow: 0 12px 38px rgba(21, 65, 73, .055);
+  }
+
+  .orders-shell .order-form-compact::before {
+    inset-inline: 20px;
+  }
+
+  .orders-shell .order-form-compact h1 {
+    font-size: 25px;
+  }
+
+  .orders-shell .order-form-compact .order-form-intro {
+    margin-bottom: 24px;
+    padding-bottom: 17px;
+  }
+
+  .orders-shell .order-form-compact .order-date-field {
+    max-width: 100%;
+  }
+
+  .orders-shell .order-form-compact > .order-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .orders-shell .order-form-compact > .order-actions > button,
+  .orders-shell .order-form-compact > .order-actions > .order-primary {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orders-shell .order-form-compact :is(input, select, textarea, button),
+  .orders-shell .order-form-compact .order-upload,
+  .orders-shell .order-form-compact .order-file-picker-button,
+  .orders-shell .order-form-compact .jalali-date-trigger {
+    transition: none;
+    transform: none;
+  }
+}
