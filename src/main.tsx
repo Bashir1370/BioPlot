@@ -1,11 +1,9 @@
-import {StudioContentProvider} from './orders/StudioContent';
 import { isDesignPath, isOrdersPath, isAdminOrdersPath } from './routing';
 import { lazy, StrictMode, Suspense } from 'react';
-const AdminStudioContent=lazy(()=>import('./orders/AdminStudioContent').then(module=>({default:module.AdminStudioContent})));
+const AdminStudioContent=lazy(()=>import('./orders/AdminStudioEntry').then(module=>({default:module.AdminStudioEntry})));
 
-const OrdersPage=lazy(()=>import('./orders/OrdersPage').then(module=>({default:module.OrdersPage})));
+const OrdersPage=lazy(()=>import('./orders/OrdersEntry').then(module=>({default:module.OrdersEntry})));
 const HomeRoute=lazy(()=>import('./HomeRoute').then(module=>({default:module.HomeRoute})));
-const EditorRoute=lazy(()=>import('./EditorRoute').then(module=>({default:module.EditorRoute})));
 const AdminLibraryPage=lazy(()=>import('./AdminLibraryPage').then(module=>({default:module.AdminLibraryPage})));
 const AdminLinesPage=lazy(()=>import('./AdminLinesPage').then(module=>({default:module.AdminLinesPage})));
 const AdminLinesShortcut=lazy(()=>import('./AdminLinesShortcut').then(module=>({default:module.AdminLinesShortcut})));
@@ -16,28 +14,11 @@ const AccountPage=lazy(()=>import('./AccountPage').then(module=>({default:module
 import { createRoot } from 'react-dom/client';
 import { isDashboardPath, isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
 import './styles-v3.css';
-// Base editor CSS must precede its global refinements even when the route is
-// lazy-loaded. Otherwise its old grid slots collapse the canvas and toolbar.
-import './editor-studio.css';
-import './editor-pro.css';
-import './template-previews-pro.css';
-import './studio-polish.css';
-import './studio-ribbon.css';
-import './studio-reference.css';
-import './studio-compact-ribbon.css';
-import './studio-green-theme.css';
-import './admin-asset-presets.css';
-import './studio-tight-selection.css';
-import './studio-multi-select.css';
+// Public entry: only shared type, reset and typography styles.
 import '@fontsource-variable/inter';
 import '@fontsource-variable/vazirmatn';
-import './precision-studio.css';
 import './persian-typography.css';
-import './admin-library-redesign.css';
-import './studio-contextual.css';
-import './editor-persian-polish.css';
-import './selection-controls.css';
-import './components/ui/shine-border.css';
+
 const root = document.getElementById('root');
 if (!root) throw new Error('BioPlot root element was not found.');
 
@@ -48,11 +29,22 @@ const isDashboard = isDashboardPath(window.location.pathname);
 const isAccount = isAccountPath(window.location.pathname);
 const isEditor = isEditorPath(window.location.pathname);
 
-if (isEditor) {
-  void import('./tightAssetSelection').then(module=>module.installTightAssetSelection());
+// Editor development continues in editor.html locally; there is no editor in
+// the production dependency graph. Existing bookmarks get a helpful message.
+function StudioComingSoon(){
+  const fa=localStorage.getItem('bioplot-lang')==='fa';
+  return <main style={{minHeight:'100vh',display:'grid',placeItems:'center',padding:24,background:'#f4f8f8',fontFamily:'inherit'}}>
+    <section style={{maxWidth:510,width:'100%',background:'#fff',border:'1px solid #dce9e7',borderRadius:20,padding:'clamp(25px,5vw,44px)',textAlign:'center',boxShadow:'0 14px 42px #163d4512'}}>
+      <strong style={{color:'#087f79',fontSize:13}}>BIOPLOT FIGURE STUDIO</strong>
+      <h1 style={{color:'#173e46',fontSize:26,margin:'15px 0'}}>{fa?'استودیو شکل علمی به‌زودی فعال می‌شود':'Scientific Figure Studio is coming soon'}</h1>
+      <p style={{color:'#667f85',lineHeight:2,fontSize:14}}>{fa?'فعلاً می‌توانید طراحی علمی را به تیم BioPlot بسپارید.':'For now, our design team can help you create scientific figures.'}</p>
+      <a href="/design" style={{display:'inline-block',padding:'11px 22px',marginTop:12,borderRadius:11,background:'#087f79',color:'#fff',textDecoration:'none'}}>{fa?'ثبت سفارش طراحی':'Request a design'}</a>
+      <a href="/" style={{display:'block',marginTop:18,color:'#547379',fontSize:13}}>{fa?'بازگشت به خانه':'Back to Home'}</a>
+    </section>
+  </main>;
 }
 createRoot(root).render(
-  <StrictMode><Suspense fallback={<p role="status" style={{padding:32,textAlign:'center'}}>BioPlot…</p>}><StudioContentProvider>
-    {location.pathname.replace(/\/+$/,'')==='/admin/studio' ? <AdminStudioContent/> : isDesignPath(location.pathname) ? <OrdersPage initialNewOrder/> : isOrdersPath(location.pathname) ? <OrdersPage/> : isAdminOrdersPath(location.pathname) ? <OrdersPage admin/> : isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <EditorRoute /> : <HomeRoute />}
-  </StudioContentProvider></Suspense></StrictMode>
+  <StrictMode><Suspense fallback={<p role="status" style={{padding:32,textAlign:'center'}}>BioPlot…</p>}>
+    {location.pathname.replace(/\/+$/,'')==='/admin/studio' ? <AdminStudioContent/> : isDesignPath(location.pathname) ? <OrdersPage initialNewOrder/> : isOrdersPath(location.pathname) ? <OrdersPage/> : isAdminOrdersPath(location.pathname) ? <OrdersPage admin/> : isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <StudioComingSoon /> : <HomeRoute />}
+  </Suspense></StrictMode>
 );
