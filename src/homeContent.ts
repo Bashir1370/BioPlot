@@ -1,3 +1,4 @@
+import {normalizeHomeBanner, HOME_BANNER_FIELDS, type HomeBannerContent} from './homeBannerContent';
 import { supabase } from './supabaseClient';
 export const HOME_TEXT_FIELDS = ['eyebrow','title','highlight','description','primaryText','secondaryText','socialProof'] as const;
 export type HomeText = Record<typeof HOME_TEXT_FIELDS[number], string>;
@@ -12,7 +13,7 @@ export const HOME_FONT_STACKS: Record<HomeFontFamily,string> = {
  inter:'"Inter Variable","Vazirmatn Variable",sans-serif',
 };
 export type HomeLocaleContent = HomeText & {fontFamily:HomeFontFamily};
-export type HomeContent = Record<'en'|'fa', HomeLocaleContent>;
+export type HomeContent = Record<'en'|'fa', HomeLocaleContent> & {banner?: HomeBannerContent};
 
 // Empty copy is intentional: the Home page only shows text saved by an admin.
 export const HOME_TEXT_DEFAULTS: HomeContent = {
@@ -32,7 +33,7 @@ const LEGACY_HOME_COPY: Record<'en'|'fa', Partial<HomeText>[]> = {
 };
 export function normalizeHomeContent(value: unknown): HomeContent {
  const input = value as Partial<HomeContent> | null;
- return Object.fromEntries((['en','fa'] as const).map(locale => {
+ const normalized: HomeContent = Object.fromEntries((['en','fa'] as const).map(locale => {
   const text = Object.fromEntries(HOME_TEXT_FIELDS.map(key => {
    const stored = input?.[locale]?.[key];
    if (typeof stored !== 'string') return [key, HOME_TEXT_DEFAULTS[locale][key]];
@@ -45,7 +46,9 @@ export function normalizeHomeContent(value: unknown): HomeContent {
    ? storedFont as HomeFontFamily
    : HOME_TEXT_DEFAULTS[locale].fontFamily;
   return [locale,{...text,fontFamily}];
- })) as HomeContent;
+ })) as Record<'en'|'fa', HomeLocaleContent>;
+ if(input?.banner !== undefined) normalized.banner = normalizeHomeBanner(input.banner);
+ return normalized;
 }
 export async function loadHomeContent(): Promise<HomeContent> {
  const {data,error} = await supabase.from('home_hero_content').select('content').eq('id',1).maybeSingle();
@@ -55,6 +58,9 @@ export async function loadHomeContent(): Promise<HomeContent> {
 export async function saveHomeContent(content: HomeContent) {
  for(const locale of ['en','fa'] as const) for(const key of HOME_TEXT_FIELDS) {
   if(typeof content[locale][key] !== 'string' || content[locale][key].length > 2000) throw new Error('حداکثر طول هر متن ۲۰۰۰ کاراکتر است.');
+ }
+ if(content.banner) for(const locale of ['en','fa'] as const) for(const key of HOME_BANNER_FIELDS) {
+  if(typeof content.banner[locale][key] !== 'string' || content.banner[locale][key].length > 2000) throw new Error('حداکثر طول هر متن ۲۰۰۰ کاراکتر است.');
  }
  const {data:auth,error:authError}=await supabase.auth.getUser();
  if(authError || !auth.user) throw new Error('برای ذخیره وارد حساب مدیر شوید.');

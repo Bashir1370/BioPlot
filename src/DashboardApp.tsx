@@ -1,4 +1,4 @@
-import {HomeHero} from './HomeHero';
+import {HomeBanner} from './HomeBanner';
 import {HomeOrderServices} from './HomeOrderServices';
 import { useEffect, useState } from 'react';
 import './precision-studio.css';
@@ -26,7 +26,7 @@ export function DashboardApp() {
     <main className="home-main">
       <div className="home-content">
 
-        <HomeHero locale={locale}/>
+        <HomeBanner locale={locale}/>
         <HomeOrderServices locale={locale}/>
 
 
