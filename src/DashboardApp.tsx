@@ -2,8 +2,6 @@ import './orders/orders.css';
 import {HomeHero} from './HomeHero';
 import {HomeOrderServices} from './HomeOrderServices';
 import { useEffect, useState } from 'react';
-import {createBlankDocument} from './model';
-import {openFigureDraft} from './figureDraft';
 import './precision-studio.css';
 import './home.css';
 // Keep the horizontal navigation overrides after the legacy Home styles in
@@ -43,7 +41,6 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 
 export function DashboardApp() {
   const [locale, setLocale] = useState<Locale>(() => localStorage.getItem('bioplot-lang') === 'fa' ? 'fa' : 'en');
-  const [toast, setToast] = useState('');
   const t = copy[locale];
   const fa = locale === 'fa';
 
@@ -53,21 +50,6 @@ export function DashboardApp() {
     localStorage.setItem('bioplot-lang', locale);
   }, [locale, fa]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(''), 2200);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
-
-  function notify(message: string) { setToast(message); }
-
-  async function createFigure() {
-    const document = createBlankDocument();
-    document.metadata.locale=locale;
-    openFigureDraft(document);
-    notify(t.created);
-
-  }
 
   return <div className="home-shell">
     <aside className="home-sidebar">
@@ -89,13 +71,12 @@ export function DashboardApp() {
     <main className="home-main">
       <div className="home-content">
 
-        <HomeHero locale={locale} onCreate={()=>void createFigure().catch(()=>notify(fa?'ذخیره انجام نشد؛ دوباره تلاش کنید.':'Could not save. Please retry.'))}/>
+        <HomeHero locale={locale}/>
         <HomeOrderServices locale={locale}/>
 
 
       </div>
     </main>
 
-    {toast && <div className="home-toast" role="status"><span><Icon name="check" size={15}/></span>{toast}</div>}
   </div>;
 }
