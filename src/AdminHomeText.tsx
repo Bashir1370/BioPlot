@@ -9,7 +9,7 @@ export function AdminHomeText(){
  const [message,setMessage]=useState('');
  const load=()=>{setMessage('');void loadHomeContent().then(setContent).catch(()=>setMessage('دریافت متن‌ها انجام نشد؛ دوباره تلاش کنید.'));};
  useEffect(load,[]);
- const submit=async(event:FormEvent)=>{event.preventDefault();if(!content)return;setBusy(true);setMessage('');try{await saveHomeContent(content);setMessage('متن‌ها و تنظیم فونت ذخیره شدند.');}catch{setMessage('ذخیره انجام نشد؛ تغییرات شما در فرم باقی مانده‌اند.');}finally{setBusy(false);}};
+ const submit=async(event:FormEvent)=>{event.preventDefault();if(!content)return;setBusy(true);setMessage('');try{const latest=await loadHomeContent();await saveHomeContent({...content,banner:latest.banner});setMessage('متن‌ها و تنظیم فونت ذخیره شدند.');}catch{setMessage('ذخیره انجام نشد؛ تغییرات شما در فرم باقی مانده‌اند.');}finally{setBusy(false);}};
  return <section className="admin-template-hero admin-home-text">
   <div className="admin-template-hero-head"><div><span>HOME TEXT</span><h2>متن‌های صفحهٔ اصلی</h2></div><a href="/" target="_blank" rel="noreferrer">مشاهده صفحه</a></div>
   {message && <p role="status">{message}</p>}
