@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { StudioIcon } from '../../StudioIcon';
+import { HomeIcon } from '../../HomeIcon';
 import './shuffle-grid.css';
 
 export type ShuffleImage = { id: number; src: string; alt: string; fallbackSrc?: string };
@@ -106,7 +106,7 @@ export function ShuffleHero({
       </div>
       {loadFailed && <button className="shuffle-motion" onClick={onRetry}>{fa?'تلاش دوباره برای دریافت تصاویر':'Retry loading images'}</button>}
       {!imagesLoading && !reducedMotion && <button className="shuffle-motion" aria-pressed={paused} onClick={() => setPaused(value => !value)}>
-        <StudioIcon name={paused ? 'play' : 'pause'} size={14}/>
+        <HomeIcon name={paused ? 'play' : 'pause'} size={14}/>
         {fa ? (paused ? 'ادامه حرکت تصاویر' : 'توقف حرکت تصاویر') : (paused ? 'Play animation' : 'Pause animation')}
       </button>}
     </div>
