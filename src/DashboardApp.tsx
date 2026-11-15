@@ -9,10 +9,10 @@ import './home.css';
 // Keep the horizontal navigation overrides after the legacy Home styles in
 // the same lazy-loaded route chunk, rather than the earlier global bundle.
 import './home-top-nav.css';
-import { StudioIcon } from './StudioIcon';
+import { HomeIcon } from './HomeIcon';
 
 type Locale = 'en' | 'fa';
-type IconName = 'home' | 'templates' | 'figure' | 'search' | 'plus' | 'arrow' | 'sparkle' | 'check' | 'close';
+type IconName = 'home' | 'templates' | 'figure' | 'sparkle' | 'check';
 
 const copy = {
   en: {
@@ -38,7 +38,7 @@ const copy = {
 };
 
 function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
-  return <StudioIcon name={name === 'check' ? 'done' : name} size={size}/>;
+  return <HomeIcon name={name === 'check' ? 'done' : name} size={size}/>;
 }
 
 export function DashboardApp() {
