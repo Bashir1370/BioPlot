@@ -1,6 +1,6 @@
 import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { StudioIcon } from './StudioIcon';
+import { HomeIcon } from './HomeIcon';
 import { loadPublishedShowcaseItems, ShowcaseItem, showcasePublicUrl } from './showcasePortfolio';
 import './portfolio-showcase.css';
 
@@ -26,6 +26,9 @@ export function PortfolioShowcasePortal() {
   const [paused, setPaused] = useState(false);
   const [ratios, setRatios] = useState<Record<string, number>>({});
   const pointerStart = useRef<number | null>(null);
+  const loadAnchor=useRef<HTMLDivElement>(null);
+  const [inView,setInView]=useState(false);
+
 
   useEffect(() => {
     const attach = () => {
@@ -42,9 +45,27 @@ export function PortfolioShowcasePortal() {
     return () => observer.disconnect();
   }, []);
 
+  // The showcase is below Home's hero and service cards. Fetch it only when
+  // the visitor is approaching this section rather than during the first paint.
   useEffect(() => {
+    if (!target || inView) return;
+    const node=loadAnchor.current;
+    if (!node) return;
+    if (!('IntersectionObserver' in window)) { setInView(true); return; }
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)) {setInView(true);observer.disconnect();}
+    },{rootMargin:'450px 0px'});
+    observer.observe(node);
+    return()=>observer.disconnect();
+  },[target,inView]);
+
+  useEffect(() => {
+    if (!inView) return;
     let cancelled = false;
+    let lastLoad=0;
     async function load() {
+      if(Date.now()-lastLoad<60_000)return;
+      lastLoad=Date.now();
       try {
         const next = await loadPublishedShowcaseItems();
         if (!cancelled) {
@@ -59,7 +80,7 @@ export function PortfolioShowcasePortal() {
     const refresh = () => void load();
     window.addEventListener('focus', refresh);
     return () => { cancelled = true; window.removeEventListener('focus', refresh); };
-  }, []);
+  }, [inView]);
 
   useEffect(() => {
     if (paused || slides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -67,7 +88,7 @@ export function PortfolioShowcasePortal() {
     return () => window.clearInterval(timer);
   }, [paused, slides.length]);
 
-  if (!target || slides.length === 0) return null;
+  if (!target) return null;
   const previous = () => setActive(current => (current - 1 + slides.length) % slides.length);
   const next = () => setActive(current => (current + 1) % slides.length);
   const title = locale === 'fa' ? 'نمونه‌کارهای طراحی شکل علمی' : 'Scientific figure design examples';
@@ -75,12 +96,14 @@ export function PortfolioShowcasePortal() {
   const nextLabel = locale === 'fa' ? 'تصویر بعدی' : 'Next image';
 
   return createPortal(
-    <section className="portfolio-showcase home-section" aria-labelledby="portfolio-showcase-title" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
+    <>
+    <div ref={loadAnchor} className="portfolio-showcase-load-anchor" aria-hidden="true" style={{height:1}}/>
+    {slides.length>0 && <section className="portfolio-showcase home-section" aria-labelledby="portfolio-showcase-title" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
       <div className="portfolio-showcase-heading">
         <h2 id="portfolio-showcase-title">{title}</h2>
         {slides.length > 1 && <div className="portfolio-showcase-controls" aria-label={locale === 'fa' ? 'کنترل نمونه‌کارها' : 'Design examples carousel controls'}>
-          <button type="button" onClick={previous} aria-label={previousLabel}><StudioIcon name="arrow"/></button>
-          <button type="button" onClick={next} aria-label={nextLabel}><StudioIcon name="arrow"/></button>
+          <button type="button" onClick={previous} aria-label={previousLabel}><HomeIcon name="arrow"/></button>
+          <button type="button" onClick={next} aria-label={nextLabel}><HomeIcon name="arrow"/></button>
         </div>}
       </div>
 
@@ -102,7 +125,8 @@ export function PortfolioShowcasePortal() {
           </button>;
         })}
       </div>
-    </section>,
+    </section>}
+    </>,
     target,
   );
 }

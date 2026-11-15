@@ -4,7 +4,7 @@ import {dirname,resolve} from 'node:path';
 import {afterEach,describe,expect,it} from 'vitest';
 function routeStyles(){
  const seen=new Set<string>();let css='';
- for(const source of ['src/main.tsx','src/EditorStudio.tsx','src/EditorRoute.tsx']){
+ for(const source of ['src/main.tsx','src/EditorStudio.tsx','src/EditorRoute.tsx','src/editor-main.tsx']){
   const code=readFileSync(source,'utf8');
   for(const match of code.matchAll(/import '(\.\/[^']+\.css)';/g)){
    const path=resolve(dirname(source),match[1]);if(seen.has(path))continue;seen.add(path);css+=readFileSync(path,'utf8')+'\n';

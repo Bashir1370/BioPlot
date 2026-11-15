@@ -21,6 +21,8 @@ import {
 } from './cloudAssetLibrary';
 import { StudioIcon } from './StudioIcon';
 import './admin-library.css';
+import './admin-library-redesign.css';
+import './admin-asset-presets.css';
 import './admin-access.css';
 
 type Gate = 'loading' | 'signed-out' | 'claim' | 'admin';
