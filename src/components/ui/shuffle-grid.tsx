@@ -34,31 +34,6 @@ export function shuffleOrder(order: number[], random = Math.random): number[] {
   return next;
 }
 
-function decodeImage(src: string): Promise<boolean> {
-  return new Promise(resolve => {
-    const image = new Image();
-    let settled = false;
-    const finish = (ok: boolean) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve(ok);
-    };
-    const timer = setTimeout(() => finish(false), 12_000);
-    image.onerror = () => finish(false);
-    const loaded = () => {
-      if (typeof image.decode === 'function') void image.decode().then(() => finish(true)).catch(() => finish(image.naturalWidth > 0));
-      else finish(image.naturalWidth > 0);
-    };
-    image.onload = loaded;
-    image.src = src;
-    if (image.complete) {
-      if (image.naturalWidth > 0) loaded();
-      else finish(false);
-    }
-  });
-}
-
 export function ShuffleHero({
   loading = false, copyLoading = false, copyFailed = false, loadFailed = false, onRetry,
   title = '', highlight = '', description = '', eyebrow = '',
@@ -71,32 +46,13 @@ export function ShuffleHero({
   const [order, setOrder] = useState(() => Array.from({ length: 16 }, (_, i) => i));
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [readyKey, setReadyKey] = useState('');
-  const [displayImages, setDisplayImages] = useState<ShuffleImage[]>([]);
   const grid = useRef<HTMLDivElement>(null);
   const fa = locale === 'fa';
-  const sourceKey = images.slice(0, 16).map(image => `${image.id}:${image.src}:${image.fallbackSrc ?? ''}`).join('|');
-  const imagesLoading = loading || readyKey !== sourceKey;
+  const imagesLoading = loading;
   const hasHeading = Boolean(title || highlight);
 
-  useEffect(() => {
-    let cancelled = false;
-    setReadyKey('');
-    if (loading) return () => { cancelled = true; };
-    void Promise.all(images.slice(0, 16).map(async image => {
-      if (!image.src) return { ...image, src: '' };
-      if (await decodeImage(image.src)) return image;
-      if (image.fallbackSrc && image.fallbackSrc !== image.src && await decodeImage(image.fallbackSrc)) {
-        return { ...image, src: image.fallbackSrc };
-      }
-      return { ...image, src: '' };
-    })).then(resolved => {
-      if (cancelled) return;
-      setDisplayImages(resolved);
-      setReadyKey(sourceKey);
-    });
-    return () => { cancelled = true; };
-  }, [loading, sourceKey]);
+  // Browser-native image loading paints each thumbnail as it arrives. Never block
+  // the entire sixteen-tile gallery on one failed or slow Supabase image.
 
   useEffect(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -132,11 +88,19 @@ export function ShuffleHero({
     </div>
     <div className="shuffle-hero-visual">
       <div ref={grid} className="shuffle-grid" aria-busy={imagesLoading && !loadFailed} dir="ltr" aria-label={fa ? 'گالری تصاویر BioPlot' : 'BioPlot image gallery'}>
-        {imagesLoading && Array.from({length:16},(_,i)=><div key={i} className="shuffle-tile shuffle-placeholder" aria-hidden="true" style={{'--column':i%4,'--row':Math.floor(i/4)} as CSSProperties}/>)}
-        {!imagesLoading && displayImages.map((image, i) => {
-          const position = order.indexOf(i);
-          return <div key={image.id} className="shuffle-tile" data-image-slot={image.id} style={{ '--column': position % 4, '--row': Math.floor(position / 4) } as CSSProperties}>
-            {image.src && <img src={image.src} alt={image.alt} decoding="async" onError={event=>{event.currentTarget.remove();}}/>}
+        {Array.from({length:16},(_,i)=>{
+          const image=imagesLoading ? undefined : images[i];
+          const position=order.indexOf(i);
+          return <div key={i} className={image?.src ? 'shuffle-tile' : 'shuffle-tile shuffle-placeholder'}
+            data-image-slot={image?.id}
+            style={{'--column':position%4,'--row':Math.floor(position/4)} as CSSProperties}>
+            {image?.src && <img src={image.src} alt={image.alt} loading={i<4?'eager':'lazy'} decoding="async"
+              onError={event=>{
+                const element=event.currentTarget;
+                // Use the original only if the optimized WebP thumbnail is unavailable.
+                if(image.fallbackSrc && element.getAttribute('src')!==image.fallbackSrc) element.src=image.fallbackSrc;
+                else element.remove();
+              }}/>}
           </div>;
         })}
       </div>
