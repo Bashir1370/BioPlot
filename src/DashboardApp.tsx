@@ -1,4 +1,3 @@
-import './orders/orders.css';
 import {HomeHero} from './HomeHero';
 import {HomeOrderServices} from './HomeOrderServices';
 import { useEffect, useState } from 'react';
