@@ -1,6 +1,6 @@
 import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { StudioIcon } from './StudioIcon';
+import { HomeIcon } from './HomeIcon';
 import { loadPublishedShowcaseItems, ShowcaseItem, showcasePublicUrl } from './showcasePortfolio';
 import './portfolio-showcase.css';
 
@@ -102,8 +102,8 @@ export function PortfolioShowcasePortal() {
       <div className="portfolio-showcase-heading">
         <h2 id="portfolio-showcase-title">{title}</h2>
         {slides.length > 1 && <div className="portfolio-showcase-controls" aria-label={locale === 'fa' ? 'کنترل نمونه‌کارها' : 'Design examples carousel controls'}>
-          <button type="button" onClick={previous} aria-label={previousLabel}><StudioIcon name="arrow"/></button>
-          <button type="button" onClick={next} aria-label={nextLabel}><StudioIcon name="arrow"/></button>
+          <button type="button" onClick={previous} aria-label={previousLabel}><HomeIcon name="arrow"/></button>
+          <button type="button" onClick={next} aria-label={nextLabel}><HomeIcon name="arrow"/></button>
         </div>}
       </div>
 
