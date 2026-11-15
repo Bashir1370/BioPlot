@@ -34,9 +34,9 @@ export function HomeHeader({ locale, onLocaleChange }: {
 
   return <header className="home-header" ref={header} dir={fa ? 'rtl' : 'ltr'}>
     <div className="home-header-inner">
-      <a className="home-header-brand" href="/" aria-label={fa ? 'خانه BioPlot' : 'BioPlot home'}>
+      <a className="home-header-brand" dir="ltr" href="/" aria-label={fa ? 'خانه BioPlot' : 'BioPlot home'}>
         <span className="home-header-mark" aria-hidden="true">B</span>
-        <span className="home-header-wordmark"><b dir="ltr">BioPlot</b><small>{fa ? 'طراحی علمی' : 'Scientific design'}</small></span>
+        <span className="home-header-logo-tail" aria-hidden="true">ioplot</span>
       </a>
       <nav id="home-header-navigation" className={`home-header-nav${open ? ' is-open' : ''}`} aria-label={fa ? 'ناوبری اصلی' : 'Main navigation'} onClick={event => { if ((event.target as HTMLElement).closest('a')) setOpen(false); }}>
         <ul>
