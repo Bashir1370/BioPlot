@@ -6,41 +6,11 @@ import './home.css';
 // Keep the horizontal navigation overrides after the legacy Home styles in
 // the same lazy-loaded route chunk, rather than the earlier global bundle.
 import './home-top-nav.css';
-import { HomeIcon } from './HomeIcon';
+import { HomeHeader } from './HomeHeader';
 
 type Locale = 'en' | 'fa';
-type IconName = 'home' | 'templates' | 'figure' | 'sparkle' | 'check';
-
-const copy = {
-  en: {
-    home: 'Home', templates: 'Templates', editor: 'Figure Studio',
-    search: 'Search figure templates…',
-    templatesTitle: 'Figure templates', templatesSub: 'Start with a strong scientific composition, then edit every object.',
-    searchTemplates: 'Templates', noSearch: 'No matching templates.',
-    created: 'New figure created',
-    localWorkspace: 'Local workspace', focusTitle: 'Figure Studio focus', focusText: 'We are building one professional scientific figure workflow end-to-end before expanding BioPlot.',
-    featureTitle: 'One focused workflow', featureText: 'Create → design → save → reopen → export',
-    clearSearch: 'Clear search'
-  },
-  fa: {
-    home: 'خانه', templates: 'قالب‌ها', editor: 'استودیو شکل علمی',
-    search: 'جست‌وجوی قالب‌های شکل علمی…',
-    templatesTitle: 'قالب‌های شکل علمی', templatesSub: 'با یک ترکیب‌بندی علمی قوی شروع کن و بعد همه اجزا را آزادانه تغییر بده.',
-    searchTemplates: 'قالب‌ها', noSearch: 'قالبی با این عبارت پیدا نشد.',
-    created: 'شکل علمی جدید ساخته شد',
-    localWorkspace: 'فضای محلی', focusTitle: 'تمرکز روی Figure Studio', focusText: 'قبل از گسترش BioPlot، مسیر طراحی شکل علمی را از ابتدا تا انتها حرفه‌ای می‌کنیم.',
-    featureTitle: 'یک مسیر متمرکز', featureText: 'ساخت ← طراحی ← ذخیره ← بازکردن ← خروجی',
-    clearSearch: 'پاک کردن جست‌وجو'
-  }
-};
-
-function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
-  return <HomeIcon name={name === 'check' ? 'done' : name} size={size}/>;
-}
-
 export function DashboardApp() {
   const [locale, setLocale] = useState<Locale>(() => localStorage.getItem('bioplot-lang') === 'fa' ? 'fa' : 'en');
-  const t = copy[locale];
   const fa = locale === 'fa';
 
   useEffect(() => {
@@ -50,22 +20,8 @@ export function DashboardApp() {
   }, [locale, fa]);
 
 
-  return <div className="home-shell">
-    <aside className="home-sidebar">
-      <div className="home-sidebar-top">
-        <a className="home-brand" href="#home" aria-label="BioPlot home"><span className="home-brand-mark">B</span><span><b>BioPlot</b><small>Figure Studio</small></span></a>
-        <nav className="home-nav" aria-label={t.home}>
-          <a className="active" href="#home" aria-label={t.home}><Icon name="home"/><span>{t.home}</span></a>
-          <a href="/dashboard"><Icon name="templates"/><span>{fa ? 'داشبورد من' : 'My dashboard'}</span></a>
-          <span className="home-nav-coming-soon" aria-disabled="true" title={fa ? "این بخش به‌زودی فعال می‌شود" : "This feature is coming soon"}><Icon name="figure"/><span>{t.editor}</span><small>{fa ? "به‌زودی" : "Coming soon"}</small></span>
-        </nav>
-        <div className="home-top-actions"><a href="/design">{fa?'سفارش طراحی':'Design services'}</a><button className="home-language" onClick={() => setLocale(fa ? 'en' : 'fa')}>{fa ? 'EN' : 'FA'}</button><span className="home-avatar" aria-label="BioPlot workspace">B</span></div>
-      </div>
-      <div className="home-sidebar-bottom">
-        <div className="home-focus-card"><span className="focus-icon"><Icon name="sparkle"/></span><small>STAGE 10</small><b>{t.focusTitle}</b><p>{t.focusText}</p><div className="focus-flow"><span>{t.featureTitle}</span><strong>{t.featureText}</strong></div></div>
-        <div className="home-workspace-status"><span className="status-dot"/><span>{t.localWorkspace}</span><small>BioPlot v3</small></div>
-      </div>
-    </aside>
+  return <div className="home-shell" dir={fa ? 'rtl' : 'ltr'} lang={locale}>
+    <HomeHeader locale={locale} onLocaleChange={() => setLocale(fa ? 'en' : 'fa')}/>
 
     <main className="home-main">
       <div className="home-content">
