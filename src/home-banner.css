@@ -44,33 +44,15 @@
 }
 @media(prefers-reduced-motion:reduce){.home-banner-actions a{transition:none}}
 
-/* A brief shared nudge every five seconds; transforms keep the layout still. */
+/* Three gentle pulses together, followed by rest, in a three-second cycle. */
 .home-banner-promise{
-  position:relative;display:inline-block;max-width:100%;padding:8px 20px;
-  border:1px solid rgba(8,123,118,.13);border-radius:4px;
-  background:rgba(233,246,244,.22);transform-origin:center;
-  animation:home-promise-nudge 5s ease-in-out 5s infinite;
+  display:inline-block;max-width:100%;transform-origin:center;
+  animation:home-promise-pulse 3s ease-in-out infinite;
 }
-.home-banner-promise-corner{
-  position:absolute;width:11px;height:11px;border:0 solid var(--home-brand);pointer-events:none;
-  animation:home-promise-corners 5s ease-in-out 5s infinite;
-}
-.home-banner-promise-corner.top-left{top:-1px;left:-1px;border-top-width:2px;border-left-width:2px;--corner-x:-2px;--corner-y:-2px}
-.home-banner-promise-corner.top-right{top:-1px;right:-1px;border-top-width:2px;border-right-width:2px;--corner-x:2px;--corner-y:-2px}
-.home-banner-promise-corner.bottom-left{bottom:-1px;left:-1px;border-bottom-width:2px;border-left-width:2px;--corner-x:-2px;--corner-y:2px}
-.home-banner-promise-corner.bottom-right{bottom:-1px;right:-1px;border-bottom-width:2px;border-right-width:2px;--corner-x:2px;--corner-y:2px}
-@keyframes home-promise-nudge{
-  0%,12%,100%{transform:translateX(0) rotate(0)}
-  2%{transform:translateX(-2px) rotate(-.6deg)}
-  4%{transform:translateX(2px) rotate(.6deg)}
-  6%{transform:translateX(-1px) rotate(-.3deg)}
-  9%{transform:translateX(1px) rotate(.2deg)}
-}
-@keyframes home-promise-corners{
-  0%,12%,100%{transform:translate(0,0)}
-  2%,6%{transform:translate(var(--corner-x),var(--corner-y))}
-  4%,9%{transform:translate(calc(var(--corner-x) * -.5),calc(var(--corner-y) * -.5))}
+@keyframes home-promise-pulse{
+  0%,12%,24%,36%,100%{transform:scale(1)}
+  6%,18%,30%{transform:scale(1.055)}
 }
 @media(prefers-reduced-motion:reduce){
-  .home-banner-promise,.home-banner-promise-corner{animation:none}
+  .home-banner-promise{animation:none}
 }
