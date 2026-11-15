@@ -11,16 +11,16 @@
 .home-header a{text-decoration:none}
 .home-header-brand{display:flex;align-items:center;gap:0;flex-shrink:0;color:var(--home-brand);direction:ltr;isolation:isolate}
 .home-header-mark{
-  width:40px;height:40px;display:grid;place-items:center;border-radius:11px;
+  width:34px;height:34px;display:grid;place-items:center;border-radius:9px;flex:0 0 auto;
   background:linear-gradient(145deg,var(--home-brand),#39b4aa);color:white;
-  font-size:30px;line-height:1;font-weight:850;box-shadow:0 5px 14px #087b761c;
+  font-family:"Inter Variable",sans-serif;font-size:30px;line-height:1;font-weight:850;box-shadow:0 5px 14px #087b761c;
 }
 /* Reserve the full word's width: the animation never moves the navigation.
    0.4s reveal + 10s fully visible + 0.4s fade, then immediate reveal. */
 .home-header-logo-tail{
   display:block;width:3.35em;margin-inline-start:-1px;padding-inline-start:1px;
   font-family:"Inter Variable",sans-serif;font-size:21px;font-weight:850;
-  line-height:40px;letter-spacing:-.65px;white-space:nowrap;
+  line-height:34px;letter-spacing:-.65px;white-space:nowrap;
   transform-origin:left center;animation:home-logo-reveal 10.8s ease-in-out infinite;
 }
 @keyframes home-logo-reveal{
@@ -79,8 +79,8 @@
 @media(max-width:600px){
   .home-header-inner{padding:10px 14px;gap:8px}
   .home-header-actions{gap:6px}
-  .home-header-mark{width:34px;height:34px;font-size:26px}
-  .home-header-logo-tail{font-size:18px;line-height:34px}
+  .home-header-mark{width:30px;height:30px;font-size:26px;border-radius:8px}
+  .home-header-logo-tail{font-size:18px;line-height:30px}
   .home-header-order{display:none}
   .home-header-mobile-order{display:block}
   .home-header-mobile-order a{color:var(--home-brand);font-weight:700}
