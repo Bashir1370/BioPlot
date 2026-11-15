@@ -24,7 +24,7 @@ function writeHeroCache(snapshot:HeroSnapshot){
 export function homeHeroSlots(items:HomeHeroImage[],locale:'en'|'fa'){
  return HOME_HERO_SLOTS.map(slot=>{const item=items.find(image=>image.slot===slot);return {src:item?homeHeroPreviewPublicUrl(item.storagePath):'',fallbackSrc:item?homeHeroPublicUrl(item.storagePath):'',alt:item?(locale==='fa'?item.altFa:item.altEn):(locale==='fa'?'تصویر الهام‌بخش':'Visual inspiration')};});
 }
-export function HomeHero({locale,onCreate}:{locale:'en'|'fa';onCreate:()=>void;eyebrow?:string;title?:string;highlight?:string;description?:string;primaryText?:string;secondaryText?:string;socialProof?:string}){
+export function HomeHero({locale,onCreate}:{locale:'en'|'fa';onCreate?:()=>void;eyebrow?:string;title?:string;highlight?:string;description?:string;primaryText?:string;secondaryText?:string;socialProof?:string}){
  const [cached]=useState(readHeroCache);
  const [items,setItems]=useState<HomeHeroImage[]>(()=>cached?.items??[]);
  const [loading,setLoading]=useState(!cached);
