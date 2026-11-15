@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { loadHomeContent, saveHomeContent, type HomeContent } from './homeContent';
 import { HOME_BANNER_DEFAULTS, HOME_BANNER_FIELDS, normalizeHomeBanner } from './homeBannerContent';
 import './admin-home-text.css';
-const labels = { title: 'عنوان اصلی بنر', subtitle: 'متن زیر عنوان' };
+const labels = { title: 'عنوان اصلی بنر', subtitle: 'متن زیر عنوان', primaryText: 'متن دکمه سفارش طراحی', secondaryText: 'متن دکمه نمونه‌کارها' };
 export function AdminHomeBanner() {
   const [content, setContent] = useState<HomeContent | null>(null);
   const [locale, setLocale] = useState<'fa' | 'en'>('fa');
@@ -27,7 +27,7 @@ export function AdminHomeBanner() {
     finally { setBusy(false); }
   };
   return <section className="admin-template-hero admin-home-text">
-    <div className="admin-template-hero-head"><div><span>HOME BANNER</span><h2>نوشته‌های بنر اصلی</h2><p>عنوان و متن زیر عنوان را برای هر زبان جداگانه ویرایش کنید.</p></div><a href="/" target="_blank" rel="noreferrer">مشاهده صفحه</a></div>
+    <div className="admin-template-hero-head"><div><span>HOME BANNER</span><h2>نوشته‌های بنر اصلی</h2><p>عنوان، زیرعنوان و متن دو دکمه را برای هر زبان جداگانه ویرایش کنید.</p></div><a href="/" target="_blank" rel="noreferrer">مشاهده صفحه</a></div>
     {message && <p role="status">{message}</p>}
     {!content?.banner ? <button onClick={load}>دریافت متن بنر</button> : <form onSubmit={submit}>
       <div className="home-text-languages">{(['fa','en'] as const).map(lang => <button key={lang} type="button" aria-pressed={locale === lang} onClick={() => setLocale(lang)}>{lang === 'fa' ? 'فارسی' : 'English'}</button>)}</div>

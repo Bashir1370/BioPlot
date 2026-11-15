@@ -19,11 +19,15 @@ export function HomeBanner({ locale }: { locale: 'fa' | 'en' }) {
   }, []);
   const copy = content[locale];
   return <section id="home" className="home-banner" dir={locale === 'fa' ? 'rtl' : 'ltr'} aria-label={locale === 'fa' ? 'طراحی شکل‌های علمی و آکادمیک' : 'Scientific and academic figure design'}>
-    <img className="home-banner-image" src="/images/scientific-design-banner-1920.webp" srcSet="/images/scientific-design-banner-1280.webp 1280w, /images/scientific-design-banner-1920.webp 1920w" sizes="(max-width: 1440px) 100vw, 1440px" width="1920" height="1072" alt="" fetchPriority="high" decoding="async"/>
+    <img className="home-banner-image" src="/images/scientific-design-banner-1920.webp" srcSet="/images/scientific-design-banner-1280.webp 1280w, /images/scientific-design-banner-1920.webp 1920w" sizes="100vw" width="1920" height="1072" alt="" fetchPriority="high" decoding="async"/>
     <div className="home-banner-fade" aria-hidden="true"/>
     <div className="home-banner-copy">
       {copy.title && <h1>{copy.title}</h1>}
       {copy.subtitle && <p>{copy.subtitle}</p>}
+      {(copy.primaryText || copy.secondaryText) && <div className="home-banner-actions">
+        {copy.primaryText && <a className="home-banner-primary" href="/design">{copy.primaryText}</a>}
+        {copy.secondaryText && <a className="home-banner-secondary" href="#portfolio">{copy.secondaryText}</a>}
+      </div>}
     </div>
   </section>;
 }

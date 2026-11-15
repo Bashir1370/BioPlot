@@ -16,11 +16,15 @@ describe('Photographic Home banner',()=>{
    expect(html).toContain(`dir="${locale==='fa'?'rtl':'ltr'}"`);
    expect(html).toContain('scientific-design-banner-1920.webp');
    expect(html).not.toContain('shuffle-tile');
+   expect(html).toContain('href="/design"');
+   expect(html).toContain('href="#portfolio"');
+   expect(html).toContain(HOME_BANNER_DEFAULTS[locale].primaryText);
+   expect(html).toContain(HOME_BANNER_DEFAULTS[locale].secondaryText);
   }
  });
  it('preserves intentionally blank text while defaulting missing translations',()=>{
   const copy=normalizeHomeBanner({fa:{title:'عنوان سفارشی',subtitle:''}});
-  expect(copy.fa).toEqual({title:'عنوان سفارشی',subtitle:''});
+  expect(copy.fa).toEqual({...HOME_BANNER_DEFAULTS.fa,title:'عنوان سفارشی',subtitle:''});
   expect(copy.en).toEqual(HOME_BANNER_DEFAULTS.en);
  });
  it('round-trips banner settings without replacing archived hero copy',async()=>{
@@ -31,6 +35,12 @@ describe('Photographic Home banner',()=>{
   expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({content}),{onConflict:'id'});
   mocks.read.mockResolvedValue({data:{content},error:null});
   expect(await loadHomeContent()).toEqual(content);
+ });
+ it('removes the old trailing title period and supplies buttons for existing CMS content',()=>{
+  const copy=normalizeHomeBanner({fa:{title:'عنوان قبلی.',subtitle:'زیرعنوان'}});
+  expect(copy.fa.title).toBe('عنوان قبلی');
+  expect(copy.fa.primaryText).toBe(HOME_BANNER_DEFAULTS.fa.primaryText);
+  expect(copy.fa.secondaryText).toBe(HOME_BANNER_DEFAULTS.fa.secondaryText);
  });
  it('rejects oversized banner copy before writing',async()=>{
   const content={...structuredClone(HOME_TEXT_DEFAULTS),banner:structuredClone(HOME_BANNER_DEFAULTS)};

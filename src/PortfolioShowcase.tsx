@@ -97,7 +97,7 @@ export function PortfolioShowcasePortal() {
 
   return createPortal(
     <>
-    <div ref={loadAnchor} className="portfolio-showcase-load-anchor" aria-hidden="true" style={{height:1}}/>
+    <div id="portfolio" ref={loadAnchor} className="portfolio-showcase-load-anchor" aria-hidden="true" style={{height:1}}/>
     {slides.length>0 && <section className="portfolio-showcase home-section" aria-labelledby="portfolio-showcase-title" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
       <div className="portfolio-showcase-heading">
         <h2 id="portfolio-showcase-title">{title}</h2>

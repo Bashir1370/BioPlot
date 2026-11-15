@@ -24,9 +24,8 @@ export function DashboardApp() {
     <HomeHeader locale={locale} onLocaleChange={() => setLocale(fa ? 'en' : 'fa')}/>
 
     <main className="home-main">
+      <HomeBanner locale={locale}/>
       <div className="home-content">
-
-        <HomeBanner locale={locale}/>
         <HomeOrderServices locale={locale}/>
 
 
