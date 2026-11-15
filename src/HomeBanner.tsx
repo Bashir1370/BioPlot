@@ -23,10 +23,7 @@ export function HomeBanner({ locale }: { locale: 'fa' | 'en' }) {
     <div className="home-banner-fade" aria-hidden="true"/>
     <div className="home-banner-copy">
       {copy.title && <h1>{copy.title}</h1>}
-      {copy.subtitle && <p><span className="home-banner-promise">
-        <span className="home-banner-promise-text">{copy.subtitle}</span>
-        {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => <span key={corner} className={`home-banner-promise-corner ${corner}`} aria-hidden="true"/>)}
-      </span></p>}
+      {copy.subtitle && <p><span className="home-banner-promise">{copy.subtitle}</span></p>}
       {(copy.primaryText || copy.secondaryText) && <div className="home-banner-actions">
         {copy.primaryText && <a className="home-banner-primary" href="/design">{copy.primaryText}</a>}
         {copy.secondaryText && <a className="home-banner-secondary" href="#portfolio">{copy.secondaryText}</a>}
