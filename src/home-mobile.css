@@ -1,0 +1,74 @@
+/* Home-only mobile layout. Keep desktop composition and both reading directions. */
+@media(max-width:820px){
+  .home-shell .home-content{width:100%;padding:32px 20px 48px}
+  .home-shell .home-order-services{margin-top:0}
+  .home-shell .home-header-inner{min-height:68px;padding:10px 16px;gap:12px}
+  .home-shell .home-header-actions{gap:8px;min-width:0}
+  .home-shell .home-header :is(.home-header-language,.home-header-toggle,.home-account-entry){min-width:44px;min-height:44px;height:44px}
+  .home-shell .home-header .home-account-entry{width:44px;padding:5px;justify-content:center}
+  .home-shell .home-header .home-account-entry .home-account-label{display:none}
+  .home-shell .home-header .home-account-entry .home-account-avatar{display:grid}
+  .home-shell .home-header-nav.is-open{max-height:calc(100dvh - 90px);overflow-y:auto;overscroll-behavior:contain}
+  .home-shell .home-header-nav a,.home-shell .home-header-coming-soon{white-space:normal;min-height:48px}
+  .home-shell .home-header-coming-soon{flex-wrap:wrap}
+  .home-shell .home-order-services-grid{grid-template-columns:1fr;gap:18px}
+  .home-shell .home-order-service-card{display:grid;grid-template-columns:36% minmax(0,1fr)}
+  .home-shell .home-order-service-visual{height:100%;min-height:180px;border-bottom:0;border-inline-end:1px solid #e6eeef}
+  .home-shell .home-order-service-content{min-width:0}
+  .home-shell .home-order-service-content :is(h3,p){overflow-wrap:anywhere}
+  .home-shell .home-order-service-cta{min-height:48px}
+  .home-shell .portfolio-showcase{padding-top:34px;scroll-margin-top:90px}
+  .home-shell .portfolio-showcase-heading{gap:12px;align-items:flex-start}
+  .home-shell .portfolio-showcase-heading h2{min-width:0;font-size:clamp(20px,3.5vw,25px);line-height:1.6;letter-spacing:0}
+  .home-shell .portfolio-showcase-controls{gap:8px}
+  .home-shell .portfolio-showcase-controls button{width:44px;height:44px;flex-shrink:0}
+  .home-shell[dir="rtl"] .portfolio-showcase-controls button:first-child svg{transform:none}
+  .home-shell[dir="rtl"] .portfolio-showcase-controls button:last-child svg{transform:rotate(180deg)}
+}
+@media(max-width:767px){
+  .home-shell .home-banner{display:block;min-height:0;padding-bottom:210px;align-items:initial}
+  .home-shell .home-banner-copy{width:100%;max-width:620px;margin-inline:auto;padding:32px 24px 30px}
+  .home-shell .home-banner-copy h1{font-size:clamp(26px,6.4vw,36px);line-height:1.3;overflow-wrap:anywhere}
+  .home-shell .home-banner[dir="rtl"] .home-banner-copy h1{line-height:1.65}
+  .home-shell .home-banner-copy p{font-size:clamp(16px,3.6vw,19px);margin-top:16px;line-height:1.8}
+  .home-shell .home-banner-promise{max-width:94%}
+  .home-shell .home-banner-image{top:auto;bottom:0;height:280px;object-position:center;object-fit:cover}
+  .home-shell .home-banner .home-banner-fade{
+    background:linear-gradient(to bottom,#fff 0%,#fff calc(100% - 260px),rgba(255,255,255,.92) calc(100% - 220px),rgba(255,255,255,0) calc(100% - 90px));
+  }
+  .home-shell .home-banner-actions{gap:10px;margin-top:22px}
+  .home-shell .home-banner-actions a{min-height:48px;white-space:normal;overflow-wrap:anywhere;font-size:15px}
+  .home-shell .home-order-services-heading{margin-bottom:20px;gap:16px}
+  .home-shell .home-order-services-heading h2{font-size:clamp(23px,4.4vw,29px);line-height:1.6}
+  .home-shell .home-order-services-heading p{font-size:14px;line-height:1.9}
+  .home-shell .home-order-services-grid{grid-template-columns:1fr;gap:18px}
+  .home-shell .portfolio-squeeze{height:clamp(240px,78vw,390px);display:block;position:relative;overflow:hidden}
+  .home-shell .portfolio-slide{position:absolute;inset:0;min-width:0;opacity:0;visibility:hidden;pointer-events:none;border-radius:14px}
+  .home-shell .portfolio-slide.active{opacity:1;visibility:visible;pointer-events:auto;transform:none}
+  .home-shell .portfolio-slide>img{object-fit:contain}
+  .home-shell .portfolio-showcase-load-anchor{scroll-margin-top:90px}
+}
+@media(max-width:600px){
+  .home-shell .home-content{padding:30px 16px 44px}
+  .home-shell .home-header-order{display:none}
+  .home-shell .home-header-mobile-order{display:block}
+  .home-shell .home-order-service-card{display:flex;border-radius:16px}
+  .home-shell .home-order-service-visual{height:clamp(150px,42vw,200px);min-height:0;border-inline-end:0;border-bottom:1px solid #e6eeef;padding:10px 16px}
+  .home-shell .home-order-service-content{padding:18px 20px 20px}
+  .home-shell .home-order-service-content h3{font-size:20px;line-height:1.65;margin:8px 0}
+  .home-shell .home-order-service-content p{font-size:14px;min-height:0;margin-bottom:18px;line-height:1.9}
+  .home-shell .home-order-service-cta{width:100%;font-size:14px}
+}
+@media(max-width:480px){
+  .home-shell .home-header-inner{padding-inline:12px;gap:8px}
+  .home-shell .home-header-actions{gap:6px}
+  .home-shell .home-header .home-account-entry{width:44px;padding:5px;justify-content:center}
+  .home-shell .home-header .home-account-entry .home-account-label{display:none}
+  .home-shell .home-header .home-account-entry .home-account-avatar{display:grid}
+  .home-shell .home-banner-copy{padding-inline:22px}
+  .home-shell .home-banner-actions{flex-direction:column;align-items:stretch}
+  .home-shell .home-banner-actions a{flex:none;width:100%;padding:12px 16px}
+}
+@media(hover:none){
+  .home-shell .home-order-service-card:hover,.home-shell .home-order-service-cta:hover{transform:none}
+}
