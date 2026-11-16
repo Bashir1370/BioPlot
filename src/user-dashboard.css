@@ -83,8 +83,8 @@
 
 /* Match the Home wordmark motion while preserving sidebar colors. */
 .workspace-brand .workspace-logo{direction:ltr;gap:0;flex-shrink:0;isolation:isolate}
-.workspace-brand .workspace-logo>b{flex:0 0 40px;font-family:"Inter Variable",sans-serif;font-size:30px;line-height:1;font-weight:850}
-.workspace-brand .workspace-logo-tail{display:block;width:3.35em;margin-inline-start:-1px;padding-inline-start:1px;font-family:"Inter Variable",sans-serif;font-size:21px;font-weight:850;line-height:40px;letter-spacing:-.65px;white-space:nowrap;transform-origin:left center;animation:workspace-logo-reveal 10.8s ease-in-out infinite}
+.workspace-brand .workspace-logo>b{flex:0 0 30px;width:30px;height:32px;border-radius:9px;font-family:"Inter Variable",sans-serif;font-size:28px;line-height:1;font-weight:850}
+.workspace-brand .workspace-logo-tail{display:block;width:3.35em;margin-inline-start:-2px;padding-inline-start:0;font-family:"Inter Variable",sans-serif;font-size:21px;font-weight:850;line-height:32px;letter-spacing:-.65px;white-space:nowrap;transform-origin:left center;animation:workspace-logo-reveal 10.8s ease-in-out infinite}
 @keyframes workspace-logo-reveal{
  0%,100%{opacity:0;transform:translateX(-8px);clip-path:inset(0 100% 0 0);filter:blur(2px)}
  3.703704%,96.296296%{opacity:1;transform:translateX(0);clip-path:inset(0 0 0 0);filter:blur(0)}
