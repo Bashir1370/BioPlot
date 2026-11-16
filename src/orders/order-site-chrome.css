@@ -1,0 +1,8 @@
+/* Share Home chrome without applying order button styles to the header/footer. */
+.home-shell.order-site-layout{display:flex;flex-direction:column;min-height:100vh;font-family:'Vazirmatn Variable','Inter Variable',sans-serif}
+.order-site-layout>.orders-shell{flex:1;min-height:0}
+.order-site-layout .orders-content{width:100%}
+.order-site-layout>.home-footer{margin-top:0}
+.order-workspace-links{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.order-workspace-links a{display:inline-flex;align-items:center;min-height:44px;padding:6px 12px;border:1px solid #dce9e5;border-radius:9px;background:#fff;color:#476a70;font-size:13px}
+.order-workspace-links a:hover{border-color:#9ecac2;color:#087b76}

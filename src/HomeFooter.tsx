@@ -16,8 +16,8 @@ export function HomeFooter({locale}: {locale: 'fa' | 'en'}) {
         <nav className="home-footer-links" aria-label={fa ? 'دسترسی سریع' : 'Quick links'}>
           <h2>{fa ? 'دسترسی سریع' : 'Explore'}</h2>
           <a href="/design">{fa ? 'سفارش طراحی' : 'Request a design'}</a>
-          <a href="#portfolio">{fa ? 'نمونه‌کارهای ما' : 'Our work'}</a>
-          <a href="#home-order-services-title">{fa ? 'خدمات طراحی' : 'Design services'}</a>
+          <a href="/#portfolio">{fa ? 'نمونه‌کارهای ما' : 'Our work'}</a>
+          <a href="/#home-order-services-title">{fa ? 'خدمات طراحی' : 'Design services'}</a>
         </nav>
         <div className="home-footer-contact">
           <h2>{fa ? 'با ما در ارتباط باشید' : 'Get in touch'}</h2>
