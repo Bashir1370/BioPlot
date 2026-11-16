@@ -42,7 +42,7 @@
 @media(max-width:540px){.workspace-order-heading{align-items:flex-start}.workspace-order-heading h2{font-size:17px}.workspace-order-heading>a{font-size:10px}.workspace-order-stats{grid-template-columns:1fr}.workspace-order-stats>div{grid-template-columns:28px 32px 1fr;gap:9px}.workspace-order-stats svg{grid-row:auto}.workspace-order-stats span{grid-column:3}.workspace-order-empty{align-items:stretch;flex-direction:column}.workspace-order-empty .workspace-primary{align-self:flex-start}}
 
 /* Keep the admin changes scoped to the existing dashboard layout. */
-.workspace.is-admin .workspace-stats{grid-template-columns:minmax(0,1fr);max-width:420px}
+.workspace.is-admin .workspace-main>header{justify-content:flex-end}
 .workspace.is-admin .workspace-order-center{padding:clamp(20px,3vw,32px)}
 .workspace.is-admin .workspace-order-heading small{font-size:14px;letter-spacing:0}
 .workspace.is-admin .workspace-order-heading h2{font-size:clamp(24px,2.4vw,30px);line-height:1.6;margin:6px 0}
@@ -61,7 +61,6 @@
 .workspace.is-admin .workspace-order-state,.workspace.is-admin .workspace-order-empty,.workspace.is-admin .workspace-order-empty p{font-size:15px;line-height:1.9}
 .workspace.is-admin .workspace-order-empty .workspace-primary{font-size:14px}
 @media(max-width:540px){
- .workspace.is-admin .workspace-stats{max-width:none}
  .workspace.is-admin .workspace-order-heading{flex-wrap:wrap;gap:12px}
  .workspace.is-admin .workspace-order-heading h2{font-size:24px}
  .workspace.is-admin .workspace-order-heading p{font-size:15px}
