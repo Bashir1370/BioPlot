@@ -19,7 +19,7 @@ export function OrderRequestSummary({fa,order,files,busy,onDownload,children}:{f
  return <section className="order-card order-request-summary" aria-labelledby="order-request-summary-title">
   <div className="order-request-confirmation">
    <span className="order-request-check"><CheckCircle size={30} aria-hidden="true"/></span>
-   <div><h2 id="order-request-summary-title">{pending?t('سفارش شما با موفقیت ثبت شد','Your request has been received'):t(...statusLabels[order.status])}</h2>
+   <div><h2 id="order-request-summary-title">{order.status==='submitted'?t('سفارش شما با موفقیت ثبت شد','Your request has been received'):t(...statusLabels[order.status])}</h2>
    {pending&&<p>{t('تیم ما در حال بررسی سفارش شماست و به‌زودی نتیجه را در همین صفحه به شما اطلاع می‌دهیم.','Our team is reviewing your request. We will share an update on this page soon.')}</p>}</div>
   </div>
   <dl className="order-request-facts">{fields.map(([label,value],i)=><div className={`order-request-fact tone-${i%3}`} key={label}><dt>{label}</dt><dd dir="auto">{value}</dd></div>)}
