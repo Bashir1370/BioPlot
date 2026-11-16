@@ -1,5 +1,6 @@
 import {HomeBanner} from './HomeBanner';
 import {HomeOrderServices} from './HomeOrderServices';
+import {HomeFooter} from './HomeFooter';
 import { useEffect, useState } from 'react';
 import './precision-studio.css';
 import './home.css';
@@ -32,6 +33,6 @@ export function DashboardApp() {
 
       </div>
     </main>
-
+    <HomeFooter locale={locale}/>
   </div>;
 }
