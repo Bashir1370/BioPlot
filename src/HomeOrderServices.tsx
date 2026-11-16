@@ -5,7 +5,6 @@ import ThreeDCardDemo from './components/3d-card-demo';
 type Locale = 'fa' | 'en';
 type Service = {
   kind: ServiceKind;
-  number: string;
   title: Record<Locale, string>;
   description: Record<Locale, string>;
 };
@@ -13,7 +12,6 @@ type Service = {
 const SERVICES: Service[] = [
   {
     kind: 'figure',
-    number: '01',
     title: { fa: 'طراحی تصویر علمی', en: 'Scientific illustration' },
     description: {
       fa: 'مسیرهای زیستی، شماتیک آزمایش و مکانیسم‌های مولکولی',
@@ -22,7 +20,6 @@ const SERVICES: Service[] = [
   },
   {
     kind: 'graphical_abstract',
-    number: '02',
     title: { fa: 'طراحی چکیده تصویری', en: 'Graphical abstract design' },
     description: {
       fa: 'تبدیل پیام اصلی مقاله به یک Graphical Abstract',
@@ -31,7 +28,6 @@ const SERVICES: Service[] = [
   },
   {
     kind: 'poster',
-    number: '03',
     title: { fa: 'طراحی پوستر علمی', en: 'Scientific poster design' },
     description: {
       fa: 'پوستر کنفرانس، کنگره و ارائه دانشگاهی',
@@ -77,7 +73,7 @@ export function HomeOrderServices({ locale }: { locale: Locale }) {
         {SERVICES.map(service => (
           <ThreeDCardDemo key={service.kind}
             title={service.title[locale]} description={service.description[locale]}
-            visual={<ServiceIllustration kind={service.kind} locale={locale}/>} number={service.number}
+            visual={<ServiceIllustration kind={service.kind} locale={locale}/>}
             href={`/design?kind=${service.kind}`} cta={fa ? 'شروع سفارش' : 'Start an order'} rtl={fa}/>
         ))}
       </div>
