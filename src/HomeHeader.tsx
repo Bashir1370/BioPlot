@@ -3,9 +3,10 @@ import { HomeAccountPortal } from './HomeAccountPortal';
 import './home-header.css';
 
 // The selected HyperUI header layout, adapted to BioPlot without a Tailwind runtime.
-export function HomeHeader({ locale, onLocaleChange }: {
+export function HomeHeader({ locale, onLocaleChange, currentPage = 'home' }: {
   locale: 'en' | 'fa';
   onLocaleChange: () => void;
+  currentPage?: 'home' | 'design' | null;
 }) {
   const fa = locale === 'fa';
   const [open, setOpen] = useState(false);
@@ -40,14 +41,14 @@ export function HomeHeader({ locale, onLocaleChange }: {
       </a>
       <nav id="home-header-navigation" className={`home-header-nav${open ? ' is-open' : ''}`} aria-label={fa ? 'ناوبری اصلی' : 'Main navigation'} onClick={event => { if ((event.target as HTMLElement).closest('a')) setOpen(false); }}>
         <ul>
-          <li><a href="/" aria-current="page">{fa ? 'خانه' : 'Home'}</a></li>
+          <li><a href="/" aria-current={currentPage === 'home' ? 'page' : undefined}>{fa ? 'خانه' : 'Home'}</a></li>
           <li><a href="/dashboard">{fa ? 'داشبورد من' : 'My dashboard'}</a></li>
-          <li className="home-header-mobile-order"><a href="/design">{fa ? 'سفارش طراحی' : 'Request a design'}</a></li>
+          <li className="home-header-mobile-order"><a href="/design" aria-current={currentPage === 'design' ? 'page' : undefined}>{fa ? 'سفارش طراحی' : 'Request a design'}</a></li>
           <li><span className="home-header-coming-soon" aria-disabled="true"><span>{fa ? 'استودیو شکل علمی' : 'Figure Studio'}</span><small>{fa ? 'به‌زودی' : 'Coming soon'}</small></span></li>
         </ul>
       </nav>
       <div className="home-header-actions">
-        <a className="home-header-order" href="/design">{fa ? 'سفارش طراحی' : 'Request a design'}</a>
+        <a className="home-header-order" href="/design" aria-current={currentPage === 'design' ? 'page' : undefined}>{fa ? 'سفارش طراحی' : 'Request a design'}</a>
         <HomeAccountPortal locale={locale}/>
         <button type="button" className="home-header-language" onClick={() => { setOpen(false); onLocaleChange(); }} aria-label={fa ? 'Switch to English' : 'تغییر زبان به فارسی'} lang={fa ? 'en' : 'fa'}>{fa ? 'EN' : 'FA'}</button>
         <button type="button" className="home-header-toggle" ref={toggle} aria-controls="home-header-navigation" aria-expanded={open} aria-label={open ? (fa ? 'بستن منو' : 'Close menu') : (fa ? 'باز کردن منو' : 'Open menu')} onClick={() => setOpen(!open)}>
