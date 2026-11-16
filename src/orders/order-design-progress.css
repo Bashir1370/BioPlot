@@ -1,0 +1,20 @@
+.order-detail-clean>.order-design-progress{max-width:1020px;margin:0 auto 26px;padding:clamp(22px,4vw,38px);border:1px solid #bcded2;background:radial-gradient(ellipse at 95% 0,#def2e9 0,transparent 55%),linear-gradient(135deg,#fbfefd,#f0f8f4);box-shadow:0 12px 34px #173f4608;overflow:hidden}
+.design-progress-heading{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.design-progress-icon{display:grid;place-items:center;width:54px;height:54px;border-radius:17px;flex:none;background:#d9eee4;color:#16735e}
+.design-progress-heading>div{flex:1;min-width:180px}
+.design-progress-eyebrow{font-size:12px;color:#538474;letter-spacing:.03em}
+.design-progress-heading h2{font-size:clamp(21px,2.5vw,28px);line-height:1.7;color:#174e42;margin:3px 0}
+.design-progress-confirmed{display:inline-flex;align-items:center;gap:6px;color:#437b68;background:#ffffffa6;border:1px solid #d9eae1;border-radius:999px;padding:7px 12px;font-size:12px}
+.design-countdown-label{text-align:center;font-size:14px;color:#577d6e;margin:27px 0 13px}
+.design-countdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:490px;margin:auto}
+.design-countdown>div{display:grid;justify-items:center;padding:16px 12px;background:#ffffffd9;border:1px solid #d7e9e0;border-radius:18px;box-shadow:0 5px 16px #244d3905}
+.design-countdown strong{font-size:clamp(32px,5vw,49px);font-weight:750;line-height:1.35;font-variant-numeric:tabular-nums;color:#196b55}
+.design-countdown span{font-size:13px;color:#749082;margin-top:3px}
+.design-time-track{height:5px;max-width:490px;margin:19px auto 12px;border-radius:99px;background:#dcebe3;overflow:hidden}
+.design-time-track>span{display:block;height:100%;background:linear-gradient(90deg,#62b997,#218867);border-radius:inherit}
+.design-delivery-date{text-align:center;font-size:12px;color:#6b877b;line-height:1.8;margin:14px 0 0}
+.design-patience-note{text-align:center;margin-top:24px;padding-top:19px;border-top:1px solid #d5e6dc}
+.design-patience-note p{font-size:16px;color:#375f50;margin:0 0 6px;font-weight:600}
+.design-patience-note span{font-size:14px;line-height:1.9;color:#6a8778}
+.design-timing-notice{padding:17px 19px;border-radius:13px;background:#ffffffb3;color:#4d7263;line-height:1.9;margin-top:24px}
+@media(max-width:540px){.design-progress-confirmed{margin-inline-start:69px}.design-countdown{gap:9px}.design-countdown>div{padding:14px 6px;border-radius:14px}.design-progress-heading{gap:12px}.design-progress-heading>div{min-width:0}.design-progress-heading h2{font-size:21px}.design-patience-note p{font-size:15px}.design-patience-note span{font-size:13px}}
