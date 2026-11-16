@@ -26,8 +26,6 @@ export function PortfolioShowcasePortal() {
   const [paused, setPaused] = useState(false);
   const [ratios, setRatios] = useState<Record<string, number>>({});
   const pointerStart = useRef<number | null>(null);
-  const loadAnchor=useRef<HTMLDivElement>(null);
-  const [inView,setInView]=useState(false);
 
 
   useEffect(() => {
@@ -45,22 +43,7 @@ export function PortfolioShowcasePortal() {
     return () => observer.disconnect();
   }, []);
 
-  // The showcase is below Home's hero and service cards. Fetch it only when
-  // the visitor is approaching this section rather than during the first paint.
   useEffect(() => {
-    if (!target || inView) return;
-    const node=loadAnchor.current;
-    if (!node) return;
-    if (!('IntersectionObserver' in window)) { setInView(true); return; }
-    const observer=new IntersectionObserver(entries=>{
-      if(entries.some(entry=>entry.isIntersecting)) {setInView(true);observer.disconnect();}
-    },{rootMargin:'450px 0px'});
-    observer.observe(node);
-    return()=>observer.disconnect();
-  },[target,inView]);
-
-  useEffect(() => {
-    if (!inView) return;
     let cancelled = false;
     let lastLoad=0;
     async function load() {
@@ -80,7 +63,7 @@ export function PortfolioShowcasePortal() {
     const refresh = () => void load();
     window.addEventListener('focus', refresh);
     return () => { cancelled = true; window.removeEventListener('focus', refresh); };
-  }, [inView]);
+  }, []);
 
   useEffect(() => {
     if (paused || slides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -97,7 +80,7 @@ export function PortfolioShowcasePortal() {
 
   return createPortal(
     <>
-    <div id="portfolio" ref={loadAnchor} className="portfolio-showcase-load-anchor" aria-hidden="true" style={{height:1}}/>
+    <div id="portfolio" className="portfolio-showcase-load-anchor" aria-hidden="true" style={{height:1}}/>
     {slides.length>0 && <section className="portfolio-showcase home-section" aria-labelledby="portfolio-showcase-title" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
       <div className="portfolio-showcase-heading">
         <h2 id="portfolio-showcase-title">{title}</h2>
