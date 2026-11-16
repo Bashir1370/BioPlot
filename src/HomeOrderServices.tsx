@@ -43,20 +43,20 @@ const SERVICES: Service[] = [
 /** Supplied scientific artwork and lightweight service illustrations. */
 function ServiceIllustration({ kind, locale }: { kind: ServiceKind; locale: Locale }) {
   if (kind === 'figure') return (
-    <img className="service-scientific-image" src="/images/services/scientific-signaling.webp"
-      width="1280" height="956" loading="lazy" decoding="async"
+    <img className="service-scientific-image" src="/images/services/scientific-signaling-original.jpg"
+      width="2048" height="1529" loading="lazy" decoding="async"
       alt={locale === 'fa' ? 'نمونه طراحی مسیر سیگنال‌دهی سلولی و اتوفاژی' : 'Scientific illustration of cellular signaling and autophagy'}/>
   );
 
   if (kind === 'graphical_abstract') return (
-    <img className="service-scientific-image" src="/images/services/graphical-abstract.webp"
-      width="1280" height="956" loading="lazy" decoding="async"
+    <img className="service-scientific-image" src="/images/services/graphical-abstract-original.jpg"
+      width="2048" height="1529" loading="lazy" decoding="async"
       alt={locale === 'fa' ? 'نمونه گرافیکال ابسترکت با نمایش اپی‌تلیوم روده و رگ خونی' : 'Graphical abstract showing intestinal epithelium and a blood vessel'}/>
   );
 
   return (
-    <img className="service-scientific-image" src="/images/services/conference-poster.webp"
-      width="1280" height="956" loading="lazy" decoding="async"
+    <img className="service-scientific-image" src="/images/services/conference-poster-original.jpg"
+      width="2048" height="1529" loading="lazy" decoding="async"
       alt={locale === 'fa' ? 'نمونه پوستر علمی همایش با نمودارها و نتایج پژوهش' : 'Scientific conference poster with research charts and results'}/>
   );
 }
