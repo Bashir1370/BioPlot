@@ -61,7 +61,7 @@ describe('Customer order detail',()=>{
   await act(async()=>send.click());
   const form=host.querySelector<HTMLFormElement>('.order-action-form')!;
   expect(form.textContent).not.toContain('پیش‌پرداخت اولیه');
-  expect(form.querySelector('.order-payment-terms')?.textContent).toContain('اطلاعات حساب هنگام تحویل نهایی');
+  expect(form.querySelector('.order-payment-terms')?.textContent).toBe('در صورت موافقت شما با این پیشنهاد، مبلغ پس از پایان طراحی و تأیید رضایت شما پرداخت می‌شود.');
   await act(async()=>form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
   expect(transition).toHaveBeenCalledWith('quoted','',{amount:100,currency:'USD',scope:'Scientific illustration',days:7,revisions:2});
  });

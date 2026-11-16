@@ -19,7 +19,8 @@ beforeAll(async()=>{
  alter table storage.objects enable row level security;
  grant usage on schema public,auth,storage to authenticated,anon;
  grant select,insert,delete on storage.objects to authenticated;`);
- await db.exec(readFileSync('supabase/migrations/20260923150000_scientific_design_orders.sql','utf8'));
+ await db.exec(readFileSync('supabase/migrations/20261101140141_scientific_design_orders.sql','utf8'));
+ await db.exec(readFileSync('supabase/migrations/20261116204022_auto_start_design_after_acceptance.sql','utf8'));
 },30000);
 afterAll(async()=>{await db.close();});
 describe.sequential('order PostgreSQL policies and workflow',()=>{
@@ -47,6 +48,8 @@ describe.sequential('order PostgreSQL policies and workflow',()=>{
   await move('quoted','',{amount:1500000,currency:'IRT',scope:'One illustration, SVG and PNG, two rounds; payment by agreement.',days:5,revisions:2});
   await expect(move('accepted')).rejects.toThrow('INVALID_TRANSITION');
   await asUser(customer);await expect(move('designing')).rejects.toThrow('INVALID_TRANSITION');await move('accepted');
+  expect((await row()).status).toBe('designing');
+  const automatic=await db.query<{detail:{automatic:boolean;delivery_due_at:string}}>("select detail from public.design_order_events where status='designing'");expect(automatic.rows).toHaveLength(1);expect(automatic.rows[0].detail.automatic).toBe(true);expect(Date.parse(automatic.rows[0].detail.delivery_due_at)).toBeGreaterThan(Date.now());
   const events=await db.query<{detail:{amount:number}}>("select detail from public.design_order_events where status='accepted'");expect(events.rows[0].detail.amount).toBe(1500000);
  });
  it('prevents customer uploads from impersonating final delivery and keeps event authors server-owned',async()=>{
@@ -59,7 +62,7 @@ describe.sequential('order PostgreSQL policies and workflow',()=>{
   await expect(db.query("insert into public.design_order_messages(order_id,author_id,body,created_at) values($1,$2,'forged','2000-01-01')",[id,customer])).rejects.toThrow();
  });
  it('requires fresh preview files, protects versions and enforces client preview approval',async()=>{
-  await asUser(admin);await move('designing');await expect(move('review')).rejects.toThrow('FILES_REQUIRED');
+  await asUser(admin);await expect(move('review')).rejects.toThrow('FILES_REQUIRED');
   const path=await file('preview','66666666-6666-4666-8666-666666666666');await move('review');
   await db.query("delete from storage.objects where bucket_id='bioplot-order-files' and name=$1",[path]);
   expect((await db.query('select * from storage.objects where name=$1',[path])).rows).toHaveLength(1);
