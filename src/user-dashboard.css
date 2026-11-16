@@ -41,31 +41,31 @@
 @media(max-width:800px){.workspace-order-center{padding:18px}.workspace-order-stats{gap:7px}.workspace-order-stats>div{padding:9px;grid-template-columns:22px 1fr;column-gap:6px}.workspace-order-stats span{font-size:9px}}
 @media(max-width:540px){.workspace-order-heading{align-items:flex-start}.workspace-order-heading h2{font-size:17px}.workspace-order-heading>a{font-size:10px}.workspace-order-stats{grid-template-columns:1fr}.workspace-order-stats>div{grid-template-columns:28px 32px 1fr;gap:9px}.workspace-order-stats svg{grid-row:auto}.workspace-order-stats span{grid-column:3}.workspace-order-empty{align-items:stretch;flex-direction:column}.workspace-order-empty .workspace-primary{align-self:flex-start}}
 
-/* Keep the admin changes scoped to the existing dashboard layout. */
+/* Readable design-service typography shared by customer and admin dashboards. */
 .workspace.is-admin .workspace-main>header{justify-content:flex-end}
-.workspace.is-admin .workspace-order-center{padding:clamp(20px,3vw,32px)}
-.workspace.is-admin .workspace-order-heading small{font-size:14px;letter-spacing:0}
-.workspace.is-admin .workspace-order-heading h2{font-size:clamp(24px,2.4vw,30px);line-height:1.6;margin:6px 0}
-.workspace.is-admin .workspace-order-heading p{font-size:16px;line-height:1.9}
-.workspace.is-admin .workspace-order-heading>a{font-size:15px}
-.workspace.is-admin .workspace-order-stats{gap:12px;margin:24px 0}
-.workspace.is-admin .workspace-order-stats>div{padding:16px;column-gap:12px}
-.workspace.is-admin .workspace-order-stats strong{font-size:24px}
-.workspace.is-admin .workspace-order-stats span{font-size:14px;line-height:1.7}
-.workspace.is-admin .workspace-order-list{gap:12px}
-.workspace.is-admin .workspace-order-item{padding:18px;row-gap:6px}
-.workspace.is-admin .workspace-order-item>strong{font-size:18px;white-space:normal;overflow-wrap:anywhere}
-.workspace.is-admin .workspace-order-item>p{font-size:15px;line-height:1.8}
-.workspace.is-admin .workspace-order-item>small{font-size:13px;line-height:1.8}
-.workspace.is-admin .workspace-order-status,.workspace.is-admin .workspace-order-unread{font-size:12px}
-.workspace.is-admin .workspace-order-state,.workspace.is-admin .workspace-order-empty,.workspace.is-admin .workspace-order-empty p{font-size:15px;line-height:1.9}
-.workspace.is-admin .workspace-order-empty .workspace-primary{font-size:14px}
+.workspace .workspace-order-center{padding:clamp(20px,3vw,32px)}
+.workspace .workspace-order-heading small{font-size:14px;letter-spacing:0}
+.workspace .workspace-order-heading h2{font-size:clamp(24px,2.4vw,30px);line-height:1.6;margin:6px 0}
+.workspace .workspace-order-heading p{font-size:16px;line-height:1.9}
+.workspace .workspace-order-heading>a{font-size:15px}
+.workspace .workspace-order-stats{gap:12px;margin:24px 0}
+.workspace .workspace-order-stats>div{padding:16px;column-gap:12px}
+.workspace .workspace-order-stats strong{font-size:24px}
+.workspace .workspace-order-stats span{font-size:14px;line-height:1.7}
+.workspace .workspace-order-list{gap:12px}
+.workspace .workspace-order-item{padding:18px;row-gap:6px}
+.workspace .workspace-order-item>strong{font-size:18px;white-space:normal;overflow-wrap:anywhere}
+.workspace .workspace-order-item>p{font-size:15px;line-height:1.8}
+.workspace .workspace-order-item>small{font-size:13px;line-height:1.8}
+.workspace .workspace-order-status,.workspace .workspace-order-unread{font-size:12px}
+.workspace .workspace-order-state,.workspace .workspace-order-empty,.workspace .workspace-order-empty p{font-size:15px;line-height:1.9}
+.workspace .workspace-order-empty .workspace-primary{font-size:14px}
 @media(max-width:540px){
- .workspace.is-admin .workspace-order-heading{flex-wrap:wrap;gap:12px}
- .workspace.is-admin .workspace-order-heading h2{font-size:24px}
- .workspace.is-admin .workspace-order-heading p{font-size:15px}
- .workspace.is-admin .workspace-order-stats>div{grid-template-columns:24px 32px minmax(0,1fr);padding:12px}
- .workspace.is-admin .workspace-order-item{padding:14px}
+ .workspace .workspace-order-heading{flex-wrap:wrap;gap:12px}
+ .workspace .workspace-order-heading h2{font-size:24px}
+ .workspace .workspace-order-heading p{font-size:15px}
+ .workspace .workspace-order-stats>div{grid-template-columns:24px 32px minmax(0,1fr);padding:12px}
+ .workspace .workspace-order-item{padding:14px}
 }
 /* Hide only the introductory dashboard area; retain language switching. */
 .workspace .workspace-main>header>div:not(.workspace-header-actions),
