@@ -4,6 +4,7 @@ import {readOrderSource} from './orderSource';
 import {useState,type FormEvent} from 'react';
 import {serviceLabels,validBrief,validateOrderFile,type OrderBrief,type ServiceKind} from './orderModel';
 import './order-form-polish.css';
+import './order-form-effects.css';
 export function OrderForm({fa,userId,onSubmit,busy,onCancel,preview=false,allowAttachments=true}:{fa:boolean;userId:string;preview?:boolean;allowAttachments?:boolean;onSubmit:(input:{id:string;title:string;kind:ServiceKind;brief:OrderBrief;requested_date:string|null},files:File[])=>Promise<void>;busy:boolean;onCancel:()=>void}){
  const t=(faText:string,enText:string)=>fa?faText:enText;
  const key='bioplot-order-draft:'+userId;
@@ -14,7 +15,7 @@ export function OrderForm({fa,userId,onSubmit,busy,onCancel,preview=false,allowA
  const update=(patch:Partial<typeof draft>)=>{setDraft(current=>{const next={...current,...patch};try{if(!preview)sessionStorage.setItem(key,JSON.stringify(next));}catch{/* Draft storage is optional. */}return next;});};
  const brief=(patch:Partial<OrderBrief>)=>update({brief:{...draft.brief,...patch}});
  const submit=(event:FormEvent)=>{event.preventDefault();if(preview)return;const briefWithDefaults={...draft.brief,formats:draft.brief.formats.length?draft.brief.formats:['PNG','SVG']};if(!validBrief(draft.title,briefWithDefaults)){setError(t('عنوان و توضیح درخواست را کامل کنید. توضیح باید حداقل ۲۰ نویسه باشد.','Enter a title and a description of at least 20 characters.'));return;}void onSubmit({...draft,brief:briefWithDefaults,requested_date:draft.requested_date||null},allowAttachments?files:[]);};
- return <form className="order-form order-form-compact order-card" onSubmit={submit}>
+ return <form className="order-form order-form-compact order-card" onSubmit={submit} aria-busy={busy}>
   <h1>{t('درخواست طراحی','Design request')}</h1>
   <p className="order-form-intro">{t('جزئیات درخواستتان را ثبت کنید؛ هزینه و زمان اجرا پس از بررسی اعلام می‌شود.','Tell us what you need. We will confirm the price and timeline after reviewing your request.')}</p>
   <label>{t('نوع طراحی','Design type')}<select value={draft.kind} onChange={e=>update({kind:e.target.value as ServiceKind})}>{Object.entries(serviceLabels).map(([id,label])=><option value={id} key={id}>{t(label[0],label[1])}</option>)}</select></label>

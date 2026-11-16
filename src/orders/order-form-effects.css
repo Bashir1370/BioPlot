@@ -1,0 +1,68 @@
+/* Subtle interaction feedback for the existing request form. */
+.orders-shell .order-form-compact{
+  animation:order-form-arrive .45s ease-out both;
+  transition:border-color .25s ease,box-shadow .25s ease;
+}
+.orders-shell .order-form-compact:focus-within{
+  border-color:#b4d5d0;
+  box-shadow:0 4px 12px #15414909,0 26px 72px #15414912,0 0 0 1px #198e860a;
+}
+.orders-shell .order-form-compact::before{
+  background:linear-gradient(90deg,#087c78,#80d6c2,#087c78);
+  background-size:200% 100%;
+  transition:background-position .6s ease;
+  pointer-events:none;
+}
+.orders-shell .order-form-compact:focus-within::before{background-position:100% 0}
+.orders-shell .order-form-compact>label,.orders-shell .order-form-compact .order-date-field>label{
+  transition:color .2s ease;
+}
+.orders-shell .order-form-compact>label:focus-within,
+.orders-shell .order-form-compact .order-date-field:focus-within>label{color:var(--form-accent)}
+.orders-shell .order-form-compact input:not([type="file"]):not([type="radio"]):not([type="checkbox"]):focus-visible,
+.orders-shell .order-form-compact select:focus-visible,
+.orders-shell .order-form-compact textarea:focus-visible,
+.orders-shell .order-form-compact .jalali-date-trigger:focus-visible{
+  border-color:#198e86;background:#fff;
+  box-shadow:0 0 0 4px #0f8f821c,0 4px 14px #0f8f8209;
+}
+.orders-shell .order-form-compact .order-upload{
+  transition:border-color .22s ease,background-color .22s ease,box-shadow .22s ease,transform .22s ease;
+}
+.orders-shell .order-form-compact .order-upload:focus-within{box-shadow:0 0 0 4px #0f8f8212}
+.orders-shell .order-form-compact :is(.order-picked-file,.order-alert){animation:order-form-feedback .22s ease-out both}
+.orders-shell .order-form-compact>.order-actions>.order-primary{
+  position:relative;isolation:isolate;overflow:hidden;
+}
+.orders-shell .order-form-compact>.order-actions>.order-primary::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(110deg,transparent 20%,#ffffff23 48%,transparent 76%);
+  transform:translateX(-130%);
+}
+.orders-shell .order-form-compact>.order-actions>.order-primary:focus-visible:not(:disabled)::after{
+  animation:order-button-sheen .65s ease-out;
+}
+.orders-shell .order-form-compact[aria-busy="true"]>.order-actions>.order-primary::before{
+  content:"";width:15px;height:15px;flex:0 0 15px;border:2px solid #ffffff55;border-top-color:currentColor;border-radius:50%;
+  animation:order-submit-spin .8s linear infinite;
+}
+.orders-shell .order-form-compact>.order-actions>button:active:not(:disabled),
+.orders-shell .order-form-compact .order-file-picker-button:active{transform:scale(.985)}
+@media(hover:hover) and (pointer:fine){
+  .orders-shell .order-form-compact .order-upload:hover{transform:translateY(-2px);box-shadow:0 8px 22px #087c780a}
+  .orders-shell .order-form-compact>.order-actions>.order-primary:hover:not(:disabled)::after{animation:order-button-sheen .65s ease-out}
+}
+@keyframes order-form-arrive{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes order-form-feedback{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes order-button-sheen{to{transform:translateX(130%)}}
+@keyframes order-submit-spin{to{transform:rotate(360deg)}}
+@media(max-width:650px){.orders-shell .order-form-compact{animation-name:order-form-mobile-arrive}}
+@keyframes order-form-mobile-arrive{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  .orders-shell .order-form-compact,
+  .orders-shell .order-form-compact::before,
+  .orders-shell .order-form-compact *,
+  .orders-shell .order-form-compact *::before,
+  .orders-shell .order-form-compact *::after{animation:none!important;transition:none!important;transform:none!important}
+  .orders-shell .order-form-compact>.order-actions>.order-primary::after{display:none}
+}
