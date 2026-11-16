@@ -5,8 +5,9 @@
 }
 .home-order-services-heading {
   display: flex;
-  justify-content: space-between;
-  align-items: end;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
   gap: 24px;
   margin-bottom: 25px;
 }
@@ -29,7 +30,7 @@
 }
 .home-order-services-heading p {
   max-width: 730px;
-  margin: 9px 0 0;
+  margin: 9px auto 0;
   color: #6b818b;
   font-size: 14px;
   font-weight: 420;

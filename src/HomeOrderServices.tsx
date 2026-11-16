@@ -40,23 +40,12 @@ const SERVICES: Service[] = [
   },
 ];
 
-/** Original, lightweight vector artwork — no third-party image dependencies. */
-function ServiceIllustration({ kind }: { kind: ServiceKind }) {
+/** Supplied scientific artwork and lightweight service illustrations. */
+function ServiceIllustration({ kind, locale }: { kind: ServiceKind; locale: Locale }) {
   if (kind === 'figure') return (
-    <svg viewBox="0 0 360 190" fill="none" aria-hidden="true" focusable="false">
-      <circle cx="171" cy="96" r="69" fill="#E7F5F1" stroke="#65AFA4" strokeWidth="2" />
-      <circle cx="171" cy="96" r="29" fill="#FCFFFF" stroke="#2E968D" strokeWidth="2.5" />
-      <path d="M155 89c9-19 25 23 35 4M153 103c15 20 25-22 36-3" stroke="#468BA4" strokeWidth="3" strokeLinecap="round" />
-      <path d="M150 91l6-2m32 3 6 1m-41 10-6 2m40-6 6-2" stroke="#86BBC1" strokeWidth="2" strokeLinecap="round" />
-      <ellipse cx="135" cy="65" rx="13" ry="7" transform="rotate(-36 135 65)" fill="#B9DDD7" stroke="#2E968D" strokeWidth="1.5" />
-      <ellipse cx="209" cy="69" rx="16" ry="8" transform="rotate(42 209 69)" fill="#B9DDD7" stroke="#2E968D" strokeWidth="1.5" />
-      <ellipse cx="139" cy="134" rx="15" ry="8" transform="rotate(38 139 134)" fill="#B9DDD7" stroke="#2E968D" strokeWidth="1.5" />
-      <ellipse cx="212" cy="126" rx="13" ry="7" transform="rotate(-30 212 126)" fill="#B9DDD7" stroke="#2E968D" strokeWidth="1.5" />
-      <circle cx="209" cy="106" r="4" fill="#7CB5CB" /><circle cx="119" cy="103" r="4" fill="#7CB5CB" /><circle cx="188" cy="142" r="3.5" fill="#7CB5CB" />
-      <path d="M234 63h40l16-18h34M231 134h54l17 15h22M109 95H76l-15-18H35" stroke="#71A7AF" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="324" cy="45" r="7" fill="#81C7BC"/><circle cx="324" cy="149" r="7" fill="#76A6C9"/><circle cx="35" cy="77" r="7" fill="#81C7BC"/>
-      <path d="M261 52h14m-7-7v14M269 146h11" stroke="#9EBFC7" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
+    <img className="service-scientific-image" src="/images/services/scientific-signaling.webp"
+      width="1280" height="956" loading="lazy" decoding="async"
+      alt={locale === 'fa' ? 'نمونه طراحی مسیر سیگنال‌دهی سلولی و اتوفاژی' : 'Scientific illustration of cellular signaling and autophagy'}/>
   );
 
   if (kind === 'graphical_abstract') return (
@@ -106,7 +95,6 @@ export function HomeOrderServices({ locale }: { locale: Locale }) {
     <section className="home-order-services home-section" aria-labelledby="home-order-services-title">
       <div className="home-order-services-heading">
         <div>
-          <span className="home-order-services-eyebrow">BIOPLOT DESIGN SERVICES</span>
           <h2 id="home-order-services-title">{fa ? 'چه نوع طراحی علمی نیاز دارید؟' : 'What would you like us to design?'}</h2>
           <p>{fa ? 'خدمت موردنظرتان را انتخاب کنید و درخواستتان را برای بررسی تیم طراحی بفرستید.' : 'Choose your service and send your brief to our design team for a quote.'}</p>
         </div>
@@ -116,7 +104,7 @@ export function HomeOrderServices({ locale }: { locale: Locale }) {
         {SERVICES.map(service => (
           <ThreeDCardDemo key={service.kind}
             title={service.title[locale]} description={service.description[locale]}
-            visual={<ServiceIllustration kind={service.kind}/>} number={service.number}
+            visual={<ServiceIllustration kind={service.kind} locale={locale}/>} number={service.number}
             href={`/design?kind=${service.kind}`} cta={fa ? 'شروع سفارش' : 'Start an order'} rtl={fa}/>
         ))}
       </div>
