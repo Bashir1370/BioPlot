@@ -44,3 +44,8 @@
 .order-team-updates article p{margin:10px 0 0;line-height:1.95;font-size:16px}
 .order-team-updates .order-quote-pending{margin:14px 0 0;padding-top:14px;border-top:1px solid #dcebe4;color:#637e76;font-size:14px;line-height:1.9}
 .order-detail-clean>.order-quote .order-inline-actions{margin-top:20px}
+
+.order-payment-terms{background:#edf7f2;border:1px solid #d3e8dc;border-radius:12px;padding:14px 16px;line-height:1.95;font-size:14px;color:#315f50}
+.order-detail-clean>.order-delivery-payment{max-width:1020px;margin:0 auto 24px;border-color:#b8dacc}
+.order-delivery-payment h2{font-size:21px;color:#164b47}
+.order-delivery-payment>p{font-size:16px;line-height:1.95}
