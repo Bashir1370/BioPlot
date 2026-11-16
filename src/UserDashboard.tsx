@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
-import {List,X,SidebarSimple,House,SquaresFour,Clock,User,Gear,SignOut,Plus,ArrowRight,CloudArrowUp,MagnifyingGlass,Flask,Trash,ChatCircleDots} from '@phosphor-icons/react';
-import {accountDisplayName,accountInitial,getAccountState,subscribeAccountState,signOutUser,updateUserProfile,type AccountState} from './accountAuth';
+import {List,X,SidebarSimple,House,SquaresFour,Clock,User,Plus,ArrowRight,CloudArrowUp,MagnifyingGlass,Flask,Trash,ChatCircleDots} from '@phosphor-icons/react';
+import {accountDisplayName,accountInitial,getAccountState,subscribeAccountState,updateUserProfile,type AccountState} from './accountAuth';
 import {getOrderInbox,type OrderInboxItem} from './orders/orderRepository';
 import {statusLabels} from './orders/orderModel';
 import {projects,localProjects,type ProjectSummary} from './persistence';
@@ -88,8 +88,7 @@ export function UserDashboard(){
  };
  const importDrafts=()=>run(async()=>{const rows=await localProjects.list();let count=0;for(const row of rows){const doc=await localProjects.load(row.id);if(!doc||doc.ownerId)continue;await projects.save({...doc,ownerId:account.user!.id});count++;}await refresh();setMessage(text(`${count} device drafts moved to your account.`,`${count} طرح دستگاه به حساب منتقل شد.`));});
  const saveProfile=(event:FormEvent)=>{event.preventDefault();void run(async()=>{await updateUserProfile({displayName:name,preferredLanguage:locale});setAccount(await getAccountState());setMessage(text('Saved.','ذخیره شد.'));});};
- const logout=()=>run(async()=>{await signOutUser();window.location.href='/';});
- const nav=[{id:'figures' as Tab,label:text('My figures','شکل‌های من'),icon:SquaresFour},{id:'activity' as Tab,label:text('Recent activity','فعالیت‌های اخیر'),icon:Clock},{id:'profile' as Tab,label:text('Profile','پروفایل'),icon:User},{id:'settings' as Tab,label:text('Settings','تنظیمات'),icon:Gear}];
+ const nav=[{id:'profile' as Tab,label:text('Profile','پروفایل'),icon:User}];
  const unreadTotal=orderInbox.reduce((sum,order)=>sum+order.unread_count,0);
  const orderStatusText=(status:OrderInboxItem['status'])=>statusLabels[status]?.[fa?0:1]??status;
  const orderNeedsUser=['quoted','review','delivered'];
@@ -101,16 +100,13 @@ export function UserDashboard(){
   <button className="workspace-mobile" aria-label={text('Toggle menu','باز و بسته کردن منو')} aria-expanded={mobile} onClick={()=>setMobile(!mobile)}>{mobile?<X/>:<List/>}</button>
   {mobile&&<button className="workspace-overlay" aria-label={text('Close menu','بستن منو')} onClick={()=>setMobile(false)}/>}
   <aside className={`workspace-sidebar ${mobile?'is-open':''}`}>
-   <div className="workspace-brand"><a href="/"><b>B</b><span>BioPlot</span></a><button className="workspace-collapse" title={text('Collapse sidebar','جمع کردن منو')} aria-label={text('Collapse sidebar','جمع کردن منو')} aria-expanded={!collapsed} onClick={()=>setCollapsed(!collapsed)}><SidebarSimple size={22}/></button></div>
+   <div className="workspace-brand"><a className="workspace-logo" href="/" dir="ltr" aria-label={text('BioPlot home','خانه BioPlot')}><b aria-hidden="true">B</b><span className="workspace-logo-tail" aria-hidden="true">ioPlot</span></a><button className="workspace-collapse" title={text('Collapse sidebar','جمع کردن منو')} aria-label={text('Collapse sidebar','جمع کردن منو')} aria-expanded={!collapsed} onClick={()=>setCollapsed(!collapsed)}><SidebarSimple size={22}/></button></div>
    <nav aria-label={text('Workspace navigation','منوی داشبورد')}>
-    {nav.map(item=><button key={item.id} title={item.label} aria-label={item.label} aria-current={tab===item.id?'page':undefined} onClick={()=>{setTab(item.id);setMobile(false);setMessage('');}}><item.icon size={22}/><span>{item.label}</span></button>)}
-    <a className="workspace-order-link" href="/orders"><Flask size={22}/><span>{text('Design orders','سفارش‌های طراحی')}</span>{unreadTotal>0&&<b className="workspace-nav-badge" aria-label={text(`${unreadTotal} unread order messages`,`${unreadTotal.toLocaleString('fa-IR')} پیام خوانده‌نشده`)}>{unreadTotal>99?'99+':unreadTotal.toLocaleString(fa?'fa-IR':'en-US')}</b>}</a>
-    {account.isAdmin&&<a href="/admin/studio">محتوای خدمات و سفارش</a>}{account.isAdmin&&<a href="/admin/orders"><Clock size={22}/><span>{text('Manage orders','مدیریت سفارش‌ها')}</span></a>}
     <a href="/" title={text('Home','خانه')}><House size={22}/><span>{text('Home','خانه')}</span></a>
-    {account.isAdmin&&<a href="/admin/library"><Gear size={22}/><span>{text('Administration','مدیریت سایت')}</span></a>}
-    {account.user?<button disabled={busy} onClick={()=>void logout()} title={text('Sign out','خروج')}><SignOut size={22}/><span>{text('Sign out','خروج')}</span></button>:<a href="/account?next=dashboard"><User size={22}/><span>{text('Sign in','ورود / ثبت‌نام')}</span></a>}
+    {nav.map(item=><button key={item.id} title={item.label} aria-label={item.label} aria-current={tab===item.id?'page':undefined} onClick={()=>{setTab(item.id);setMobile(false);setMessage('');}}><item.icon size={22}/><span>{item.label}</span></button>)}
+    <a className="workspace-order-link" href="/orders"><Flask size={22}/><span>{text('Order list','لیست سفارش‌ها')}</span>{unreadTotal>0&&<b className="workspace-nav-badge" aria-label={text(`${unreadTotal} unread order messages`,`${unreadTotal.toLocaleString('fa-IR')} پیام خوانده‌نشده`)}>{unreadTotal>99?'99+':unreadTotal.toLocaleString(fa?'fa-IR':'en-US')}</b>}</a>
    </nav>
-   <div className="workspace-identity"><b>{account.user?accountInitial(account):'B'}</b><div><strong>{account.user?accountDisplayName(account):text('Guest workspace','فضای مهمان')}</strong><small>{account.user?.email||text('Saved on this device','ذخیره در همین دستگاه')}</small></div></div>
+   <div className="workspace-identity"><b>{account.user?accountInitial(account):'B'}</b><div><strong>{account.user?accountDisplayName(account):text('Guest workspace','فضای مهمان')}</strong></div></div>
   </aside>
   <main className="workspace-main">
    <header>{!account.isAdmin&&<div><small>BIOPLOT WORKSPACE</small><h1>{nav.find(item=>item.id===tab)?.label}</h1><p className="workspace-subtitle">{text('A home for your scientific ideas.','خانه‌ای برای ایده‌های علمی شما.')}</p></div>}<div className="workspace-header-actions"><button onClick={()=>setLocale(fa?'en':'fa')}>{fa?'EN':'FA'}</button>{!account.isAdmin&&<button className="workspace-primary" disabled={busy||!ready} onClick={()=>void create()}><Plus size={18}/>{text('New figure','شکل جدید')}</button>}</div></header>
