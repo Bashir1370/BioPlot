@@ -11,7 +11,7 @@ describe('Customer order detail',()=>{
  const transition=vi.fn(async()=>true),download=vi.fn();
  beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);transition.mockClear();download.mockClear();host=document.createElement('div');document.body.append(host);root=createRoot(host);});
  afterEach(async()=>{await act(async()=>root.unmount());host.remove();vi.unstubAllGlobals();});
- async function render(current=order,messages:OrderMessage[]=[],events:OrderEvent[]=[]){await act(async()=>root.render(<OrderDetail fa admin={false} userId="customer" order={current} files={[reference]} messages={messages} events={events} busy={false} onTransition={transition} onDownload={download} onUpload={async()=>true} onMessage={async()=>true}/>));}
+ async function render(current=order,messages:OrderMessage[]=[],events:OrderEvent[]=[],admin=false){await act(async()=>root.render(<OrderDetail fa admin={admin} userId={admin?'admin':'customer'} order={current} files={[reference]} messages={messages} events={events} busy={false} onTransition={transition} onDownload={download} onUpload={async()=>true} onMessage={async()=>true}/>));}
  it('shows the entered brief and references together, without empty deliverable sections',async()=>{
   await render();const card=host.querySelector('.order-request-summary')!;
   expect(card.textContent).toContain('سفارش شما با موفقیت ثبت شد');
@@ -30,6 +30,8 @@ describe('Customer order detail',()=>{
   expect(host.textContent).not.toContain('سفارش شما با موفقیت ثبت شد');
   const cards=Array.from(host.querySelector('.order-detail-view')!.children);
   expect(cards.indexOf(host.querySelector('.order-quote')!)).toBeLessThan(cards.indexOf(host.querySelector('.order-request-summary')!));
+  expect(host.querySelector('.quote-payment-split')).toBeNull();
+  expect(host.querySelector('.order-payment-terms')?.textContent).toContain('پس از پایان طراحی و تأیید رضایت شما');
   const accept=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='تأیید پیشنهاد')!;
   await act(async()=>accept.click());expect(transition).not.toHaveBeenCalled();
   const checkbox=host.querySelector<HTMLInputElement>('.order-action-form input[type="checkbox"]')!;
@@ -51,6 +53,30 @@ describe('Customer order detail',()=>{
   await render(order,[{id:'customer-msg',order_id:order.id,author_id:'customer',body:'توضیح مشتری',created_at:order.created_at},{id:'team-msg',order_id:order.id,author_id:'admin',body:'پاسخ طراحی به مشتری',created_at:order.updated_at}]);
   expect(host.querySelector('.order-team-updates')?.textContent).toContain('پاسخ طراحی به مشتری');
   expect(host.querySelector('.order-team-updates')?.textContent).not.toContain('توضیح مشتری');
+ });
+
+ it('submits a proposal without requesting or sending an advance amount',async()=>{
+  await render({...order,status:'reviewing',quote_amount:100,quote_scope:'Scientific illustration',quote_currency:'USD'},[],[],true);
+  const send=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='ارسال پیشنهاد')!;
+  await act(async()=>send.click());
+  const form=host.querySelector<HTMLFormElement>('.order-action-form')!;
+  expect(form.textContent).not.toContain('پیش‌پرداخت اولیه');
+  expect(form.querySelector('.order-payment-terms')?.textContent).toContain('اطلاعات حساب هنگام تحویل نهایی');
+  await act(async()=>form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+  expect(transition).toHaveBeenCalledWith('quoted','',{amount:100,currency:'USD',scope:'Scientific illustration',days:7,revisions:2});
+ });
+ it('keeps the delivery payment details visible after later messages and order completion',async()=>{
+  const details='فایل نهایی آماده است. شماره حساب: SAMPLE-ACCOUNT — صاحب حساب: تیم طراحی';
+  const events:OrderEvent[]=[{id:'delivery',order_id:order.id,actor_id:'admin',status:'delivered',detail:{note:details},created_at:order.updated_at}];
+  const messages:OrderMessage[]=Array.from({length:4},(_,i)=>({id:`later-${i}`,order_id:order.id,author_id:'admin',body:`پیام بعدی ${i}`,created_at:'2026-11-17T10:00:00Z'}));
+  await render({...order,status:'completed'},messages,events);
+  expect(host.querySelector('.order-delivery-payment')?.textContent).toContain(details);
+  expect(host.querySelector('.order-delivery-payment')?.textContent).toContain('پس از پایان طراحی و تأیید رضایت شما');
+ });
+ it('prompts the administrator to provide account details only when delivering the final files',async()=>{
+  await render({...order,status:'approved'},[],[],true);
+  await act(async()=>Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='تحویل نهایی')!.click());
+  expect(host.querySelector('.order-action-form')?.textContent).toContain('شماره حساب، شبا یا کارت و نام صاحب حساب');
  });
 
 });
