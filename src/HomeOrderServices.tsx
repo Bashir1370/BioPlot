@@ -49,22 +49,9 @@ function ServiceIllustration({ kind, locale }: { kind: ServiceKind; locale: Loca
   );
 
   if (kind === 'graphical_abstract') return (
-    <svg viewBox="0 0 360 190" fill="none" aria-hidden="true" focusable="false">
-      <rect x="27" y="43" width="90" height="106" rx="15" fill="#FFFFFF" stroke="#B4D7D2" strokeWidth="2"/>
-      <rect x="135" y="43" width="90" height="106" rx="15" fill="#FFFFFF" stroke="#B4D7D2" strokeWidth="2"/>
-      <rect x="243" y="43" width="90" height="106" rx="15" fill="#FFFFFF" stroke="#B4D7D2" strokeWidth="2"/>
-      <circle cx="72" cy="84" r="19" fill="#E4F4F1" stroke="#6AADA5" strokeWidth="2"/>
-      <path d="M63 78c2-9 15-10 18-1 3 8-6 12-9 15v4" stroke="#328E86" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="72" cy="102" r="2" fill="#328E86" />
-      <path d="M52 120h40M61 128h22" stroke="#A9C5C5" strokeWidth="3" strokeLinecap="round" />
-      <path d="M153 99l12-19 13 10 13-22 15 15" stroke="#438BA7" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="153" cy="99" r="4" fill="#8BB9CD"/><circle cx="165" cy="80" r="4" fill="#8BB9CD"/><circle cx="178" cy="90" r="4" fill="#8BB9CD"/><circle cx="191" cy="68" r="4" fill="#8BB9CD"/>
-      <path d="M153 122h53M163 131h33" stroke="#A9C5C5" strokeWidth="3" strokeLinecap="round"/>
-      <circle cx="288" cy="86" r="23" fill="#E9F6EF" stroke="#75B6A0" strokeWidth="2"/>
-      <path d="M278 86l8 8 16-17" stroke="#258B72" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M267 122h42M275 131h26" stroke="#A9C5C5" strokeWidth="3" strokeLinecap="round"/>
-      <path d="M119 96h13m-5-5 5 5-5 5M227 96h13m-5-5 5 5-5 5" stroke="#499D98" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
+    <img className="service-scientific-image" src="/images/services/graphical-abstract.webp"
+      width="1280" height="956" loading="lazy" decoding="async"
+      alt={locale === 'fa' ? 'نمونه گرافیکال ابسترکت با نمایش اپی‌تلیوم روده و رگ خونی' : 'Graphical abstract showing intestinal epithelium and a blood vessel'}/>
   );
 
   return (
