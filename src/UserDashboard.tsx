@@ -10,6 +10,7 @@ import {documentToSvg} from './export';
 import {deleteOptimistically} from './optimisticDeletion';
 import {clearRecoverySnapshots} from './recovery';
 import './user-dashboard.css';
+import {AdminDashboard} from './AdminDashboard';
 
 type Tab='figures'|'activity'|'profile'|'settings';
 const emptyAccount:AccountState={user:null,profile:null,isAdmin:false};
@@ -46,14 +47,14 @@ export function UserDashboard(){
    if(request===generation.current)setThumbs(Object.fromEntries(Object.entries(previews).filter(([id])=>!hiddenProjects.current.has(id))));
   }catch{if(request===generation.current){setError(text('Could not load your figures. Please retry.','دریافت شکل‌ها انجام نشد؛ دوباره تلاش کنید.'));setLoading(false);}}
  };
- useEffect(()=>{if(!ready)return;hiddenProjects.current=new Set();setItems([]);setThumbs({});void refresh();const focus=()=>void refresh(true);window.addEventListener('focus',focus);return()=>{generation.current++;hiddenProjects.current=new Set();window.removeEventListener('focus',focus);};},[ready,account.user?.id]);
+ useEffect(()=>{if(!ready||account.isAdmin)return;hiddenProjects.current=new Set();setItems([]);setThumbs({});void refresh();const focus=()=>void refresh(true);window.addEventListener('focus',focus);return()=>{generation.current++;hiddenProjects.current=new Set();window.removeEventListener('focus',focus);};},[ready,account.user?.id,account.isAdmin]);
  useEffect(()=>{
-  if(!ready||!account.user){setOrderInbox([]);setOrderInboxError('');return;}
+  if(!ready||!account.user||account.isAdmin){setOrderInbox([]);setOrderInboxError('');return;}
   let alive=true;
   const load=async()=>{setOrderInboxLoading(true);try{const rows=await getOrderInbox();if(alive){setOrderInbox(rows);setOrderInboxError('');}}catch{if(alive)setOrderInboxError(text('Order messages could not be loaded. Open your design orders to retry.','پیام‌های سفارش دریافت نشد. برای تلاش دوباره، بخش سفارش‌های طراحی را باز کنید.'));}finally{if(alive)setOrderInboxLoading(false);}};
   void load();const focus=()=>{if(!document.hidden)void load();};window.addEventListener('focus',focus);const timer=window.setInterval(()=>{if(!document.hidden)void load();},30000);
   return()=>{alive=false;window.removeEventListener('focus',focus);window.clearInterval(timer);};
- },[ready,account.user?.id,locale]);
+ },[ready,account.user?.id,account.isAdmin,locale]);
  useEffect(()=>{const close=(event:KeyboardEvent)=>{if(event.key==='Escape')setMobile(false);};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close);},[]);
  const run=async(action:()=>Promise<void>)=>{setBusy(true);setMessage('');try{await action();}catch{setMessage(text('Could not complete this action. Please retry.','عملیات انجام نشد؛ دوباره تلاش کنید.'));}finally{setBusy(false);}};
  const create=()=>run(async()=>{const doc=createBlankDocument();doc.metadata.locale=locale;openFigureDraft(doc);});
@@ -97,6 +98,8 @@ export function UserDashboard(){
  const filtered=items.filter(row=>row.title.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).sort((a,b)=>sort==='name'?a.title.localeCompare(b.title,locale):sort==='oldest'?a.updatedAt.localeCompare(b.updatedAt):b.updatedAt.localeCompare(a.updatedAt));
  const recent=items.filter(row=>Date.now()-new Date(row.updatedAt).getTime()<7*86400000).length;
  const date=(value:string)=>new Intl.DateTimeFormat(fa?'fa-IR':'en-US',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
+ if(!ready)return <div className="workspace" dir={fa?'rtl':'ltr'}><main className="workspace-main"><p role="status">{text('Loading workspace…','در حال دریافت داشبورد…')}</p></main></div>;
+ if(account.isAdmin)return <AdminDashboard account={account} locale={locale} onLocaleChange={()=>setLocale(fa?'en':'fa')} onLogout={()=>void logout()} busy={busy}/>;
  return <div className={`workspace ${collapsed?'is-collapsed':''}`} dir={fa?'rtl':'ltr'}>
   <button className="workspace-mobile" aria-label={text('Toggle menu','باز و بسته کردن منو')} aria-expanded={mobile} onClick={()=>setMobile(!mobile)}>{mobile?<X/>:<List/>}</button>
   {mobile&&<button className="workspace-overlay" aria-label={text('Close menu','بستن منو')} onClick={()=>setMobile(false)}/>}
