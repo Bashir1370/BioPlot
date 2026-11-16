@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
-import {List,X,SidebarSimple,House,SquaresFour,Clock,User,Plus,ArrowRight,CloudArrowUp,MagnifyingGlass,Flask,Trash,ChatCircleDots} from '@phosphor-icons/react';
+import {SquaresFour,Clock,User,Plus,ArrowRight,CloudArrowUp,MagnifyingGlass,Flask,Trash,ChatCircleDots} from '@phosphor-icons/react';
 import {accountDisplayName,accountInitial,getAccountState,subscribeAccountState,updateUserProfile,type AccountState} from './accountAuth';
 import {getOrderInbox,type OrderInboxItem} from './orders/orderRepository';
 import {statusLabels} from './orders/orderModel';
@@ -9,6 +9,7 @@ import {createBlankDocument,makeId} from './model';
 import {documentToSvg} from './export';
 import {deleteOptimistically} from './optimisticDeletion';
 import {clearRecoverySnapshots} from './recovery';
+import {WorkspaceSidebar} from './WorkspaceSidebar';
 import './user-dashboard.css';
 
 type Tab='figures'|'activity'|'profile'|'settings';
@@ -17,7 +18,7 @@ export function UserDashboard(){
  const [account,setAccount]=useState<AccountState>(emptyAccount);
  const [ready,setReady]=useState(false);
  const [locale,setLocale]=useState<'en'|'fa'>(()=>localStorage.getItem('bioplot-lang')==='fa'?'fa':'en');
- const [tab,setTab]=useState<Tab>('figures');
+ const [tab,setTab]=useState<Tab>(()=>new URLSearchParams(location.search).get('tab')==='profile'?'profile':'figures');
  const [collapsed,setCollapsed]=useState(false);
  const [mobile,setMobile]=useState(false);
  const [items,setItems]=useState<ProjectSummary[]>([]);
@@ -54,7 +55,6 @@ export function UserDashboard(){
   void load();const focus=()=>{if(!document.hidden)void load();};window.addEventListener('focus',focus);const timer=window.setInterval(()=>{if(!document.hidden)void load();},30000);
   return()=>{alive=false;window.removeEventListener('focus',focus);window.clearInterval(timer);};
  },[ready,account.user?.id,locale]);
- useEffect(()=>{const close=(event:KeyboardEvent)=>{if(event.key==='Escape')setMobile(false);};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close);},[]);
  const run=async(action:()=>Promise<void>)=>{setBusy(true);setMessage('');try{await action();}catch{setMessage(text('Could not complete this action. Please retry.','عملیات انجام نشد؛ دوباره تلاش کنید.'));}finally{setBusy(false);}};
  const create=()=>run(async()=>{const doc=createBlankDocument();doc.metadata.locale=locale;openFigureDraft(doc);});
  const rename=(row:ProjectSummary)=>{const title=window.prompt(text('Figure name','نام شکل'),row.title);if(!title?.trim())return;void run(async()=>{const doc=await projects.load(row.id);if(!doc)throw new Error('Missing figure');await projects.save({...doc,title:title.trim()});await refresh();});};
@@ -97,17 +97,7 @@ export function UserDashboard(){
  const recent=items.filter(row=>Date.now()-new Date(row.updatedAt).getTime()<7*86400000).length;
  const date=(value:string)=>new Intl.DateTimeFormat(fa?'fa-IR':'en-US',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
  return <div className={`workspace ${collapsed?'is-collapsed':''} ${account.isAdmin?'is-admin':''}`} dir={fa?'rtl':'ltr'}>
-  <button className="workspace-mobile" aria-label={text('Toggle menu','باز و بسته کردن منو')} aria-expanded={mobile} onClick={()=>setMobile(!mobile)}>{mobile?<X/>:<List/>}</button>
-  {mobile&&<button className="workspace-overlay" aria-label={text('Close menu','بستن منو')} onClick={()=>setMobile(false)}/>}
-  <aside className={`workspace-sidebar ${mobile?'is-open':''}`}>
-   <div className="workspace-brand"><a className="workspace-logo" href="/" dir="ltr" aria-label={text('BioPlot home','خانه BioPlot')}><b aria-hidden="true">B</b><span className="workspace-logo-tail" aria-hidden="true">ioPlot</span></a><button className="workspace-collapse" title={text('Collapse sidebar','جمع کردن منو')} aria-label={text('Collapse sidebar','جمع کردن منو')} aria-expanded={!collapsed} onClick={()=>setCollapsed(!collapsed)}><SidebarSimple size={22}/></button></div>
-   <nav aria-label={text('Workspace navigation','منوی داشبورد')}>
-    <a href="/" title={text('Home','خانه')}><House size={22}/><span>{text('Home','خانه')}</span></a>
-    {nav.map(item=><button key={item.id} title={item.label} aria-label={item.label} aria-current={tab===item.id?'page':undefined} onClick={()=>{setTab(item.id);setMobile(false);setMessage('');}}><item.icon size={22}/><span>{item.label}</span></button>)}
-    <a className="workspace-order-link" href="/orders"><Flask size={22}/><span>{text('Order list','لیست سفارش‌ها')}</span>{unreadTotal>0&&<b className="workspace-nav-badge" aria-label={text(`${unreadTotal} unread order messages`,`${unreadTotal.toLocaleString('fa-IR')} پیام خوانده‌نشده`)}>{unreadTotal>99?'99+':unreadTotal.toLocaleString(fa?'fa-IR':'en-US')}</b>}</a>
-   </nav>
-   <div className="workspace-identity"><b>{account.user?accountInitial(account):'B'}</b><div><strong>{account.user?accountDisplayName(account):text('Guest workspace','فضای مهمان')}</strong></div></div>
-  </aside>
+  <WorkspaceSidebar account={account} fa={fa} collapsed={collapsed} setCollapsed={setCollapsed} mobile={mobile} setMobile={setMobile} unreadTotal={unreadTotal} active={tab==='profile'?'profile':undefined} onProfile={()=>{setTab('profile');setMobile(false);setMessage('');}}/>
   <main className="workspace-main">
    <header>{!account.isAdmin&&<div><small>BIOPLOT WORKSPACE</small><h1>{nav.find(item=>item.id===tab)?.label}</h1><p className="workspace-subtitle">{text('A home for your scientific ideas.','خانه‌ای برای ایده‌های علمی شما.')}</p></div>}<div className="workspace-header-actions"><button onClick={()=>setLocale(fa?'en':'fa')}>{fa?'EN':'FA'}</button>{!account.isAdmin&&<button className="workspace-primary" disabled={busy||!ready} onClick={()=>void create()}><Plus size={18}/>{text('New figure','شکل جدید')}</button>}</div></header>
    {message&&<p role="status" className="workspace-notice">{message}</p>}

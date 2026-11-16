@@ -7,9 +7,9 @@ const state=vi.hoisted(()=>({admin:true,record:null as DesignOrder|null}));
 const api=vi.hoisted(()=>({transition:vi.fn(async()=>{})}));
 vi.mock('../accountAuth',()=>({
  getAccountState:async()=>({user:{id:state.admin?'team':'customer'},profile:null,isAdmin:state.admin}),
- subscribeAccountState:()=>()=>{},
+ subscribeAccountState:()=>()=>{},accountDisplayName:()=> 'Admin',accountInitial:()=> 'A',
 }));
-vi.mock('../HomeHeader',()=>({HomeHeader:()=>null}));
+vi.mock('../HomeHeader',()=>({HomeHeader:()=> <header data-testid="home-header"/>}));
 vi.mock('../HomeFooter',()=>({HomeFooter:()=>null}));
 vi.mock('./orderRepository',()=>({
  listOrders:async()=>[state.record],loadOrder:async()=>({order:state.record,files:[],messages:[],events:[]}),
@@ -26,6 +26,9 @@ describe('Order management from dashboard links',()=>{
  it('lets a verified admin confirm a submitted request from the regular order URL',async()=>{
   await act(async()=>root.render(<OrdersPage/>));
   expect(host.querySelector('.order-request-summary')).not.toBeNull();
+  expect(host.querySelector('.workspace-sidebar')).not.toBeNull();
+  expect(host.querySelector('[data-testid="home-header"]')).toBeNull();
+  expect(host.querySelector('.workspace-order-link')?.getAttribute('href')).toBe('/admin/orders');
   expect(button('لغو درخواست')).toBeDefined();
   expect(button('تأیید درخواست')).toBeDefined();
   expect(Array.from(host.querySelectorAll('.order-progress li>span')).map(el=>el.textContent)).toEqual(['۱','۲','۳','۴','۵','۶']);
@@ -37,8 +40,24 @@ describe('Order management from dashboard links',()=>{
  it('keeps management confirmation unavailable to customers and uses English step numbers in English',async()=>{
   state.admin=false;localStorage.setItem('bioplot-lang','en');
   await act(async()=>root.render(<OrdersPage/>));
+  expect(host.querySelector('.workspace-sidebar')).toBeNull();
+  expect(host.querySelector('[data-testid="home-header"]')).not.toBeNull();
   expect(button('Confirm request')).toBeUndefined();
   expect(button('Cancel request')).toBeDefined();
   expect(Array.from(host.querySelectorAll('.order-progress li>span')).map(el=>el.textContent)).toEqual(['1','2','3','4','5','6']);
  });
+ it('retains admin navigation between detail and list and supports collapsing and mobile Escape',async()=>{
+  await act(async()=>root.render(<OrdersPage admin/>));
+  await act(async()=>host.querySelector<HTMLButtonElement>('.workspace-collapse')!.click());
+  expect(host.querySelector('.workspace.is-collapsed')).not.toBeNull();
+  await act(async()=>button('فهرست سفارش‌ها')!.click());
+  expect(host.querySelector('.workspace-sidebar')).not.toBeNull();
+  expect(host.querySelector('.order-list')).not.toBeNull();
+  expect(host.querySelector('.workspace-sidebar a[href="/dashboard?tab=profile"]')).not.toBeNull();
+  await act(async()=>host.querySelector<HTMLButtonElement>('.workspace-mobile')!.click());
+  expect(host.querySelector('.workspace-sidebar.is-open')).not.toBeNull();
+  await act(async()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'})));
+  expect(host.querySelector('.workspace-sidebar.is-open')).toBeNull();
+ });
+
 });
