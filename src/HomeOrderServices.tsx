@@ -55,23 +55,9 @@ function ServiceIllustration({ kind, locale }: { kind: ServiceKind; locale: Loca
   );
 
   return (
-    <svg viewBox="0 0 360 190" fill="none" aria-hidden="true" focusable="false">
-      <rect x="101" y="15" width="158" height="163" rx="8" fill="#D5E9E7" opacity=".8"/>
-      <rect x="95" y="10" width="158" height="163" rx="8" fill="#FFFFFF" stroke="#99C5BF" strokeWidth="2"/>
-      <rect x="107" y="23" width="134" height="24" rx="3" fill="#3B9690"/>
-      <rect x="118" y="31" width="72" height="3" rx="1.5" fill="#FFFFFF" opacity=".94"/>
-      <rect x="118" y="39" width="101" height="2" rx="1" fill="#D8F1EB"/>
-      <rect x="107" y="56" width="63" height="51" rx="3" fill="#EDF6F5"/>
-      <path d="M115 90l12-14 10 8 12-20 12 15" stroke="#4499A5" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round"/>
-      <circle cx="127" cy="76" r="3" fill="#77B5C8"/><circle cx="149" cy="64" r="3" fill="#77B5C8"/>
-      <rect x="178" y="56" width="63" height="51" rx="3" fill="#EEF7F1"/>
-      <circle cx="209" cy="81" r="17" fill="#BFDCD3" stroke="#5AA69B" strokeWidth="1.5"/>
-      <circle cx="209" cy="81" r="7" fill="#FFFFFF" stroke="#5AA69B" strokeWidth="1.5"/>
-      <path d="M189 114h52M189 122h39M107 114h63M107 122h55" stroke="#B8CED2" strokeWidth="2.3" strokeLinecap="round"/>
-      <rect x="107" y="135" width="134" height="25" rx="3" fill="#F2F7F7"/>
-      <path d="M116 143h115M116 149h115M116 155h87" stroke="#C3D6D6" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M77 42h-19m11-7v14M278 131h24m-7-7v14" stroke="#93C3B6" strokeWidth="2" strokeLinecap="round" opacity=".9"/>
-    </svg>
+    <img className="service-scientific-image" src="/images/services/conference-poster.webp"
+      width="1280" height="956" loading="lazy" decoding="async"
+      alt={locale === 'fa' ? 'نمونه پوستر علمی همایش با نمودارها و نتایج پژوهش' : 'Scientific conference poster with research charts and results'}/>
   );
 }
 
