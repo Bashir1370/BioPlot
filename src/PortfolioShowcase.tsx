@@ -112,7 +112,8 @@ export function PortfolioShowcasePortal() {
         const delta = event.clientX - pointerStart.current;
         pointerStart.current = null;
         if (Math.abs(delta) < 44) return;
-        delta > 0 ? previous() : next();
+        const moveNext = locale === 'fa' ? delta > 0 : delta < 0;
+        moveNext ? next() : previous();
       }}>
         {slides.map((slide, index) => {
           const isActive = index === active;

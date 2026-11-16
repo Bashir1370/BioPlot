@@ -7,6 +7,7 @@ import './home.css';
 // the same lazy-loaded route chunk, rather than the earlier global bundle.
 import './home-top-nav.css';
 import { HomeHeader } from './HomeHeader';
+import './home-mobile.css';
 
 type Locale = 'en' | 'fa';
 export function DashboardApp() {
