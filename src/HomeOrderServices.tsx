@@ -1,5 +1,6 @@
 import type { ServiceKind } from './orders/orderModel';
 import './home-order-services.css';
+import ThreeDCardDemo from './components/3d-card-demo';
 
 type Locale = 'fa' | 'en';
 type Service = {
@@ -113,20 +114,10 @@ export function HomeOrderServices({ locale }: { locale: Locale }) {
 
       <div className="home-order-services-grid">
         {SERVICES.map(service => (
-          <article className={`home-order-service-card home-order-service-${service.kind}`} key={service.kind}>
-            <div className="home-order-service-visual">
-              <ServiceIllustration kind={service.kind} />
-            </div>
-            <div className="home-order-service-content">
-              <span className="home-order-service-number">{service.number} / 03</span>
-              <h3>{service.title[locale]}</h3>
-              <p>{service.description[locale]}</p>
-              <a className="home-order-service-cta" href={`/design?kind=${service.kind}`}>
-                {fa ? 'شروع سفارش' : 'Start an order'}
-                <span className="home-order-service-arrow" aria-hidden="true">{fa ? '←' : '→'}</span>
-              </a>
-            </div>
-          </article>
+          <ThreeDCardDemo key={service.kind}
+            title={service.title[locale]} description={service.description[locale]}
+            visual={<ServiceIllustration kind={service.kind}/>} number={service.number}
+            href={`/design?kind=${service.kind}`} cta={fa ? 'شروع سفارش' : 'Start an order'} rtl={fa}/>
         ))}
       </div>
     </section>

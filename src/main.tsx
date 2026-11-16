@@ -13,6 +13,7 @@ const UserDashboard=lazy(()=>import('./UserDashboard').then(module=>({default:mo
 const AccountPage=lazy(()=>import('./AccountPage').then(module=>({default:module.AccountPage})));
 import { createRoot } from 'react-dom/client';
 import { isDashboardPath, isAccountPath, isAdminLibraryPath, isAdminShowcasePath, isEditorPath } from './routing';
+import './tailwind.css';
 import './styles-v3.css';
 // Public entry: only shared type, reset and typography styles.
 import '@fontsource-variable/inter';

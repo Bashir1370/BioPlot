@@ -13,7 +13,7 @@ describe('Home design service cards', () => {
     for (const kind of ['figure','graphical_abstract','poster']) {
       expect(html).toContain(`href="/design?kind=${kind}"`);
     }
-    expect(html.match(/class="home-order-service-cta"/g)).toHaveLength(3);
+    expect(html.match(/class="[^"\n]*\bhome-order-service-cta\b[^"\n]*"/g)).toHaveLength(3);
     expect(html).not.toContain('href="/editor"');
   });
 
