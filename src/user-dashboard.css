@@ -74,3 +74,9 @@
 .workspace .workspace-main>header{justify-content:flex-end}
 
 .workspace .workspace-order-heading>div>p{display:none}
+
+/* The dashboard focuses on design services; retain saved figure data. */
+.workspace .workspace-main>.workspace-section-title,
+.workspace .workspace-main>.workspace-tools,
+.workspace .workspace-main>.workspace-empty,
+.workspace .workspace-main>.workspace-figures{display:none}
