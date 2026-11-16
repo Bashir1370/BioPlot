@@ -45,3 +45,8 @@ html .design-hub :is(button,input,textarea,select),html .orders-shell :is(button
 .order-card .jalali-calendar-grid button{padding:0;border:0;border-radius:9px;background:#fff;color:var(--order-ink);font-size:13px}
 .order-card .jalali-calendar-grid button:hover:not(:disabled),.order-card .jalali-calendar-grid button.selected{background:#e7f5ef;color:var(--order-green)}
 .order-card .jalali-calendar-grid button:disabled{opacity:.35;cursor:not-allowed}
+
+/* Readable journey stages in both language directions. */
+.order-progress li{font-size:16px;font-weight:600;line-height:1.7;color:#617a72}
+.order-progress li>span{width:38px;height:38px;font-size:18px;font-weight:650;line-height:1}
+@media(max-width:540px){.order-progress li{font-size:14px;min-width:96px}.order-progress li>span{width:34px;height:34px;font-size:17px}}
