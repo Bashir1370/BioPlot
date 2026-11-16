@@ -72,3 +72,5 @@
 .workspace .workspace-header-actions>.workspace-primary,
 .workspace .workspace-stats{display:none}
 .workspace .workspace-main>header{justify-content:flex-end}
+
+.workspace .workspace-order-heading>div>p{display:none}
