@@ -67,3 +67,8 @@
  .workspace.is-admin .workspace-order-stats>div{grid-template-columns:24px 32px minmax(0,1fr);padding:12px}
  .workspace.is-admin .workspace-order-item{padding:14px}
 }
+/* Hide only the introductory dashboard area; retain language switching. */
+.workspace .workspace-main>header>div:not(.workspace-header-actions),
+.workspace .workspace-header-actions>.workspace-primary,
+.workspace .workspace-stats{display:none}
+.workspace .workspace-main>header{justify-content:flex-end}
