@@ -65,18 +65,47 @@ describe('Customer order detail',()=>{
   await act(async()=>form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
   expect(transition).toHaveBeenCalledWith('quoted','',{amount:100,currency:'USD',scope:'Scientific illustration',days:7,revisions:2});
  });
- it('keeps the delivery payment details visible after later messages and order completion',async()=>{
+ it('keeps delivery details in the delivery stage and archives them at completion',async()=>{
   const details='فایل نهایی آماده است. شماره حساب: SAMPLE-ACCOUNT — صاحب حساب: تیم طراحی';
   const events:OrderEvent[]=[{id:'delivery',order_id:order.id,actor_id:'admin',status:'delivered',detail:{note:details},created_at:order.updated_at}];
   const messages:OrderMessage[]=Array.from({length:4},(_,i)=>({id:`later-${i}`,order_id:order.id,author_id:'admin',body:`پیام بعدی ${i}`,created_at:'2026-11-17T10:00:00Z'}));
-  await render({...order,status:'completed'},messages,events);
+  await render({...order,status:'delivered'},messages,events);
   expect(host.querySelector('.order-delivery-payment')?.textContent).toContain(details);
-  expect(host.querySelector('.order-delivery-payment')?.textContent).toContain('پس از پایان طراحی و تأیید رضایت شما');
+  await render({...order,status:'completed'},messages,events);
+  expect(host.querySelector('.order-delivery-payment')).toBeNull();
+  expect(host.querySelector('.order-stage-message-history')?.textContent).toContain(details);
  });
  it('prompts the administrator to provide account details only when delivering the final files',async()=>{
   await render({...order,status:'approved'},[],[],true);
   await act(async()=>Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='تحویل نهایی')!.click());
   expect(host.querySelector('.order-action-form')?.textContent).toContain('شماره حساب، شبا یا کارت و نام صاحب حساب');
+ });
+
+ it('keeps old replies and conversations under their original stages instead of carrying them into design',async()=>{
+  const stamp=(hour:number)=>`2026-11-16T${String(hour).padStart(2,'0')}:00:00Z`;
+  const events:OrderEvent[]=[
+   {id:'request-note',order_id:order.id,actor_id:'admin',status:'reviewing',detail:{note:'پاسخ مرحله درخواست'},created_at:stamp(10)},
+   {id:'quote-note',order_id:order.id,actor_id:'admin',status:'quoted',detail:{note:'پاسخ مرحله توافق'},created_at:stamp(11)},
+   {id:'design-start',order_id:order.id,actor_id:'admin',status:'designing',detail:{},created_at:stamp(12)},
+  ];
+  const messages:OrderMessage[]=[
+   {id:'old-message',order_id:order.id,author_id:'admin',body:'پیام قدیمی توافق',created_at:stamp(11)},
+   {id:'current-message',order_id:order.id,author_id:'admin',body:'پیام مخصوص طراحی',created_at:stamp(13)},
+  ];
+  await render({...order,status:'designing',updated_at:stamp(12),quote_amount:100,quote_currency:'USD',quote_scope:'Agreed illustration'},messages,events);
+  expect(host.querySelector('.order-team-updates')?.textContent).toContain('پیام مخصوص طراحی');
+  expect(host.querySelector('.order-team-updates')?.textContent).not.toContain('پاسخ مرحله درخواست');
+  expect(host.querySelector('.order-team-updates')?.textContent).not.toContain('پاسخ مرحله توافق');
+  expect(host.querySelector('.order-current-conversation')?.textContent).not.toContain('پیام قدیمی توافق');
+  expect(host.querySelector('.order-stage-message-history')?.textContent).toContain('پاسخ مرحله درخواست');
+  expect(host.querySelector('.order-stage-message-history')?.textContent).toContain('پاسخ مرحله توافق');
+  expect(host.querySelector('.order-stage-message-history')?.textContent).toContain('پیام قدیمی توافق');
+  expect(host.querySelector('.order-quote')?.closest('details.order-quote-archive')).not.toBeNull();
+ });
+ it('keeps preview approval available outside the archived agreement',async()=>{
+  await render({...order,status:'review',quote_amount:100,quote_currency:'USD',quote_scope:'Agreed illustration'});
+  expect(host.querySelector('.order-current-phase-actions')?.textContent).toContain('تأیید پیش‌نمایش');
+  expect(host.querySelector('.order-quote-archive .order-inline-actions')).toBeNull();
  });
 
 });
