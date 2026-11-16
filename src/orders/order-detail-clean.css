@@ -49,3 +49,11 @@
 .order-detail-clean>.order-delivery-payment{max-width:1020px;margin:0 auto 24px;border-color:#b8dacc}
 .order-delivery-payment h2{font-size:21px;color:#164b47}
 .order-delivery-payment>p{font-size:16px;line-height:1.95}
+
+/* Previous-stage content stays available without appearing as a current response. */
+.order-stage-message-history,.order-quote-archive{border:1px solid #dce9e5;border-radius:16px;background:#fff;margin-bottom:24px}
+.order-stage-message-history>summary,.order-stage-message-group>summary,.order-quote-archive>summary{cursor:pointer;padding:16px 20px;font-size:14px;color:#466e64;line-height:1.8}
+.order-stage-message-group{margin:0 16px 16px;border-top:1px solid #e3ece7}
+.order-stage-message-group .order-messages{padding:0 4px 12px;margin:0}
+.order-detail-clean>.order-quote-archive,.order-detail-clean>.order-current-phase-actions{max-width:1020px;margin:0 auto 24px}
+.order-quote-archive>.order-quote{border:0;border-top:1px solid #e3ece7;border-radius:0 0 16px 16px;margin:0;box-shadow:none}
