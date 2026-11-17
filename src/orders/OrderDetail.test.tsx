@@ -34,6 +34,7 @@ describe('Customer order detail',()=>{
   expect(host.querySelector('.admin-order-tab-content>.order-request-summary')).toBeNull();
   expect(host.querySelector('.quote-payment-split')).toBeNull();
   expect(host.querySelector('.order-payment-terms')?.textContent).toContain('پس از پایان طراحی و تأیید رضایت شما');
+  expect(host.querySelector('.order-quote-decision')?.textContent).toContain('رد پیشنهاد و لغو سفارش');
   const accept=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='تأیید پیشنهاد')!;
   await act(async()=>accept.click());expect(transition).not.toHaveBeenCalled();
   const checkbox=host.querySelector<HTMLInputElement>('.order-action-form input[type="checkbox"]')!;

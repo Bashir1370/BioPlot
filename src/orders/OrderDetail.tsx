@@ -17,7 +17,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
  const terminal=['completed','cancelled'].includes(order.status);
  const manageTabs=canManage&&!!onPublishPreview;
  const actions=(canManage||userId===order.user_id?allowedTransitions(order.status,canManage):[]).filter(status=>!manageTabs||status!=='designing');
- const actionLabel=(status:OrderStatus)=>status==='reviewing'&&order.status==='submitted'?t('تأیید درخواست','Confirm request'):t(actionLabels[status]?.[0]??'',actionLabels[status]?.[1]??'');
+ const actionLabel=(status:OrderStatus)=>status==='cancelled'&&!canManage&&order.status==='quoted'?t('رد پیشنهاد و لغو سفارش','Decline proposal and cancel order'):status==='reviewing'&&order.status==='submitted'?t('تأیید درخواست','Confirm request'):t(actionLabels[status]?.[0]??'',actionLabels[status]?.[1]??'');
  const date=(value:string)=>new Date(value).toLocaleString(fa?'fa-IR':'en-US',{dateStyle:'medium',timeStyle:'short'});
  const currency=(value:string|null)=>value==='IRT'?t('تومان','toman'):value==='USD'?t('دلار آمریکا','USD'):t('یورو','EUR');
  const amount=(value:number)=>value.toLocaleString(fa?'fa-IR':'en-US');
@@ -42,7 +42,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
  const finalFiles=files.filter(file=>file.kind==='final');
  const finalDeliveryEvent=events.slice().reverse().find(event=>event.status==='delivered');
  const deliveryNote=events.slice().reverse().find(event=>event.status==='delivered'&&event.actor_id!==order.user_id&&typeof event.detail.note==='string'&&event.detail.note.trim());
- const quotePanel=order.quote_amount!==null&&<section className="order-card order-quote"><div className="order-section-heading"><span>{t('پیشنهاد تیم','Team proposal')}</span><h2>{amount(order.quote_amount)} <small>{currency(order.quote_currency)}</small></h2></div><div className="quote-facts"><span><Clock/>{order.quote_days} {t('روز پس از تأیید پیشنهاد','days after approval')}</span><span>{order.quote_revisions} {t('نوبت اصلاح در محدوده توافق','revision rounds within scope')}</span></div><p className="order-prewrap">{order.quote_scope}</p><p className="order-payment-terms">{paymentTerms}</p>{!admin&&!manageTabs&&current.stage===1&&order.status==='quoted'&&actionPanel}</section>;
+ const quotePanel=order.quote_amount!==null&&<section className="order-card order-quote"><div className="order-section-heading"><span>{t('پیشنهاد تیم','Team proposal')}</span><h2>{amount(order.quote_amount)} <small>{currency(order.quote_currency)}</small></h2></div><div className="quote-facts"><span><Clock/>{order.quote_days} {t('روز پس از تأیید پیشنهاد','days after approval')}</span><span>{order.quote_revisions} {t('نوبت اصلاح در محدوده توافق','revision rounds within scope')}</span></div><p className="order-prewrap">{order.quote_scope}</p><p className="order-payment-terms">{paymentTerms}</p></section>;
  const displayedQuote=order.status==='quoted'&&quotePanel;
  const uploadReference=!terminal&&<OrderFilePicker fa={fa} label={t('افزودن فایل مرجع','Add reference files')} disabled={busy} onChange={e=>{const input=e.currentTarget;const selected=Array.from(input.files||[]);if(selected.length)void onUpload(selected,'reference').then(ok=>{if(ok)input.value='';});}}/>;
  const latestDesign=events.filter(event=>event.status==='designing').reduce((latest,event)=>Math.max(latest,Date.parse(event.created_at)),Date.parse(order.created_at));
@@ -93,7 +93,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
       {tab===0&&active&&order.status==='reviewing'&&order.quote_amount===null&&<p className="order-quote-pending">
        {t('پیشنهاد قیمت هنوز ارسال نشده است. پس از ثبت توسط تیم، مبلغ و شرایط در تب توافق نمایش داده می‌شود.','No price proposal has been sent yet. The price and terms will appear in Agreement.')}
       </p>}
-      {tab===1&&quotePanel}
+      {tab===1&&<>{quotePanel}{writeAllowed&&order.status==='quoted'&&<section className="order-card order-quote-decision"><h2>{t('پاسخ شما به پیشنهاد','Your response to the proposal')}</h2>{actionPanel}</section>}</>}
       {tab===2&&(active?<OrderDesignProgress fa={fa} order={order} events={events}/>:<section className="order-card"><h2>{t('طراحی انجام شد','Design completed')}</h2></section>)}
       {tab===3&&<>
        {(sent||awaitingDecision)&&<OrderReviewStage fa={fa} files={sentFiles} busy={busy} onDownload={onDownload} awaitingDecision={awaitingDecision}>
