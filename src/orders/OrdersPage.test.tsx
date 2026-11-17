@@ -4,7 +4,7 @@ import {createRoot,type Root} from 'react-dom/client';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import type {DesignOrder} from './orderModel';
 const state=vi.hoisted(()=>({admin:true,record:null as DesignOrder|null}));
-const api=vi.hoisted(()=>({transition:vi.fn(async()=>{})}));
+const api=vi.hoisted(()=>({transition:vi.fn(async()=>{}),upload:vi.fn(async()=>{})}));
 vi.mock('../accountAuth',()=>({
  getAccountState:async()=>({user:{id:state.admin?'team':'customer'},profile:null,isAdmin:state.admin}),
  subscribeAccountState:()=>()=>{},accountDisplayName:()=> 'Admin',accountInitial:()=> 'A',
@@ -14,7 +14,7 @@ vi.mock('../HomeFooter',()=>({HomeFooter:()=>null}));
 vi.mock('./orderRepository',()=>({
  listOrders:async()=>[state.record],loadOrder:async()=>({order:state.record,files:[],messages:[],events:[]}),
  markOrderRead:async()=>{},transitionOrder:api.transition,
- createOrder:vi.fn(),sendOrderMessage:vi.fn(),uploadOrderFile:vi.fn(),downloadOrderFile:vi.fn(),orderError:()=> 'Action failed',
+ createOrder:vi.fn(),sendOrderMessage:vi.fn(),uploadOrderFile:api.upload,downloadOrderFile:vi.fn(),orderError:()=> 'Action failed',
 }));
 import {OrdersPage} from './OrdersPage';
 const order:DesignOrder={id:'submitted-order',user_id:'customer',title:'Scientific pathway',kind:'figure',brief:{route:'idea',message:'Show the molecular pathway and its key components',audience:'',requirements:'',style:'',formats:['PNG']},requested_date:null,status:'submitted',quote_amount:null,quote_deposit_amount:null,quote_currency:null,quote_scope:null,quote_days:null,quote_revisions:null,revision_round:0,created_at:'2026-11-16T10:00:00Z',updated_at:'2026-11-16T10:00:00Z'};
@@ -58,6 +58,21 @@ describe('Order management from dashboard links',()=>{
   expect(host.querySelector('.workspace-sidebar.is-open')).not.toBeNull();
   await act(async()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'})));
   expect(host.querySelector('.workspace-sidebar.is-open')).toBeNull();
+ });
+
+ it('opens the design uploader directly for legacy accepted orders and starts design before uploading',async()=>{
+  state.record={...order,status:'accepted'};
+  await act(async()=>root.render(<OrdersPage/>));
+  const input=host.querySelector<HTMLInputElement>('.order-review-stage input[type=file]')!;
+  expect(input).not.toBeNull();
+  expect(button('شروع طراحی')).toBeUndefined();
+  expect(host.querySelector('.order-detail-view>.order-request-summary')).toBeNull();
+  const preview=new File(['drawing'],'drawing.png',{type:'image/png'});
+  Object.defineProperty(input,'files',{value:[preview]});
+  await act(async()=>input.dispatchEvent(new Event('change',{bubbles:true})));
+  expect(api.transition).toHaveBeenCalledWith(state.record,'designing','');
+  expect(api.upload).toHaveBeenCalledWith(order.id,'team',preview,'preview');
+  expect(api.transition.mock.invocationCallOrder[0]).toBeLessThan(api.upload.mock.invocationCallOrder[0]);
  });
 
 });
