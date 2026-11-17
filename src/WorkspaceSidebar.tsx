@@ -1,5 +1,5 @@
 import {useEffect} from 'react';
-import {List,X,SidebarSimple,House,User,Flask,NotePencil} from '@phosphor-icons/react';
+import {List,X,SidebarSimple,House,User,Flask,NotePencil,PlusCircle} from '@phosphor-icons/react';
 import {accountDisplayName,accountInitial,type AccountState} from './accountAuth';
 import './user-dashboard.css';
 
@@ -18,6 +18,7 @@ export function WorkspaceSidebar({account,fa,collapsed,setCollapsed,mobile,setMo
     <a href="/" title={text('Home','خانه')}><House size={22}/><span>{text('Home','خانه')}</span></a>
     {onProfile?<button title={text('Profile','پروفایل')} aria-label={text('Profile','پروفایل')} aria-current={active==='profile'?'page':undefined} onClick={onProfile}><User size={22}/><span>{text('Profile','پروفایل')}</span></button>:<a href="/dashboard?tab=profile"><User size={22}/><span>{text('Profile','پروفایل')}</span></a>}
     <a className="workspace-order-link" href={account.isAdmin?'/admin/orders':'/orders'} aria-current={active==='orders'?'page':undefined}><Flask size={22}/><span>{text('Order list','لیست سفارش‌ها')}</span>{unreadTotal>0&&<b className="workspace-nav-badge" aria-label={text(`${unreadTotal} unread order messages`,`${unreadTotal.toLocaleString('fa-IR')} پیام خوانده‌نشده`)}>{unreadTotal>99?'99+':unreadTotal.toLocaleString(fa?'fa-IR':'en-US')}</b>}</a>
+    <a href="/orders?new=1" title={text('Place a new order','ثبت سفارش جدید')} aria-label={text('Place a new order','ثبت سفارش جدید')}><PlusCircle size={22}/><span>{text('Place a new order','ثبت سفارش جدید')}</span></a>
     {(revisionCount>0||active==='revision')&&<a href={account.isAdmin?'/admin/orders?tab=revision':'/orders?tab=revision'} aria-current={active==='revision'?'page':undefined} title={text('Revisions','بازبینی')}><NotePencil size={22}/><span>{text('Revisions','بازبینی')}</span>{revisionCount>0&&<b className="workspace-nav-badge">{revisionCount.toLocaleString(fa?'fa-IR':'en-US')}</b>}</a>}
    </nav>
    <div className="workspace-identity"><b>{account.user?accountInitial(account):'B'}</b><div><strong>{account.user?accountDisplayName(account):text('Guest workspace','فضای مهمان')}</strong></div></div>
