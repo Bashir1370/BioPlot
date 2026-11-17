@@ -2,9 +2,9 @@
 import {act} from 'react';
 import {createRoot,type Root} from 'react-dom/client';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
-const state=vi.hoisted(()=>({admin:false}));
+const state=vi.hoisted(()=>({admin:false,deleted:vi.fn(async()=>{}),inbox:[] as {id:string;title:string;status:string;unread_count:number;last_message_at:null;last_message_body:null}[]}));
 vi.mock('./accountAuth',()=>({getAccountState:async()=>({user:{id:'signed-in',email:'private@example.com'},profile:{display_name:'زیبا'},isAdmin:state.admin}),subscribeAccountState:()=>()=>{},accountDisplayName:()=> 'زیبا',accountInitial:()=> 'Z',updateUserProfile:vi.fn()}));
-vi.mock('./orders/orderRepository',()=>({getOrderInbox:async()=>[]}));
+vi.mock('./orders/orderRepository',()=>({getOrderInbox:async()=>state.inbox,deleteOrder:state.deleted}));
 vi.mock('./persistence',()=>({projects:{list:async()=>[]},localProjects:{}}));
 import {UserDashboard} from './UserDashboard';
 describe('Dashboard sidebar for signed-in accounts',()=>{
@@ -32,6 +32,21 @@ describe('Dashboard sidebar for signed-in accounts',()=>{
   await act(async()=>root.render(<UserDashboard/>));
   expect(host.querySelector('.workspace-profile form')).not.toBeNull();
   expect(host.querySelector('.workspace-sidebar [aria-current="page"]')?.textContent).toBe('پروفایل');
+ });
+
+ it('offers confirmed order deletion only to administrators',async()=>{
+  state.inbox=[{id:'order-1',title:'Test order',status:'submitted',unread_count:0,last_message_at:null,last_message_body:null}];state.admin=false;
+  await act(async()=>root.render(<UserDashboard/>));
+  expect(host.querySelector('.workspace-order-delete')).toBeNull();
+  await act(async()=>root.unmount());root=createRoot(host);state.admin=true;
+  await act(async()=>root.render(<UserDashboard/>));
+  const confirm=vi.spyOn(window,'confirm').mockReturnValue(false);
+  const button=host.querySelector<HTMLButtonElement>('.workspace-order-delete')!;
+  expect(button.closest('a')).toBeNull();
+  await act(async()=>button.click());expect(state.deleted).not.toHaveBeenCalled();
+  confirm.mockReturnValue(true);await act(async()=>button.click());
+  expect(state.deleted).toHaveBeenCalledWith('order-1');expect(host.querySelector('.workspace-order-row')).toBeNull();
+  confirm.mockRestore();state.inbox=[];
  });
 
 });

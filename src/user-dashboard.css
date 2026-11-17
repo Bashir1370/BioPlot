@@ -91,3 +91,5 @@
 }
 @media(min-width:801px){.workspace.is-collapsed .workspace-logo-tail{display:none}}
 @media(prefers-reduced-motion:reduce){.workspace-brand .workspace-logo-tail{animation:none;opacity:1;transform:none;clip-path:none;filter:none}}
+
+.workspace-order-row{display:flex;align-items:center;gap:12px;min-width:0}.workspace-order-row>.workspace-order-item{flex:1;min-width:0}.workspace .workspace-order-delete{display:inline-flex;align-items:center;gap:6px;flex:none;padding:9px 12px;border:1px solid #ebcdd1;border-radius:9px;background:#fff8f8;color:#a33444}.workspace .workspace-order-delete:hover{background:#fdeced}.workspace .workspace-order-delete:disabled{opacity:.5}@media(max-width:540px){.workspace-order-row{flex-wrap:wrap}.workspace-order-row>.workspace-order-item{flex-basis:100%}}

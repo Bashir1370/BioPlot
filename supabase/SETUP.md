@@ -40,3 +40,5 @@ Collaboration uses same-browser tabs by default. After applying
 `VITE_BIOPLOT_REMOTE_COLLABORATION=true` to enable private remote topics for a
 signed-in document owner across devices. Cross-account sharing is not implemented.
 Public broadcast topics are not a substitute for document authorization.
+
+Apply `migrations/20261117223000_admin_order_delete.sql` to enable the dashboard's admin-only order deletion. It atomically removes the order and related messages, events, file records and read markers. Private Storage binaries are retained for separate cleanup via the Storage API.

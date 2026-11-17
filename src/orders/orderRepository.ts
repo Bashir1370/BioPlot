@@ -34,3 +34,5 @@ export function orderError(error:unknown,fa:boolean){
  if(message.includes('FILE_INVALID'))return fa?'فایل باید یکی از قالب‌های مجاز و حداکثر ۲۰ مگابایت باشد.':'Choose a supported file up to 20 MB.';
  return fa?'عملیات انجام نشد. اتصال را بررسی کنید و دوباره تلاش کنید؛ اطلاعات فرم حفظ شده است.':'This action failed. Check your connection and retry; your form is preserved.';
 }
+
+export async function deleteOrder(orderId:string){const {error}=await supabase.rpc('delete_design_order',{p_id:orderId});check(error);}
