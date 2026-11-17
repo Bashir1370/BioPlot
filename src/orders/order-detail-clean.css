@@ -65,3 +65,5 @@
 .order-settlement-stage strong{display:block;color:#176451;margin-top:4px}
 .order-filter-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
 .orders-shell .order-filter-tabs [aria-pressed=true]{border-color:#78b8aa;background:#e5f4ed;color:#145e4d}
+
+.order-detail-navigation{max-width:1020px;margin:0 auto 20px}

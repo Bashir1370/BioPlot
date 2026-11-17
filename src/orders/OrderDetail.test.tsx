@@ -28,8 +28,8 @@ describe('Customer order detail',()=>{
  it('keeps quote approval explicit and does not show a pending-review message after quoting',async()=>{
   await render({...order,status:'quoted',quote_amount:100,quote_deposit_amount:30,quote_currency:'USD',quote_scope:'Scientific illustration',quote_days:7,quote_revisions:2});
   expect(host.textContent).not.toContain('سفارش شما با موفقیت ثبت شد');
-  const cards=Array.from(host.querySelector('.order-detail-view')!.children);
-  expect(cards.indexOf(host.querySelector('.order-quote')!)).toBeLessThan(cards.indexOf(host.querySelector('.order-request-summary')!));
+  expect(host.querySelector('.order-detail-view>.order-quote')).not.toBeNull();
+  expect(host.querySelector('.order-detail-view>.order-request-summary')).toBeNull();
   expect(host.querySelector('.quote-payment-split')).toBeNull();
   expect(host.querySelector('.order-payment-terms')?.textContent).toContain('پس از پایان طراحی و تأیید رضایت شما');
   const accept=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='تأیید پیشنهاد')!;
@@ -100,12 +100,14 @@ describe('Customer order detail',()=>{
   expect(host.querySelector('.order-stage-message-history')?.textContent).toContain('پاسخ مرحله درخواست');
   expect(host.querySelector('.order-stage-message-history')?.textContent).toContain('پاسخ مرحله توافق');
   expect(host.querySelector('.order-stage-message-history')?.textContent).toContain('پیام قدیمی توافق');
-  expect(host.querySelector('.order-quote')?.closest('details.order-quote-archive')).not.toBeNull();
+  expect(host.querySelector('.order-detail-view>.order-quote')).toBeNull();
+  expect(host.querySelector('.order-detail-view>.order-request-summary')).toBeNull();
+  expect(host.querySelector('.order-history-collapsed .order-request-summary')).not.toBeNull();
  });
  it('keeps preview approval available outside the archived agreement',async()=>{
   await render({...order,status:'review',quote_amount:100,quote_currency:'USD',quote_scope:'Agreed illustration'});
   expect(host.querySelector('.order-review-stage')?.textContent).toContain('تأیید طرح و رفتن به تسویه');
-  expect(host.querySelector('.order-quote-archive .order-inline-actions')).toBeNull();
+  expect(host.querySelector('.order-detail-view>.order-quote')).toBeNull();
  });
 
  it('offers both review decisions next to the released design and separates the resulting stages',async()=>{

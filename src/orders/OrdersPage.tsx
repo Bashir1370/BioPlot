@@ -26,7 +26,14 @@ export function OrdersPage({admin=false,initialNewOrder=false}:{admin?:boolean;i
  useEffect(()=>{setDetail(null);setOrders([]);if(!ready||!account.user||(admin&&!account.isAdmin)){setLoading(false);return;}void refresh();const focus=()=>{if(!document.hidden&&!actionBusy.current)void refresh(true);};window.addEventListener('focus',focus);const timer=window.setInterval(focus,30000);return()=>{generation.current++;window.removeEventListener('focus',focus);clearInterval(timer);};},[ready,account.user?.id,account.isAdmin,selected,admin]);
  const navigate=(id:string|null,create=false)=>{setSelected(id);setNewOrder(create);setDetail(null);setNotice('');setError('');const next=new URLSearchParams();if(id)next.set('id',id);if(create)next.set('new','1');else if(filter==='revision_requested')next.set('tab','revision');history.replaceState(null,'',`${admin?'/admin/orders':'/orders'}${next.size?'?'+next:''}`);};
  const run=async(work:()=>Promise<void>)=>{if(actionBusy.current)return false;actionBusy.current=true;setBusy(true);setError('');setNotice('');try{await work();return true;}catch(e){setError(orderError(e,fa));return false;}finally{actionBusy.current=false;setBusy(false);}};
- const upload=async(files:File[],kind:OrderFile['kind'])=>{if(files.length>8||files.some(file=>!validateOrderFile(file)))throw new Error('FILE_INVALID');for(const file of files)await uploadOrderFile(selected!,account.user!.id,file,kind);};
+ const upload=async(files:File[],kind:OrderFile['kind'])=>{
+  if(!files.length||files.length>8||files.some(file=>!validateOrderFile(file)))throw new Error('FILE_INVALID');
+  // Orders accepted before automatic design start still need the design event.
+  if(kind==='preview'&&account.isAdmin&&detail?.order.status==='accepted'){
+   await transitionOrder(detail.order,'designing','');
+  }
+  for(const file of files)await uploadOrderFile(selected!,account.user!.id,file,kind);
+ };
  const revisions=orders.filter(order=>order.status==='revision_requested').length;
  const revisionTab=filter==='revision_requested';
  const selectFilter=(value:string)=>{
