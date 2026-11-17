@@ -29,7 +29,7 @@ export function HomeAccountPortal({ locale }: { locale: 'en' | 'fa' }) {
   const subtitle = account.user ? (account.isAdmin ? (fa ? 'مدیر' : 'Admin') : (fa ? 'پروفایل' : 'Profile')) : (fa ? 'ورود / ثبت‌نام' : 'Sign in / Sign up');
 
   return (
-    <a className={`home-account-entry ${account.user ? 'signed-in' : ''} ${account.isAdmin ? 'is-admin' : ''}`} href={account.user?'/account':'/account?next=dashboard'} aria-label={fa ? 'حساب کاربری BioPlot' : 'BioPlot account'}>
+    <a className={`home-account-entry ${account.user ? 'signed-in' : ''} ${account.isAdmin ? 'is-admin' : ''}`} href="/account" aria-label={fa ? 'حساب کاربری BioPlot' : 'BioPlot account'}>
       <span className="home-account-avatar" aria-hidden="true">{ready ? account.user ? <User size={20} weight="regular"/> : 'B' : '·'}</span>
       <span className="home-account-label"><b>{name}</b><small>{subtitle}</small></span>
       {account.isAdmin && <span className="home-account-admin-dot" title={fa ? 'مدیر BioPlot' : 'BioPlot administrator'}/>} 

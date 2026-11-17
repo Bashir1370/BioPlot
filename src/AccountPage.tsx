@@ -125,15 +125,9 @@ export function AccountPage() {
       const { data, error } = await signInUser(email, password);
       if (error) throw error;
       if (!data.session?.user) throw new Error(t.error);
-      setAccount({user:data.session.user,profile:null,isAdmin:false});
       const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));
-      if(destination){window.location.href=destination;return;}
-      void getAccountState().then(state=>{
-        setAccount(state);
-        if (state.user) setDisplayName(accountDisplayName(state));
-      loadContact(state);
-        setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
-      }).catch(()=>{});
+      window.location.replace(destination ?? '/');
+      return;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t.error);
     } finally { setBusy(false); }
