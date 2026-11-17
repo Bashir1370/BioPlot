@@ -87,7 +87,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
       ...phase.messages.map(item=>({id:item.id,author:item.author_id,body:item.body,at:item.created_at})),
      ]).sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
      return <>
-      {tab===0&&<OrderRequestSummary fa={fa} order={order} briefOnly={!active} files={files} busy={busy} onDownload={onDownload}>
+      {tab===0&&<OrderRequestSummary showOwner={canManage} fa={fa} order={order} briefOnly={!active} files={files} busy={busy} onDownload={onDownload}>
        {active&&writeAllowed&&uploadReference}{active&&actionPanel}
       </OrderRequestSummary>}
       {tab===0&&active&&order.status==='reviewing'&&order.quote_amount===null&&<p className="order-quote-pending">
@@ -151,7 +151,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
      const notes=tab===4?eventNotes(tab).slice(-1):eventNotes(tab);
      const tabMessages=allPhases.filter(phase=>phase.stage===tab).flatMap(phase=>phase.messages);
      return <>
-      {tab===0&&<OrderRequestSummary fa={fa} order={order} briefOnly files={files} busy={busy} onDownload={onDownload}>{active&&actionPanel}</OrderRequestSummary>}
+      {tab===0&&<OrderRequestSummary showOwner={canManage} fa={fa} order={order} briefOnly files={files} busy={busy} onDownload={onDownload}>{active&&actionPanel}</OrderRequestSummary>}
       {tab===1&&<>{quotePanel}{active&&actionPanel}</>}
       {tab===2&&active&&<AdminPreviewForm fa={fa} busy={busy} staged={order.status==='designing'?previewFiles:[]} onPublish={onPublishPreview}/>}
       {tab===3&&<section className="order-card order-review-stage">
