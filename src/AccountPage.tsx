@@ -81,7 +81,7 @@ export function AccountPage() {
       if (!mounted || authSubmitted.current) return;
       setAccount(state);
       const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(state.user&&destination){window.location.href=destination;return;}
-      setDisplayName(accountDisplayName(state));
+      if (state.user) setDisplayName(accountDisplayName(state));
       loadContact(state);
       setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
     }).catch(() => {/* Keep the sign-in form usable when session lookup fails. */});
@@ -90,7 +90,7 @@ export function AccountPage() {
       setAccount(state);
       if (state.user) {
         const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(destination){window.location.href=destination;return;}
-        setDisplayName(accountDisplayName(state));
+        if (state.user) setDisplayName(accountDisplayName(state));
       loadContact(state);
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       }
@@ -130,7 +130,7 @@ export function AccountPage() {
       if(destination){window.location.href=destination;return;}
       void getAccountState().then(state=>{
         setAccount(state);
-        setDisplayName(accountDisplayName(state));
+        if (state.user) setDisplayName(accountDisplayName(state));
       loadContact(state);
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       }).catch(()=>{});
@@ -170,12 +170,12 @@ export function AccountPage() {
 
     {!account.user ? <main className="account-auth-layout">
       <section className="account-auth-card" aria-label={mode === 'signin' ? t.signIn : t.create}>
-        <div className="account-auth-tabs"><button className={mode === 'signin' ? 'active' : ''} onClick={() => { setMode('signin'); setConfirmPassword(''); setMessage(''); }}>{t.signIn}</button><button className={mode === 'signup' ? 'active' : ''} onClick={() => { setMode('signup'); setConfirmPassword(''); setMessage(''); }}>{t.create}</button></div>
-        <form onSubmit={submitAuth}>
-          {mode === 'signup' && <label>{t.name}<input value={displayName} onChange={event => setDisplayName(event.target.value)} autoComplete="name"/></label>}
-          <label>{t.email}<input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required/></label>
-          <label>{t.password}<input type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} minLength={6} required/></label>
-          {mode === 'signup' && <label>{t.confirmPassword}<input type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={6} required aria-invalid={confirmPassword.length>0&&password!==confirmPassword}/></label>}
+        <div className="account-auth-tabs"><button className={mode === 'signin' ? 'active' : ''} onClick={() => { setMode('signin'); setConfirmPassword(''); setMessage(''); }}>{t.signIn}</button><button className={mode === 'signup' ? 'active' : ''} onClick={() => { setMode('signup'); setDisplayName(''); setEmail(''); setPassword(''); setConfirmPassword(''); setMessage(''); }}>{t.create}</button></div>
+        <form key={mode} onSubmit={submitAuth} autoComplete={mode === 'signup' ? 'off' : 'on'}>
+          {mode === 'signup' && <label>{t.name}<input dir="auto" style={{textAlign:'start'}} value={displayName} onChange={event => setDisplayName(event.target.value)} autoComplete="off"/></label>}
+          <label>{t.email}<input dir="auto" style={{textAlign:'start'}} type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete={mode === 'signup' ? 'off' : 'email'} required/></label>
+          <label>{t.password}<input dir="auto" style={{textAlign:'start'}} type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} minLength={6} required/></label>
+          {mode === 'signup' && <label>{t.confirmPassword}<input dir="auto" style={{textAlign:'start'}} type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={6} required aria-invalid={confirmPassword.length>0&&password!==confirmPassword}/></label>}
           <button className="account-primary" type="submit" disabled={busy}>{busy ? '…' : mode === 'signin' ? t.signIn : t.create}</button>
         </form>
         {message && <div className="account-message">{message}</div>}
@@ -185,10 +185,10 @@ export function AccountPage() {
         <h1 id="account-details-title">{fa ? 'اطلاعات حساب' : 'Account details'}</h1>
         <form onSubmit={saveProfile}>
           <fieldset disabled={busy}>
-            <label>{fa ? 'نام' : 'First name'}<input autoComplete="given-name" value={firstName} onChange={event=>setFirstName(event.target.value)} required maxLength={100}/></label>
-            <label>{fa ? 'نام خانوادگی' : 'Last name'}<input autoComplete="family-name" value={lastName} onChange={event=>setLastName(event.target.value)} maxLength={100}/></label>
-            <label>{t.email}<input type="email" dir="ltr" autoComplete="email" value={contactEmail} onChange={event=>setContactEmail(event.target.value)} required/></label>
-            <label>{fa ? 'شماره تماس' : 'Phone number'}<input type="tel" dir="ltr" autoComplete="tel" value={phone} onChange={event=>setPhone(event.target.value)} maxLength={40}/></label>
+            <label>{fa ? 'نام' : 'First name'}<input dir="auto" style={{textAlign:'start'}} autoComplete="given-name" value={firstName} onChange={event=>setFirstName(event.target.value)} required maxLength={100}/></label>
+            <label>{fa ? 'نام خانوادگی' : 'Last name'}<input dir="auto" style={{textAlign:'start'}} autoComplete="family-name" value={lastName} onChange={event=>setLastName(event.target.value)} maxLength={100}/></label>
+            <label>{t.email}<input dir="auto" style={{textAlign:'start'}} type="email" autoComplete="email" value={contactEmail} onChange={event=>setContactEmail(event.target.value)} required/></label>
+            <label>{fa ? 'شماره تماس' : 'Phone number'}<input dir="auto" style={{textAlign:'start'}} type="tel" autoComplete="tel" value={phone} onChange={event=>setPhone(event.target.value)} maxLength={40}/></label>
             <div className="account-simple-actions"><button className="account-primary" type="submit">{busy ? '…' : fa ? 'ذخیره اطلاعات' : 'Save details'}</button><button className="account-secondary" type="button" onClick={logout}>{t.signOut}</button></div>
           </fieldset>
           {message && <p className="account-message" role="status">{message}</p>}

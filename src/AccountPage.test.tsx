@@ -17,5 +17,11 @@ it('shows only contact details and saves them, with a working sign-out action',a
   expect(mocks.save).toHaveBeenCalledWith({displayName:'زیبا ملکشاهی',preferredLanguage:'fa',firstName:'زیبا',lastName:'ملکشاهی',phone:'09123456789',email:'user@example.com'});
   await act(async()=> (host.querySelector('main button[type="button"]') as HTMLButtonElement).click());
   expect(mocks.logout).toHaveBeenCalledOnce();expect(host.querySelector('.account-auth-card')).not.toBeNull();
+  const signup=Array.from(host.querySelectorAll<HTMLButtonElement>('.account-auth-tabs button')).find(button=>button.textContent==='ساخت حساب')!;
+  await act(async()=>signup.click());
+  const inputs=Array.from(host.querySelectorAll<HTMLInputElement>('.account-auth-card input'));
+  expect(inputs).toHaveLength(4);
+  expect(inputs.every(input=>input.value==='')).toBe(true);
+  expect(inputs.every(input=>input.dir==='auto'&&input.style.textAlign==='start')).toBe(true);
  }finally{await act(async()=>root.unmount());host.remove();localStorage.clear();vi.unstubAllGlobals();}
 });
