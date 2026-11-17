@@ -1,3 +1,4 @@
+import {AdminOrderTabs,AdminPreviewForm,adminOrderStages} from './AdminOrderTabs';
 import {useStudioCopy} from './StudioContent';
 import {OrderFilePicker} from './OrderFilePicker';
 import {OrderRequestSummary} from './OrderRequestSummary';
@@ -9,11 +10,13 @@ import {DownloadSimple,ChatCircle,Clock,CheckCircle} from '@phosphor-icons/react
 import {allowedTransitions,serviceLabels,statusLabels,type DesignOrder,type OrderFile,type OrderMessage,type OrderEvent,type OrderStatus,type Quote} from './orderModel';
 const actionLabels:Partial<Record<OrderStatus,[string,string]>>={reviewing:['شروع بررسی','Start review'],quoted:['ارسال پیشنهاد','Send quote'],accepted:['تأیید پیشنهاد','Accept quote'],designing:['شروع طراحی','Start design'],review:['ارسال طرح برای بررسی مشتری','Send design for customer review'],approved:['تأیید طرح و رفتن به تسویه','Approve design and continue to settlement'],revision_requested:['نیاز به بازبینی','Request changes'],delivered:['ثبت تسویه و تحویل نهایی','Record settlement and deliver files'],completed:['تأیید تکمیل سفارش','Confirm completion'],cancelled:['لغو درخواست','Cancel request']};
 const fileLabels:Record<OrderFile['kind'],[string,string]>={reference:['نمونه و منابع','References'],preview:['پیش‌نمایش','Previews'],final:['فایل نهایی','Final files']};
-export function OrderDetail({fa,admin,canManage=admin,userId,order,files,messages,events,busy,onTransition,onMessage,onUpload,onDownload,tools}:{fa:boolean;admin:boolean;canManage?:boolean;userId:string;order:DesignOrder;files:OrderFile[];messages:OrderMessage[];events:OrderEvent[];busy:boolean;onTransition:(status:OrderStatus,note:string,quote?:Quote)=>Promise<boolean>;onMessage:(body:string)=>Promise<boolean>;onUpload:(files:File[],kind:OrderFile['kind'])=>Promise<boolean>;onDownload:(file:OrderFile)=>void;tools?:ReactNode}){
+export function OrderDetail({fa,admin,canManage=admin,userId,order,files,messages,events,busy,onTransition,onMessage,onUpload,onDownload,onPublishPreview,tools}:{fa:boolean;admin:boolean;canManage?:boolean;userId:string;order:DesignOrder;files:OrderFile[];messages:OrderMessage[];events:OrderEvent[];busy:boolean;onTransition:(status:OrderStatus,note:string,quote?:Quote)=>Promise<boolean>;onMessage:(body:string)=>Promise<boolean>;onUpload:(files:File[],kind:OrderFile['kind'])=>Promise<boolean>;onDownload:(file:OrderFile)=>void;onPublishPreview?:(files:File[],note:string)=>Promise<boolean>;tools?:ReactNode}){
  const t=useStudioCopy(fa);const [action,setAction]=useState<OrderStatus|null>(null),[note,setNote]=useState(''),[message,setMessage]=useState(''),[agree,setAgree]=useState(false),[fileKind,setFileKind]=useState<OrderFile['kind']>('reference');
  const [quote,setQuote]=useState<Quote>({amount:order.quote_amount??0,currency:order.quote_currency??'IRT',scope:order.quote_scope??'',days:order.quote_days??7,revisions:order.quote_revisions??2});
  const paymentTerms=t('در صورت موافقت شما با این پیشنهاد، مبلغ پس از پایان طراحی و تأیید رضایت شما پرداخت می‌شود.','If you accept this proposal, payment is due after the design is completed and you confirm your satisfaction.');
- const terminal=['completed','cancelled'].includes(order.status);const actions=allowedTransitions(order.status,canManage);
+ const terminal=['completed','cancelled'].includes(order.status);
+ const manageTabs=canManage&&!!onPublishPreview;
+ const actions=allowedTransitions(order.status,canManage).filter(status=>!manageTabs||status!=='designing');
  const actionLabel=(status:OrderStatus)=>status==='reviewing'&&order.status==='submitted'?t('تأیید درخواست','Confirm request'):t(actionLabels[status]?.[0]??'',actionLabels[status]?.[1]??'');
  const date=(value:string)=>new Date(value).toLocaleString(fa?'fa-IR':'en-US',{dateStyle:'medium',timeStyle:'short'});
  const currency=(value:string|null)=>value==='IRT'?t('تومان','toman'):value==='USD'?t('دلار آمریکا','USD'):t('یورو','EUR');
@@ -57,7 +60,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
   <h2>{t('تسویه سفارش','Order settlement')}</h2>
   {order.quote_amount!==null&&<p>{t('مبلغ توافق‌شده','Agreed amount')} <strong>{amount(order.quote_amount)} {currency(order.quote_currency)}</strong></p>}
   <p>{canManage?t('اطلاعات پرداخت را در گفت‌وگوی این مرحله بفرستید. پس از تأیید دریافت وجه، تسویه و تحویل فایل نهایی را ثبت کنید.','Share payment details in this stage’s conversation. After confirming payment, record settlement and deliver the final files.'):t('طرح را تأیید کردید. اطلاعات پرداخت را تیم طراحی در گفت‌وگوی همین مرحله اعلام می‌کند.','You approved the design. The team will share payment details in this stage’s conversation.')}</p>
-  {!admin&&canManage&&<>{actionPanel}</>}
+  {!admin&&canManage&&!manageTabs&&actionPanel}
  </section>;
  const revisionEvent=order.status==='revision_requested'?
   phases.current.events.slice().reverse().find(event=>event.status==='revision_requested'):undefined;
@@ -76,6 +79,62 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
   }}/>
   {order.status==='designing'&&previewFiles.length>0?<>{previewFiles.map(file=><p key={file.id}><bdi>{file.name}</bdi></p>)}{actionPanel}</>:<p>{t('ابتدا فایل طرح را بارگذاری کنید.','Upload a design file first.')}</p>}
  </section>;
+ const adminPhases=groupOrderMessages(order,events,messages,adminOrderStages,true);
+ if(manageTabs&&onPublishPreview){
+  const current=adminPhases.current;
+  const allPhases=[...adminPhases.previous,current];
+  const sent=events.slice().reverse().find(event=>event.status==='review');
+  const previousDesign=events.slice().reverse().find(event=>event.status==='designing'&&sent&&Date.parse(event.created_at)<=Date.parse(sent.created_at));
+  const sentFiles=sent?files.filter(file=>file.kind==='preview'&&Date.parse(file.created_at)<=Date.parse(sent.created_at)&&Date.parse(file.created_at)>=Date.parse(previousDesign?.created_at??order.created_at)):[];
+  const fileList=(list:OrderFile[])=>list.map(file=><div className="order-file" key={file.id}>
+   <bdi>{file.name}</bdi><button type="button" disabled={busy} onClick={()=>onDownload(file)}>{t('دریافت','Download')}</button>
+  </div>);
+  const eventNotes=(stage:number)=>allPhases.filter(phase=>phase.stage===stage).flatMap(phase=>phase.events)
+   .filter(event=>event!==sent&&typeof event.detail.note==='string'&&event.detail.note.trim());
+  return <div className="order-detail-view order-admin-workflow">
+   <header className="order-detail-heading"><h1 dir="auto">{order.title}</h1></header>
+   <AdminOrderTabs fa={fa} stage={current.stage} phaseId={current.id} visited={allPhases.map(phase=>phase.stage)} busy={busy}>
+    {tab=>{
+     const active=tab===current.stage;
+     const notes=tab===4?eventNotes(tab).slice(-1):eventNotes(tab);
+     const tabMessages=allPhases.filter(phase=>phase.stage===tab).flatMap(phase=>phase.messages);
+     return <>
+      {tab===0&&<OrderRequestSummary fa={fa} order={order} briefOnly files={files} busy={busy} onDownload={onDownload}>{active&&actionPanel}</OrderRequestSummary>}
+      {tab===1&&<>{quotePanel}{active&&actionPanel}</>}
+      {tab===2&&active&&<AdminPreviewForm fa={fa} busy={busy} staged={order.status==='designing'?previewFiles:[]} onPublish={onPublishPreview}/>}
+      {tab===3&&<section className="order-card order-review-stage">
+       <h2>{t('تحویل طرح','Design delivery')}</h2>
+       {order.status==='review'&&<p role="status">{t('در انتظار پاسخ مشتری','Waiting for the customer’s response')}</p>}
+       {fileList(sentFiles)}
+       {typeof sent?.detail.note==='string'&&sent.detail.note.trim()&&<><h3>{t('پیام ارسالی به مشتری','Message sent to the customer')}</h3><p className="order-prewrap" dir="auto">{sent.detail.note}</p></>}
+       {['delivered','completed'].includes(order.status)&&fileList(files.filter(file=>file.kind==='final'))}
+       {active&&actionPanel}
+      </section>}
+      {tab===4&&active&&<><AdminPreviewForm fa={fa} busy={busy} staged={order.status==='designing'?previewFiles:[]} onPublish={onPublishPreview}/>{actionPanel}</>}
+      {tab===5&&<>{settlementCard||<section className="order-card order-settlement-stage"><h2>{t('پرداخت مالی','Payment')}</h2>{order.quote_amount!==null&&<p>{amount(order.quote_amount)} {currency(order.quote_currency)}</p>}</section>}
+       {active&&<section className="order-card">
+        {fileList(files.filter(file=>file.kind==='final'))}
+        <OrderFilePicker fa={fa} label={t('بارگذاری فایل نهایی','Upload final files')} disabled={busy} onChange={event=>{
+         const input=event.currentTarget;const picked=Array.from(input.files??[]);
+         if(picked.length)void onUpload(picked,'final').then(ok=>{if(ok)input.value='';});
+        }}/>
+        {actionPanel}
+       </section>}
+      </>}
+      {tab===6&&<p role="status">{t('سفارش تکمیل شد','Order completed')}</p>}
+      {tab===7&&<p role="status">{t('سفارش لغو شد','Order cancelled')}</p>}
+      {(notes.length>0||tabMessages.length>0||active&&tab===5)&&<section className="order-card order-admin-stage-messages">
+       <h3>{tab===4?t('درخواست بازبینی مشتری','Customer revision request'):t('پیام‌های این مرحله','Stage messages')}</h3>
+       {notes.map(event=><p className="order-prewrap" dir="auto" key={event.id}>{String(event.detail.note)}</p>)}
+       {tabMessages.map(item=><p className="order-prewrap" dir="auto" key={item.id}><b>{item.author_id===order.user_id?t('مشتری','Customer'):t('تیم طراحی','Design team')}</b> · {item.body}</p>)}
+       {active&&tab===5&&<form onSubmit={submitMessage}><label>{t('اطلاعات پرداخت برای مشتری','Payment information for the customer')}<textarea required maxLength={6000} value={message} onChange={event=>setMessage(event.currentTarget.value)}/></label><button disabled={busy||!message.trim()}>{t('ارسال پیام','Send message')}</button></form>}
+      </section>}
+     </>;
+    }}
+   </AdminOrderTabs>
+   {!admin&&tools}
+  </div>;
+ }
  return <div className={admin?'order-detail-view':'order-detail-view order-detail-clean'}>{admin&&<header className="order-detail-heading"><div><span className="order-eyebrow">{t(serviceLabels[order.kind][0],serviceLabels[order.kind][1])} · <bdi>#{order.id.slice(0,8)}</bdi></span><h1 dir="auto">{order.title}</h1><small>{t('ثبت‌شده در ','Submitted ')}{date(order.created_at)}</small></div><span className={`order-status status-${order.status}`}>{t(statusLabels[order.status][0],statusLabels[order.status][1])}</span></header>}
  {!terminal&&<ol className="order-progress">{stages.map((status,i)=><li key={status} className={i<=orderMessageStage[order.status]?'reached':''} aria-current={i===orderMessageStage[order.status]?'step':undefined}><span>{i<orderMessageStage[order.status]?<CheckCircle/>:(i+1).toLocaleString(fa?'fa-IR':'en-US')}</span>{t(...phaseLabels[i])}</li>)}</ol>}
  {!admin&&<>

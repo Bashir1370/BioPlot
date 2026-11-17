@@ -67,3 +67,10 @@
 .orders-shell .order-filter-tabs [aria-pressed=true]{border-color:#78b8aa;background:#e5f4ed;color:#145e4d}
 
 .order-detail-navigation{max-width:1020px;margin:0 auto 20px}
+
+.admin-order-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 24px}
+.orders-shell .admin-order-tabs button{padding:10px 15px;min-height:44px}
+.orders-shell .admin-order-tabs button[aria-pressed=true]{background:#d9efe8;border-color:#78b8aa;color:#145e4d;font-weight:700}
+.orders-shell .admin-order-tabs button:disabled{cursor:default}
+.admin-order-tab-content .order-card{margin-bottom:18px}
+.admin-order-tab-content bdi{overflow-wrap:anywhere}
