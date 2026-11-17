@@ -11,7 +11,6 @@ import {
   updateUserProfile,
 } from './accountAuth';
 import {HomeHeader} from './HomeHeader';
-import { StudioIcon } from './StudioIcon';
 import './account.css';
 
 type Mode = 'signin' | 'signup';
@@ -23,7 +22,6 @@ const copy = {
   en: {
     title: 'Your BioPlot account', subtitle: 'One account for projects, preferences and administration.',
     signIn: 'Sign in', create: 'Create account', email: 'Email', password: 'Password', confirmPassword: 'Confirm password', name: 'Display name',
-    signInText: 'Sign in to continue to your BioPlot workspace.', createText: 'Create your BioPlot account and keep your workspace identity in one place.',
     have: 'Already have an account?', new: 'New to BioPlot?', switchSignIn: 'Sign in instead', switchCreate: 'Create an account',
     profile: 'Profile', role: 'Role', plan: 'Plan', language: 'Preferred language', save: 'Save profile', saved: 'Profile updated.',
     user: 'User', admin: 'Administrator', verified: 'Authenticated with Supabase', signOut: 'Sign out', home: 'Back to BioPlot', passwordMismatch: 'Passwords do not match.',
@@ -34,7 +32,6 @@ const copy = {
   fa: {
     title: 'حساب کاربری BioPlot', subtitle: 'یک حساب برای پروژه‌ها، تنظیمات و دسترسی مدیریت.',
     signIn: 'ورود', create: 'ساخت حساب', email: 'ایمیل', password: 'رمز عبور', confirmPassword: 'تکرار رمز عبور', name: 'نام نمایشی',
-    signInText: 'برای ورود به فضای کاری BioPlot وارد حساب خود شو.', createText: 'حساب BioPlot خودت را بساز تا هویت و تنظیمات فضای کاری در یک جا نگه‌داری شود.',
     have: 'از قبل حساب داری؟', new: 'هنوز حساب نداری؟', switchSignIn: 'ورود به حساب', switchCreate: 'ساخت حساب جدید',
     profile: 'پروفایل', role: 'نقش', plan: 'پلن', language: 'زبان ترجیحی', save: 'ذخیره پروفایل', saved: 'پروفایل به‌روزرسانی شد.',
     user: 'کاربر', admin: 'مدیر سیستم', verified: 'ورود امن با Supabase', signOut: 'خروج از حساب', home: 'بازگشت به BioPlot', passwordMismatch: 'رمزهای عبور با هم مطابقت ندارند.',
@@ -172,19 +169,8 @@ export function AccountPage() {
     <HomeHeader locale={locale} onLocaleChange={()=>setLocale(fa ? 'en' : 'fa')} currentPage={null}/>
 
     {!account.user ? <main className="account-auth-layout">
-      <section className="account-auth-intro">
-        <span className="account-kicker">BIOPLOT ACCOUNT</span>
-        <h1>{t.title}</h1>
-        <p>{t.subtitle}</p>
-        <div className="account-benefits">
-          <span><StudioIcon name="check"/>Projects and workspace identity</span>
-          <span><StudioIcon name="check"/>Persian + English preferences</span>
-          <span><StudioIcon name="check"/>Secure Supabase authentication</span>
-        </div>
-      </section>
-      <section className="account-auth-card">
+      <section className="account-auth-card" aria-label={mode === 'signin' ? t.signIn : t.create}>
         <div className="account-auth-tabs"><button className={mode === 'signin' ? 'active' : ''} onClick={() => { setMode('signin'); setConfirmPassword(''); setMessage(''); }}>{t.signIn}</button><button className={mode === 'signup' ? 'active' : ''} onClick={() => { setMode('signup'); setConfirmPassword(''); setMessage(''); }}>{t.create}</button></div>
-        <div className="account-auth-heading"><h2>{mode === 'signin' ? t.signIn : t.create}</h2><p>{mode === 'signin' ? t.signInText : t.createText}</p></div>
         <form onSubmit={submitAuth}>
           {mode === 'signup' && <label>{t.name}<input value={displayName} onChange={event => setDisplayName(event.target.value)} autoComplete="name"/></label>}
           <label>{t.email}<input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required/></label>
@@ -193,7 +179,6 @@ export function AccountPage() {
           <button className="account-primary" type="submit" disabled={busy}>{busy ? '…' : mode === 'signin' ? t.signIn : t.create}</button>
         </form>
         {message && <div className="account-message">{message}</div>}
-        <div className="account-auth-switch"><span>{mode === 'signin' ? t.new : t.have}</span><button onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>{mode === 'signin' ? t.switchCreate : t.switchSignIn}</button></div>
       </section>
     </main> : <main className="account-simple-layout">
       <section className="account-card account-simple-card" aria-labelledby="account-details-title">
