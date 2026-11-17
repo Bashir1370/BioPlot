@@ -10,6 +10,7 @@ import {
   subscribeAccountState,
   updateUserProfile,
 } from './accountAuth';
+import {HomeHeader} from './HomeHeader';
 import { StudioIcon } from './StudioIcon';
 import './account.css';
 
@@ -168,13 +169,7 @@ export function AccountPage() {
   }
 
   return <div className="account-page" dir={fa ? 'rtl' : 'ltr'}>
-    <header className="account-topbar">
-      <a className="account-brand" href="/"><span>B</span><div><b>BioPlot</b><small>Figure Studio</small></div></a>
-      <div className="account-top-actions">
-        <button className="account-lang" onClick={() => setLocale(fa ? 'en' : 'fa')}>{fa ? 'EN' : 'FA'}</button>
-        <a className="account-home-link" href="/"><StudioIcon name="arrow"/>{t.home}</a>
-      </div>
-    </header>
+    <HomeHeader locale={locale} onLocaleChange={()=>setLocale(fa ? 'en' : 'fa')} currentPage={null}/>
 
     {!account.user ? <main className="account-auth-layout">
       <section className="account-auth-intro">

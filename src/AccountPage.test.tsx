@@ -3,7 +3,7 @@ import {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {expect,it,vi} from 'vitest';
 const mocks=vi.hoisted(()=>({save:vi.fn(async()=>({emailChanged:false})),logout:vi.fn(async()=>{})}));
-vi.mock('./accountAuth',()=>({getAccountState:async()=>({user:{id:'user',email:'user@example.com',user_metadata:{first_name:'زیبا',last_name:'ملکشاهی',contact_phone:'09123456789'}},profile:{display_name:'زیبا ملکشاهی',preferred_language:'fa'},isAdmin:true}),accountDisplayName:()=> 'زیبا ملکشاهی',subscribeAccountState:()=>()=>{},updateUserProfile:mocks.save,signOutUser:mocks.logout,signInUser:vi.fn(),signUpUser:vi.fn()}));
+vi.mock('./accountAuth',()=>({getAccountState:async()=>({user:{id:'user',email:'user@example.com',user_metadata:{first_name:'زیبا',last_name:'ملکشاهی',contact_phone:'09123456789'}},profile:{display_name:'زیبا ملکشاهی',preferred_language:'fa'},isAdmin:true}),accountInitial:()=> 'ز',accountDisplayName:()=> 'زیبا ملکشاهی',subscribeAccountState:()=>()=>{},updateUserProfile:mocks.save,signOutUser:mocks.logout,signInUser:vi.fn(),signUpUser:vi.fn()}));
 import {AccountPage} from './AccountPage';
 it('shows only contact details and saves them, with a working sign-out action',async()=>{
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);localStorage.setItem('bioplot-lang','fa');history.replaceState(null,'','/account');
