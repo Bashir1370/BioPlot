@@ -1,9 +1,8 @@
 import {orderReturnPath} from './orders/orderModel';
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import {
   AccountState,
   accountDisplayName,
-  accountInitial,
   getAccountState,
   signInUser,
   signOutUser,
@@ -52,6 +51,18 @@ export function AccountPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  function loadContact(state: AccountState) {
+    const metadata = state.user?.user_metadata ?? {};
+    const name = accountDisplayName(state).trim().split(/\s+/);
+    setFirstName(metadata.first_name ?? name[0] ?? '');
+    setLastName(metadata.last_name ?? name.slice(1).join(' '));
+    setContactEmail(state.user?.email ?? '');
+    setPhone(metadata.contact_phone ?? '');
+  }
   const [preferredLanguage, setPreferredLanguage] = useState<Locale>(locale);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -73,6 +84,7 @@ export function AccountPage() {
       setAccount(state);
       const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(state.user&&destination){window.location.href=destination;return;}
       setDisplayName(accountDisplayName(state));
+      loadContact(state);
       setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
     }).catch(() => {/* Keep the sign-in form usable when session lookup fails. */});
     const unsubscribe = subscribeAccountState(state => {
@@ -81,6 +93,7 @@ export function AccountPage() {
       if (state.user) {
         const destination=orderReturnPath(new URLSearchParams(window.location.search).get('next'));if(destination){window.location.href=destination;return;}
         setDisplayName(accountDisplayName(state));
+      loadContact(state);
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       }
     });
@@ -120,6 +133,7 @@ export function AccountPage() {
       void getAccountState().then(state=>{
         setAccount(state);
         setDisplayName(accountDisplayName(state));
+      loadContact(state);
         setPreferredLanguage((state.profile?.preferred_language as Locale | undefined) ?? locale);
       }).catch(()=>{});
     } catch (error) {
@@ -131,11 +145,11 @@ export function AccountPage() {
     event.preventDefault();
     setBusy(true); setMessage('');
     try {
-      await updateUserProfile({ displayName, preferredLanguage });
+      const result = await updateUserProfile({ displayName: `${firstName.trim()} ${lastName.trim()}`.trim(), preferredLanguage, firstName, lastName, phone, email: contactEmail });
       const state = await getAccountState();
       setAccount(state);
       setLocale(preferredLanguage);
-      setMessage(t.saved);
+      setMessage(result.emailChanged ? (fa ? 'اطلاعات ذخیره شد. برای تکمیل تغییر ایمیل، پیام تأیید را در ایمیل‌های فعلی و جدید بررسی کنید.' : 'Details saved. Check your current and new email inboxes to confirm the email change.') : t.saved);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t.error);
     } finally { setBusy(false); }
@@ -152,12 +166,6 @@ export function AccountPage() {
       setMessage(error instanceof Error ? error.message : t.error);
     } finally { setBusy(false); }
   }
-
-  const joined = useMemo(() => {
-    const raw = account.profile?.created_at ?? account.user?.created_at;
-    if (!raw) return '—';
-    return new Intl.DateTimeFormat(fa ? 'fa-IR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(raw));
-  }, [account.profile?.created_at, account.user?.created_at, fa]);
 
   return <div className="account-page" dir={fa ? 'rtl' : 'ltr'}>
     <header className="account-topbar">
@@ -192,49 +200,20 @@ export function AccountPage() {
         {message && <div className="account-message">{message}</div>}
         <div className="account-auth-switch"><span>{mode === 'signin' ? t.new : t.have}</span><button onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>{mode === 'signin' ? t.switchCreate : t.switchSignIn}</button></div>
       </section>
-    </main> : <main className="account-dashboard">
-      <section className="account-welcome">
-        <div className="account-avatar-large">{accountInitial(account)}</div>
-        <div><span className="account-kicker">BIOPLOT ACCOUNT</span><h1>{accountDisplayName(account)}</h1><p>{account.user.email}</p></div>
-        <div className="account-badges"><span className={account.isAdmin ? 'admin' : ''}>{account.isAdmin ? t.admin : t.user}</span><span><StudioIcon name="check"/>{t.verified}</span></div>
+    </main> : <main className="account-simple-layout">
+      <section className="account-card account-simple-card" aria-labelledby="account-details-title">
+        <h1 id="account-details-title">{fa ? 'اطلاعات حساب' : 'Account details'}</h1>
+        <form onSubmit={saveProfile}>
+          <fieldset disabled={busy}>
+            <label>{fa ? 'نام' : 'First name'}<input autoComplete="given-name" value={firstName} onChange={event=>setFirstName(event.target.value)} required maxLength={100}/></label>
+            <label>{fa ? 'نام خانوادگی' : 'Last name'}<input autoComplete="family-name" value={lastName} onChange={event=>setLastName(event.target.value)} maxLength={100}/></label>
+            <label>{t.email}<input type="email" dir="ltr" autoComplete="email" value={contactEmail} onChange={event=>setContactEmail(event.target.value)} required/></label>
+            <label>{fa ? 'شماره تماس' : 'Phone number'}<input type="tel" dir="ltr" autoComplete="tel" value={phone} onChange={event=>setPhone(event.target.value)} maxLength={40}/></label>
+            <div className="account-simple-actions"><button className="account-primary" type="submit">{busy ? '…' : fa ? 'ذخیره اطلاعات' : 'Save details'}</button><button className="account-secondary" type="button" onClick={logout}>{t.signOut}</button></div>
+          </fieldset>
+          {message && <p className="account-message" role="status">{message}</p>}
+        </form>
       </section>
-
-      <div className="account-grid">
-        <section className="account-card account-profile-card">
-          <div className="account-card-head"><div><span className="account-card-icon"><StudioIcon name="settings"/></span><div><h2>{t.profile}</h2><p>{account.user.email}</p></div></div></div>
-          <form onSubmit={saveProfile}>
-            <label>{t.name}<input value={displayName} onChange={event => setDisplayName(event.target.value)}/></label>
-            <div className="account-field-grid"><label>{t.language}<select value={preferredLanguage} onChange={event => setPreferredLanguage(event.target.value as Locale)}><option value="en">English</option><option value="fa">فارسی</option></select></label><label>{t.plan}<input value={(account.profile?.plan ?? 'free').toUpperCase()} readOnly/></label></div>
-            <div className="account-meta-row"><span>{t.role}<b>{account.isAdmin ? t.admin : t.user}</b></span><span>{t.member}<b>{joined}</b></span></div>
-            <div className="account-form-footer"><button className="account-primary" type="submit" disabled={busy}>{t.save}</button>{message && <span>{message}</span>}</div>
-          </form>
-        </section>
-
-        <section className="account-card account-workspace-card">
-          <span className="account-card-icon"><StudioIcon name="canvas"/></span>
-          <h2>Figure Studio</h2>
-          <p>{fa ? 'مستقیماً وارد فضای طراحی علمی شو و پروژه‌هایت را ادامه بده.' : 'Open your scientific workspace and continue designing your figures.'}</p>
-          <a className="account-secondary" href="/dashboard"><StudioIcon name="canvas"/>{fa?'داشبورد من':'My dashboard'}</a>
-        </section>
-
-        <section className="account-card account-workspace-card">
-          <span className="account-card-icon"><StudioIcon name="check"/></span>
-          <h2>{fa ? 'سفارش‌های طراحی' : 'Design requests'}</h2>
-          <p>{fa ? 'پاسخ تیم، پیشنهاد قیمت و ادامهٔ کار را در پروندهٔ سفارش ببین.' : 'View team replies, quotes and continue your work in each order.'}</p>
-          <a className="account-secondary" href="/orders">{fa ? 'مشاهدهٔ سفارش‌ها' : 'View orders'}</a>
-        </section>
-
-        {account.isAdmin && <section className="account-card account-admin-card">
-          <div className="account-admin-accent"><StudioIcon name="settings"/></div>
-          <span className="account-kicker">ADMIN ACCESS</span>
-          <h2>{t.adminTitle}</h2>
-          <p>{t.adminText}</p>
-          <div className="account-admin-features"><span><StudioIcon name="check"/>Scientific asset library</span><span><StudioIcon name="check"/>Categories & publishing</span><span><StudioIcon name="check"/>Global user content</span></div>
-          <a className="account-primary account-admin-link" href="/admin/library"><StudioIcon name="settings"/>{t.openAdmin}</a>
-        </section>}
-      </div>
-
-      <section className="account-security-strip"><div><span className="account-card-icon"><StudioIcon name="lock"/></span><div><b>{fa ? 'جلسه امن' : 'Secure session'}</b><small>{account.user.email}</small></div></div><button onClick={logout} disabled={busy}>{t.signOut}</button></section>
     </main>}
   </div>;
 }

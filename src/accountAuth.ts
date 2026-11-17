@@ -53,10 +53,24 @@ export async function signUpUser(email: string, password: string, displayName: s
   });
 }
 
-export async function updateUserProfile(input: { displayName: string; preferredLanguage: 'en' | 'fa' }) {
+export async function updateUserProfile(input: { displayName: string; preferredLanguage: 'en' | 'fa'; firstName?: string; lastName?: string; phone?: string; email?: string }) {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
   if (!user) throw new Error('Not signed in');
+
+  const emailChanged = input.email !== undefined && input.email.trim() !== user.email;
+  if (input.firstName !== undefined || emailChanged) {
+    const { error } = await supabase.auth.updateUser({
+      ...(emailChanged ? { email: input.email!.trim() } : {}),
+      data: {
+        display_name: input.displayName.trim(),
+        ...(input.firstName !== undefined ? { first_name: input.firstName.trim() } : {}),
+        ...(input.lastName !== undefined ? { last_name: input.lastName.trim() } : {}),
+        ...(input.phone !== undefined ? { contact_phone: input.phone.trim() } : {}),
+      },
+    });
+    if (error) throw error;
+  }
 
   const { error } = await supabase
     .from('profiles')
@@ -69,6 +83,7 @@ export async function updateUserProfile(input: { displayName: string; preferredL
 
   if (error) throw error;
   localStorage.setItem('bioplot-lang', input.preferredLanguage);
+  return { emailChanged };
 }
 
 export async function signOutUser() {
