@@ -11,7 +11,7 @@ it('shows only contact details and saves them, with a working sign-out action',a
  try{
   await act(async()=>root.render(<AccountPage/>));
   expect(Array.from(host.querySelectorAll('main label')).map(e=>e.textContent)).toEqual(['نام','نام خانوادگی','ایمیل','شماره تماس']);
-  expect(Array.from(host.querySelectorAll('main input')).map(e=>e.value)).toEqual(['زیبا','ملکشاهی','user@example.com','09123456789']);
+  expect(Array.from(host.querySelectorAll<HTMLInputElement>('main input')).map(e=>e.value)).toEqual(['زیبا','ملکشاهی','user@example.com','09123456789']);
   expect(host.querySelector('.account-admin-card,.account-welcome,.account-meta-row')).toBeNull();
   await act(async()=>host.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
   expect(mocks.save).toHaveBeenCalledWith({displayName:'زیبا ملکشاهی',preferredLanguage:'fa',firstName:'زیبا',lastName:'ملکشاهی',phone:'09123456789',email:'user@example.com'});
