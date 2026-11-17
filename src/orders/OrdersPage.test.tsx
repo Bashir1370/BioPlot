@@ -37,14 +37,14 @@ describe('Order management from dashboard links',()=>{
   await act(async()=>host.querySelector('.order-action-form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
   expect(api.transition).toHaveBeenCalledExactlyOnceWith(state.record,'reviewing','',undefined);
  });
- it('keeps management confirmation unavailable to customers and uses English step numbers in English',async()=>{
+ it('keeps management confirmation unavailable to customers and shows the same stages in English',async()=>{
   state.admin=false;localStorage.setItem('bioplot-lang','en');
   await act(async()=>root.render(<OrdersPage/>));
   expect(host.querySelector('.workspace-sidebar')).toBeNull();
   expect(host.querySelector('[data-testid="home-header"]')).not.toBeNull();
   expect(button('Confirm request')).toBeUndefined();
   expect(button('Cancel request')).toBeDefined();
-  expect(Array.from(host.querySelectorAll('.order-progress li>span')).map(el=>el.textContent)).toEqual(['1','2','3','4','5','6','7']);
+  expect(Array.from(host.querySelectorAll('.admin-order-tabs button'),el=>el.textContent)).toEqual(['Request','Agreement','Design','Delivery','Review','Payment','Complete']);
  });
  it('retains admin navigation between detail and list and supports collapsing and mobile Escape',async()=>{
   await act(async()=>root.render(<OrdersPage admin/>));
