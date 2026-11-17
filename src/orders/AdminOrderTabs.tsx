@@ -45,7 +45,7 @@ export function AdminPreviewForm({fa,busy,staged,onPublish}:{
    setFiles([]);setNote('');
   }
  }}>
-  <h2>{t('ارسال طرح برای بررسی مشتری','Send the design for customer review')}</h2>
+  <h2>{t('ارسال طرح برای بررسی کاربر سایت','Send the design for customer review')}</h2>
   <OrderFilePicker fa={fa} label={t('بارگذاری نسخهٔ قابل بررسی','Upload a review copy')} disabled={busy} onChange={event=>setFiles(Array.from(event.currentTarget.files??[]))}/>
   {[...staged,...files].map((file,index)=><p key={index}><bdi>{file.name}</bdi></p>)}
   <label>{t('پیام همراه طرح','Message to the customer')}

@@ -14,7 +14,7 @@ export function OrderReviewStage({fa,files,busy,onDownload,awaitingDecision,chil
  const t=useStudioCopy(fa);
  return <section className="order-card order-review-stage" aria-labelledby="order-review-title">
   <h2 id="order-review-title">{awaitingDecision?t('طرح شما آمادهٔ بررسی است','Your design is ready to review'):t('نسخهٔ ارسال‌شده برای بررسی','Design sent for review')}</h2>
-  {awaitingDecision&&<p>{t('نسخهٔ ارسالی را بررسی کنید. اگر طرح مورد تأیید شماست، به تسویه بروید. برای اصلاح، تغییرات موردنیاز را بنویسید.','Review the submitted design. Approve it to move to settlement, or describe the changes you need.')}</p>}
+  {awaitingDecision&&<p>{t('نسخهٔ ارسالی را بررسی کنید. اگر طرح مورد تأیید شماست، به پرداخت بروید. برای اصلاح، تغییرات موردنیاز را بنویسید.','Review the submitted design. Approve it to move to settlement, or describe the changes you need.')}</p>}
   {files.map(file=><div className="order-file" key={file.id}>
    <bdi>{file.name}</bdi>
    <button type="button" disabled={busy} onClick={()=>onDownload(file)} aria-label={t('دریافت','Download')+' '+file.name}>

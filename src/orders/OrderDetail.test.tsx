@@ -52,12 +52,12 @@ describe('Customer order detail',()=>{
   expect(host.querySelector('.order-request-summary')?.textContent).not.toContain('سفارش شما با موفقیت ثبت شد');
  });
  it('surfaces a team conversation reply without mislabelling a customer message as a team update',async()=>{
-  await render(order,[{id:'customer-msg',order_id:order.id,author_id:'customer',body:'توضیح مشتری',created_at:order.created_at},{id:'team-msg',order_id:order.id,author_id:'admin',body:'پاسخ طراحی به مشتری',created_at:order.updated_at}]);
+  await render(order,[{id:'customer-msg',order_id:order.id,author_id:'customer',body:'توضیح کاربر سایت',created_at:order.created_at},{id:'team-msg',order_id:order.id,author_id:'admin',body:'پاسخ طراحی به کاربر سایت',created_at:order.updated_at}]);
   const entries=host.querySelectorAll('.order-current-conversation article');
   expect(entries).toHaveLength(2);
-  expect(entries[0].querySelector('b')?.textContent).toBe('مشتری');
+  expect(entries[0].querySelector('b')?.textContent).toBe('کاربر سایت');
   expect(entries[1].querySelector('b')?.textContent).toBe('تیم طراحی');
-  expect(entries[1].textContent).toContain('پاسخ طراحی به مشتری');
+  expect(entries[1].textContent).toContain('پاسخ طراحی به کاربر سایت');
  });
 
  it('submits a proposal without requesting or sending an advance amount',async()=>{
@@ -84,7 +84,7 @@ describe('Customer order detail',()=>{
  });
  it('prompts the administrator to provide account details only when delivering the final files',async()=>{
   await render({...order,status:'approved'},[],[],true);
-  await act(async()=>Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='ثبت تسویه و تحویل نهایی')!.click());
+  await act(async()=>Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='ثبت پرداخت و تحویل نهایی')!.click());
   expect(host.querySelector('.order-action-form')?.textContent).toContain('شماره حساب، شبا یا کارت و نام صاحب حساب');
  });
 
@@ -126,7 +126,7 @@ describe('Customer order detail',()=>{
  });
  it('keeps preview approval available outside the archived agreement',async()=>{
   await render({...order,status:'review',quote_amount:100,quote_currency:'USD',quote_scope:'Agreed illustration'});
-  expect(host.querySelector('.order-review-stage')?.textContent).toContain('تأیید طرح و رفتن به تسویه');
+  expect(host.querySelector('.order-review-stage')?.textContent).toContain('تأیید طرح و رفتن به پرداخت');
   expect(host.querySelector('.admin-order-tab-content>.order-quote')).toBeNull();
  });
 
@@ -146,7 +146,7 @@ describe('Customer order detail',()=>{
   expect(tab('تحویل').getAttribute('aria-current')).toBe('step');
   expect(tab('بازبینی').disabled).toBe(true);
   const choose=(label:string)=>Array.from(card.querySelectorAll('button')).find(button=>button.textContent===label)!.click();
-  await act(async()=>choose('تأیید طرح و رفتن به تسویه'));
+  await act(async()=>choose('تأیید طرح و رفتن به پرداخت'));
   await act(async()=>card.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
   expect(transition).toHaveBeenLastCalledWith('approved','',undefined);
   await act(async()=>choose('نیاز به بازبینی'));

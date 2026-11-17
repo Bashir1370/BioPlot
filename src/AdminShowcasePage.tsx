@@ -115,7 +115,7 @@ export function AdminShowcasePage() {
         <AdminHomeHero/>
       </details>
       <section className="admin-showcase-title">
-        <div><span>PORTFOLIO SHOWCASE</span><h1>مدیریت تصاویر سفارشی</h1><p>این تصاویر حاصل سفارش مشتری هستند و توسط تیم BioPlot خلق شده‌اند. در سایت فقط خود تصویر نمایش داده می‌شود و هیچ عنوان، نوشته یا شماره‌ای روی آن اضافه نمی‌شود.</p></div>
+        <div><span>PORTFOLIO SHOWCASE</span><h1>مدیریت تصاویر سفارشی</h1><p>این تصاویر حاصل سفارش کاربر سایت هستند و توسط تیم BioPlot خلق شده‌اند. در سایت فقط خود تصویر نمایش داده می‌شود و هیچ عنوان، نوشته یا شماره‌ای روی آن اضافه نمی‌شود.</p></div>
         <div className="admin-showcase-count"><strong>{items.length}</strong><small>از {showcaseLimit} تصویر</small></div>
       </section>
 
