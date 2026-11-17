@@ -2,7 +2,7 @@
 .orders-shell .order-journey-heading h1{font-size:clamp(23px,3vw,31px);line-height:1.8;margin:0;color:#173f46}
 .order-detail-clean>.order-progress{margin-block:8px 28px}
 .order-detail-clean .order-detail-layout{display:block;max-width:1020px;margin-inline:auto}
-.order-detail-clean>.order-request-summary{max-width:1020px;margin:0 auto 26px;padding:clamp(20px,3.5vw,36px)}
+.order-customer-workflow .admin-order-tab-content>.order-request-summary{max-width:1020px;margin:0 auto 26px;padding:clamp(20px,3.5vw,36px)}
 .order-request-confirmation{display:flex;align-items:flex-start;gap:16px;padding-bottom:26px}
 .order-request-check{display:grid;place-items:center;flex:none;width:54px;height:54px;border-radius:17px;background:#e4f4ed;color:#19876f}
 .order-request-confirmation h2{font-size:22px;line-height:1.8;margin:0 0 6px;color:#164b47}
@@ -36,17 +36,17 @@
 .order-history-collapsed .order-card{border:0;margin:0;box-shadow:none}
 @media(max-width:650px){.order-journey-heading{margin-block:6px 22px}.order-request-facts{grid-template-columns:1fr}.order-request-description{grid-column:auto}.order-request-confirmation{gap:12px}.order-request-check{width:42px;height:42px;border-radius:13px}.order-request-confirmation h2{font-size:19px}.order-request-confirmation p{font-size:13px}.order-request-fact{padding:15px 16px}.order-request-tools{width:100%}.order-request-tools>button{flex:1}.order-request-footer>small{width:100%}.order-request-footer .order-inline-actions .order-actions{justify-content:stretch}.order-request-footer .order-inline-actions .order-actions>button{flex:1}.order-detail-clean .order-progress{gap:4px}.order-detail-clean .order-progress li{font-size:10px;min-width:0}}
 
-.order-detail-clean>.order-team-updates,.order-detail-clean>.order-quote{max-width:1020px;margin:0 auto 24px}
+.order-detail-clean>.order-team-updates,.order-customer-workflow .admin-order-tab-content>.order-quote{max-width:1020px;margin:0 auto 24px}
 .order-team-updates{border-color:#b8dacc;background:#f3faf6}
 .order-team-updates h2{font-size:21px;margin:0 0 16px;color:#164b47}
 .order-team-updates article{padding:14px 0;border-top:1px solid #dcebe4}
 .order-team-updates article header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:14px;color:#3f6a63}
 .order-team-updates article p{margin:10px 0 0;line-height:1.95;font-size:16px}
 .order-team-updates .order-quote-pending{margin:14px 0 0;padding-top:14px;border-top:1px solid #dcebe4;color:#637e76;font-size:14px;line-height:1.9}
-.order-detail-clean>.order-quote .order-inline-actions{margin-top:20px}
+.order-customer-workflow .admin-order-tab-content>.order-quote .order-inline-actions{margin-top:20px}
 
 .order-payment-terms{background:#edf7f2;border:1px solid #d3e8dc;border-radius:12px;padding:14px 16px;line-height:1.95;font-size:14px;color:#315f50}
-.order-detail-clean>.order-delivery-payment{max-width:1020px;margin:0 auto 24px;border-color:#b8dacc}
+.order-customer-workflow .admin-order-tab-content>.order-delivery-payment{max-width:1020px;margin:0 auto 24px;border-color:#b8dacc}
 .order-delivery-payment h2{font-size:21px;color:#164b47}
 .order-delivery-payment>p{font-size:16px;line-height:1.95}
 
@@ -55,10 +55,10 @@
 .order-stage-message-history>summary,.order-stage-message-group>summary,.order-quote-archive>summary{cursor:pointer;padding:16px 20px;font-size:14px;color:#466e64;line-height:1.8}
 .order-stage-message-group{margin:0 16px 16px;border-top:1px solid #e3ece7}
 .order-stage-message-group .order-messages{padding:0 4px 12px;margin:0}
-.order-detail-clean>.order-quote-archive,.order-detail-clean>.order-current-phase-actions{max-width:1020px;margin:0 auto 24px}
+.order-customer-workflow .admin-order-tab-content>.order-quote-archive,.order-detail-clean>.order-current-phase-actions{max-width:1020px;margin:0 auto 24px}
 .order-quote-archive>.order-quote{border:0;border-top:1px solid #e3ece7;border-radius:0 0 16px 16px;margin:0;box-shadow:none}
 
-.order-detail-clean>.order-review-stage,.order-detail-clean>.order-settlement-stage{max-width:1020px;margin:0 auto 24px}
+.order-customer-workflow .admin-order-tab-content>.order-review-stage,.order-customer-workflow .admin-order-tab-content>.order-settlement-stage{max-width:1020px;margin:0 auto 24px}
 .order-review-stage,.order-settlement-stage{border-color:#bcded2;background:linear-gradient(145deg,#f1faf6,#fff)}
 .order-review-stage .order-inline-actions{margin-top:20px}
 .order-review-stage bdi{overflow-wrap:anywhere}
@@ -74,3 +74,7 @@
 .orders-shell .admin-order-tabs button:disabled{cursor:default}
 .admin-order-tab-content .order-card{margin-bottom:18px}
 .admin-order-tab-content bdi{overflow-wrap:anywhere}
+
+.order-customer-workflow .admin-order-tab-content,
+.order-customer-workflow .order-detail-navigation{max-width:1020px;margin-inline:auto}
+.order-customer-workflow .order-current-conversation{margin-block:0 24px}

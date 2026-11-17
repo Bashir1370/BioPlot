@@ -12,6 +12,8 @@ describe('Customer order detail',()=>{
  beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);transition.mockClear();download.mockClear();host=document.createElement('div');document.body.append(host);root=createRoot(host);});
  afterEach(async()=>{await act(async()=>root.unmount());host.remove();vi.unstubAllGlobals();});
  async function render(current=order,messages:OrderMessage[]=[],events:OrderEvent[]=[],admin=false){await act(async()=>root.render(<OrderDetail fa admin={admin} userId={admin?'admin':'customer'} order={current} files={[reference]} messages={messages} events={events} busy={false} onTransition={transition} onDownload={download} onUpload={async()=>true} onMessage={async()=>true}/>));}
+ const tab=(label:string)=>Array.from(host.querySelectorAll<HTMLButtonElement>('nav button')).find(button=>button.textContent===label)!;
+ const chooseTab=(label:string)=>act(async()=>tab(label).click());
  it('shows the entered brief and references together, without empty deliverable sections',async()=>{
   await render();const card=host.querySelector('.order-request-summary')!;
   expect(card.textContent).toContain('سفارش شما با موفقیت ثبت شد');
@@ -28,8 +30,8 @@ describe('Customer order detail',()=>{
  it('keeps quote approval explicit and does not show a pending-review message after quoting',async()=>{
   await render({...order,status:'quoted',quote_amount:100,quote_deposit_amount:30,quote_currency:'USD',quote_scope:'Scientific illustration',quote_days:7,quote_revisions:2});
   expect(host.textContent).not.toContain('سفارش شما با موفقیت ثبت شد');
-  expect(host.querySelector('.order-detail-view>.order-quote')).not.toBeNull();
-  expect(host.querySelector('.order-detail-view>.order-request-summary')).toBeNull();
+  expect(host.querySelector('.admin-order-tab-content>.order-quote')).not.toBeNull();
+  expect(host.querySelector('.admin-order-tab-content>.order-request-summary')).toBeNull();
   expect(host.querySelector('.quote-payment-split')).toBeNull();
   expect(host.querySelector('.order-payment-terms')?.textContent).toContain('پس از پایان طراحی و تأیید رضایت شما');
   const accept=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='تأیید پیشنهاد')!;
@@ -42,17 +44,20 @@ describe('Customer order detail',()=>{
  it('shows an administrator status note above the original request and accurately explains a missing quote',async()=>{
   const note='سلام، سفارش شما بررسی شد و مورد تأیید قرار گرفت';
   await render({...order,status:'reviewing'},[],[{id:'review-note',order_id:order.id,actor_id:'admin',status:'reviewing',detail:{note},created_at:order.updated_at}]);
-  const updates=host.querySelector('.order-team-updates')!;
+  const updates=host.querySelector('.order-current-conversation')!;
   expect(updates.textContent).toContain(note);
   expect(updates.closest('details')).toBeNull();
-  expect(updates.textContent).toContain('پیشنهاد قیمت هنوز ارسال نشده است');
+  expect(host.querySelector('.order-quote-pending')?.textContent).toContain('پیشنهاد قیمت هنوز ارسال نشده است');
   expect(host.querySelector('.order-quote')).toBeNull();
   expect(host.querySelector('.order-request-summary')?.textContent).not.toContain('سفارش شما با موفقیت ثبت شد');
  });
  it('surfaces a team conversation reply without mislabelling a customer message as a team update',async()=>{
   await render(order,[{id:'customer-msg',order_id:order.id,author_id:'customer',body:'توضیح مشتری',created_at:order.created_at},{id:'team-msg',order_id:order.id,author_id:'admin',body:'پاسخ طراحی به مشتری',created_at:order.updated_at}]);
-  expect(host.querySelector('.order-team-updates')?.textContent).toContain('پاسخ طراحی به مشتری');
-  expect(host.querySelector('.order-team-updates')?.textContent).not.toContain('توضیح مشتری');
+  const entries=host.querySelectorAll('.order-current-conversation article');
+  expect(entries).toHaveLength(2);
+  expect(entries[0].querySelector('b')?.textContent).toBe('مشتری');
+  expect(entries[1].querySelector('b')?.textContent).toBe('تیم طراحی');
+  expect(entries[1].textContent).toContain('پاسخ طراحی به مشتری');
  });
 
  it('submits a proposal without requesting or sending an advance amount',async()=>{
@@ -73,7 +78,9 @@ describe('Customer order detail',()=>{
   expect(host.querySelector('.order-delivery-payment')?.textContent).toContain(details);
   await render({...order,status:'completed'},messages,events);
   expect(host.querySelector('.order-delivery-payment')).toBeNull();
-  expect(host.querySelector('.order-stage-message-history')?.textContent).toContain(details);
+  await chooseTab('تحویل');
+  expect(host.querySelector('.order-delivery-payment')?.textContent).toContain(details);
+  expect(host.querySelector('.order-inline-actions')).toBeNull();
  });
  it('prompts the administrator to provide account details only when delivering the final files',async()=>{
   await render({...order,status:'approved'},[],[],true);
@@ -93,21 +100,34 @@ describe('Customer order detail',()=>{
    {id:'current-message',order_id:order.id,author_id:'admin',body:'پیام مخصوص طراحی',created_at:stamp(13)},
   ];
   await render({...order,status:'designing',updated_at:stamp(12),quote_amount:100,quote_currency:'USD',quote_scope:'Agreed illustration'},messages,events);
-  expect(host.querySelector('.order-team-updates')?.textContent).toContain('پیام مخصوص طراحی');
-  expect(host.querySelector('.order-team-updates')?.textContent).not.toContain('پاسخ مرحله درخواست');
-  expect(host.querySelector('.order-team-updates')?.textContent).not.toContain('پاسخ مرحله توافق');
-  expect(host.querySelector('.order-current-conversation')?.textContent).not.toContain('پیام قدیمی توافق');
-  expect(host.querySelector('.order-stage-message-history')?.textContent).toContain('پاسخ مرحله درخواست');
-  expect(host.querySelector('.order-stage-message-history')?.textContent).toContain('پاسخ مرحله توافق');
-  expect(host.querySelector('.order-stage-message-history')?.textContent).toContain('پیام قدیمی توافق');
-  expect(host.querySelector('.order-detail-view>.order-quote')).toBeNull();
-  expect(host.querySelector('.order-detail-view>.order-request-summary')).toBeNull();
-  expect(host.querySelector('.order-history-collapsed .order-request-summary')).not.toBeNull();
+  const conversation=()=>host.querySelector('.order-current-conversation')?.textContent;
+  expect(Array.from(host.querySelectorAll('nav button'),button=>button.textContent)).toEqual(
+   ['ثبت درخواست','توافق','طراحی','تحویل','بازبینی','پرداخت مالی','تکمیل'],
+  );
+  expect(tab('طراحی').getAttribute('aria-current')).toBe('step');
+  expect(tab('تحویل').disabled).toBe(true);
+  expect(conversation()).toContain('پیام مخصوص طراحی');
+  expect(conversation()).not.toContain('پیام قدیمی توافق');
+
+  await chooseTab('توافق');
+  expect(tab('توافق').getAttribute('aria-pressed')).toBe('true');
+  expect(host.querySelector('.order-quote')?.textContent).toContain('Agreed illustration');
+  expect(conversation()).toContain('پاسخ مرحله توافق');
+  expect(conversation()).toContain('پیام قدیمی توافق');
+  expect(conversation()).not.toContain('پیام مخصوص طراحی');
+  expect(host.querySelector('.order-current-conversation form')).toBeNull();
+  expect(host.querySelector('.order-inline-actions')).toBeNull();
+
+  await chooseTab('ثبت درخواست');
+  expect(host.querySelector('.order-request-summary')?.textContent).toContain(order.brief.message);
+  expect(conversation()).toContain('پاسخ مرحله درخواست');
+  await chooseTab('طراحی');
+  expect(host.querySelector('.order-design-progress')).not.toBeNull();
  });
  it('keeps preview approval available outside the archived agreement',async()=>{
   await render({...order,status:'review',quote_amount:100,quote_currency:'USD',quote_scope:'Agreed illustration'});
   expect(host.querySelector('.order-review-stage')?.textContent).toContain('تأیید طرح و رفتن به تسویه');
-  expect(host.querySelector('.order-detail-view>.order-quote')).toBeNull();
+  expect(host.querySelector('.admin-order-tab-content>.order-quote')).toBeNull();
  });
 
  it('offers both review decisions next to the released design and separates the resulting stages',async()=>{
@@ -118,9 +138,13 @@ describe('Customer order detail',()=>{
   const draw=async(status:DesignOrder['status'],events:OrderEvent[])=>act(async()=>root.render(<OrderDetail {...props} order={{...quoted,status}} events={events}/>));
   await draw('designing',[event('designing')]);
   expect(host.querySelector('[aria-label="دریافت design.pdf"]')).toBeNull();
-  await draw('review',[event('review')]);
+  await draw('review',[event('designing'),event('review','پیام همراه طرح')]);
   const card=host.querySelector('.order-review-stage')!;
   expect(card.textContent).toContain('design.pdf');
+  expect(card.textContent).toContain('پیام همراه طرح');
+  expect(host.querySelector('.order-current-conversation')?.textContent).not.toContain('پیام همراه طرح');
+  expect(tab('تحویل').getAttribute('aria-current')).toBe('step');
+  expect(tab('بازبینی').disabled).toBe(true);
   const choose=(label:string)=>Array.from(card.querySelectorAll('button')).find(button=>button.textContent===label)!.click();
   await act(async()=>choose('تأیید طرح و رفتن به تسویه'));
   await act(async()=>card.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
@@ -128,10 +152,16 @@ describe('Customer order detail',()=>{
   await act(async()=>choose('نیاز به بازبینی'));
   expect(card.querySelector('textarea')?.required).toBe(true);
   await draw('revision_requested',[event('review'),event('revision_requested','برچسب سمت راست بزرگ‌تر شود')]);
-  expect(host.querySelector('.order-review-stage')?.textContent).toContain('برچسب سمت راست بزرگ‌تر شود');
+  expect(tab('بازبینی').getAttribute('aria-current')).toBe('step');
+  expect(host.querySelector('.order-current-conversation')?.textContent).toContain('برچسب سمت راست بزرگ‌تر شود');
+  await chooseTab('تحویل');
+  expect(host.querySelector('.order-review-stage')?.textContent).toContain('design.pdf');
+  expect(host.querySelector('.order-inline-actions')).toBeNull();
   await draw('approved',[event('review'),event('approved')]);
   expect(host.querySelector('.order-settlement-stage')?.textContent).toContain('۱۰۰');
-  expect(host.querySelector('[aria-current="step"]')?.textContent).toContain('تسویه');
+  expect(tab('پرداخت مالی').getAttribute('aria-current')).toBe('step');
+  expect(tab('پرداخت مالی').getAttribute('aria-pressed')).toBe('true');
+  expect(tab('بازبینی').disabled).toBe(true);
  });
 
 });

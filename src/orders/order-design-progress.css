@@ -1,4 +1,4 @@
-.order-detail-clean>.order-design-progress{max-width:1020px;margin:0 auto 26px;padding:clamp(22px,4vw,38px);border:1px solid #bcded2;background:radial-gradient(ellipse at 95% 0,#def2e9 0,transparent 55%),linear-gradient(135deg,#fbfefd,#f0f8f4);box-shadow:0 12px 34px #173f4608;overflow:hidden}
+.order-customer-workflow .admin-order-tab-content>.order-design-progress{max-width:1020px;margin:0 auto 26px;padding:clamp(22px,4vw,38px);border:1px solid #bcded2;background:radial-gradient(ellipse at 95% 0,#def2e9 0,transparent 55%),linear-gradient(135deg,#fbfefd,#f0f8f4);box-shadow:0 12px 34px #173f4608;overflow:hidden}
 .design-progress-heading{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
 .design-progress-icon{display:grid;place-items:center;width:54px;height:54px;border-radius:17px;flex:none;background:#d9eee4;color:#16735e}
 .design-progress-heading>div{flex:1;min-width:180px}

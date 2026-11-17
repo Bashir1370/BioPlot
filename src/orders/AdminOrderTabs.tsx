@@ -3,18 +3,18 @@ import {useStudioCopy} from './StudioContent';
 import {OrderFilePicker} from './OrderFilePicker';
 import type {OrderFile,OrderStatus} from './orderModel';
 
-export const adminOrderStages:Record<OrderStatus,number>={
+export const orderWorkflowStages:Record<OrderStatus,number>={
  submitted:0,reviewing:0,quoted:1,accepted:2,designing:2,review:3,
  revision_requested:4,approved:5,delivered:3,completed:6,cancelled:7,
 };
 
-export const adminStageLabels:[string,string][]=[
+export const orderWorkflowLabels:[string,string][]=[
  ['ثبت درخواست','Request'],['توافق','Agreement'],['طراحی','Design'],
  ['تحویل','Delivery'],['بازبینی','Revision'],['پرداخت مالی','Payment'],
  ['تکمیل','Complete'],['لغو درخواست','Cancelled'],
 ];
 
-export function AdminOrderTabs({fa,stage,phaseId,visited,busy,children}:{
+export function OrderWorkflowTabs({fa,stage,phaseId,visited,busy,children}:{
  fa:boolean;stage:number;phaseId:string;visited:number[];busy:boolean;
  children:(tab:number)=>ReactNode;
 }){
@@ -23,7 +23,7 @@ export function AdminOrderTabs({fa,stage,phaseId,visited,busy,children}:{
  const tab=selection?.phaseId===phaseId?selection.tab:stage;
  return <>
   <nav className="admin-order-tabs" aria-label={t('مراحل سفارش','Order stages')}>
-   {adminStageLabels.slice(0,stage===7?8:7).map(([label,en],index)=>
+   {orderWorkflowLabels.slice(0,stage===7?8:7).map(([label,en],index)=>
     <button type="button" key={en} disabled={busy||!visited.includes(index)}
      aria-pressed={tab===index} aria-current={stage===index?'step':undefined}
      onClick={()=>setSelection({phaseId,tab:index})}>{t(label,en)}</button>
