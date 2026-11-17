@@ -57,3 +57,11 @@
 .order-stage-message-group .order-messages{padding:0 4px 12px;margin:0}
 .order-detail-clean>.order-quote-archive,.order-detail-clean>.order-current-phase-actions{max-width:1020px;margin:0 auto 24px}
 .order-quote-archive>.order-quote{border:0;border-top:1px solid #e3ece7;border-radius:0 0 16px 16px;margin:0;box-shadow:none}
+
+.order-detail-clean>.order-review-stage,.order-detail-clean>.order-settlement-stage{max-width:1020px;margin:0 auto 24px}
+.order-review-stage,.order-settlement-stage{border-color:#bcded2;background:linear-gradient(145deg,#f1faf6,#fff)}
+.order-review-stage .order-inline-actions{margin-top:20px}
+.order-review-stage bdi{overflow-wrap:anywhere}
+.order-settlement-stage strong{display:block;color:#176451;margin-top:4px}
+.order-filter-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.orders-shell .order-filter-tabs [aria-pressed=true]{border-color:#78b8aa;background:#e5f4ed;color:#145e4d}

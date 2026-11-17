@@ -77,7 +77,7 @@ describe('Customer order detail',()=>{
  });
  it('prompts the administrator to provide account details only when delivering the final files',async()=>{
   await render({...order,status:'approved'},[],[],true);
-  await act(async()=>Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='تحویل نهایی')!.click());
+  await act(async()=>Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='ثبت تسویه و تحویل نهایی')!.click());
   expect(host.querySelector('.order-action-form')?.textContent).toContain('شماره حساب، شبا یا کارت و نام صاحب حساب');
  });
 
@@ -104,8 +104,32 @@ describe('Customer order detail',()=>{
  });
  it('keeps preview approval available outside the archived agreement',async()=>{
   await render({...order,status:'review',quote_amount:100,quote_currency:'USD',quote_scope:'Agreed illustration'});
-  expect(host.querySelector('.order-current-phase-actions')?.textContent).toContain('تأیید پیش‌نمایش');
+  expect(host.querySelector('.order-review-stage')?.textContent).toContain('تأیید طرح و رفتن به تسویه');
   expect(host.querySelector('.order-quote-archive .order-inline-actions')).toBeNull();
+ });
+
+ it('offers both review decisions next to the released design and separates the resulting stages',async()=>{
+  const preview:OrderFile={...reference,id:'preview',kind:'preview',name:'design.pdf'};
+  const event=(status:OrderEvent['status'],note=''):OrderEvent=>({id:status,status,actor_id:status==='revision_requested'?'customer':'admin',order_id:order.id,created_at:order.created_at,detail:{note}});
+  const props={fa:true,admin:false,userId:'customer',files:[preview],messages:[],busy:false,onTransition:transition,onDownload:download,onUpload:async()=>true,onMessage:async()=>true};
+  const quoted={...order,quote_amount:100,quote_currency:'USD' as const};
+  const draw=async(status:DesignOrder['status'],events:OrderEvent[])=>act(async()=>root.render(<OrderDetail {...props} order={{...quoted,status}} events={events}/>));
+  await draw('designing',[event('designing')]);
+  expect(host.querySelector('[aria-label="دریافت design.pdf"]')).toBeNull();
+  await draw('review',[event('review')]);
+  const card=host.querySelector('.order-review-stage')!;
+  expect(card.textContent).toContain('design.pdf');
+  const choose=(label:string)=>Array.from(card.querySelectorAll('button')).find(button=>button.textContent===label)!.click();
+  await act(async()=>choose('تأیید طرح و رفتن به تسویه'));
+  await act(async()=>card.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+  expect(transition).toHaveBeenLastCalledWith('approved','',undefined);
+  await act(async()=>choose('نیاز به بازبینی'));
+  expect(card.querySelector('textarea')?.required).toBe(true);
+  await draw('revision_requested',[event('review'),event('revision_requested','برچسب سمت راست بزرگ‌تر شود')]);
+  expect(host.querySelector('.order-review-stage')?.textContent).toContain('برچسب سمت راست بزرگ‌تر شود');
+  await draw('approved',[event('review'),event('approved')]);
+  expect(host.querySelector('.order-settlement-stage')?.textContent).toContain('۱۰۰');
+  expect(host.querySelector('[aria-current="step"]')?.textContent).toContain('تسویه');
  });
 
 });

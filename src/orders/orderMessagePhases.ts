@@ -1,6 +1,6 @@
 import type {DesignOrder,OrderEvent,OrderMessage,OrderStatus} from './orderModel';
 
-export const orderMessageStage:Record<OrderStatus,number>={submitted:0,reviewing:0,quoted:1,accepted:2,designing:2,review:3,approved:3,revision_requested:3,delivered:4,completed:5,cancelled:6};
+export const orderMessageStage:Record<OrderStatus,number>={submitted:0,reviewing:0,quoted:1,accepted:2,designing:2,review:3,approved:4,revision_requested:3,delivered:5,completed:6,cancelled:7};
 export interface OrderMessagePhase {id:string;stage:number;status:OrderStatus;startedAt:string;events:OrderEvent[];messages:OrderMessage[];}
 /** Consecutive visits to a journey stage form one phase; returning later creates a new phase. */
 export function groupOrderMessages(order:DesignOrder,events:OrderEvent[],messages:OrderMessage[]){

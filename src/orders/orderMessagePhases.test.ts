@@ -16,8 +16,8 @@ describe('Messages stay in their order stage',()=>{
   expect(result.current.id).toBe('design2');expect(result.current.messages.map(m=>m.id)).toEqual(['new-design']);
   expect(result.previous.flatMap(p=>p.messages).map(m=>m.id)).toEqual(['old-design','review-comment']);
  });
- it('keeps review and approval notes together until delivery',()=>{
-  const result=groupOrderMessages({...order,status:'approved'},[event('preview','review',11),event('approved','approved',12)],[message('review-message',11)]);
+ it('keeps review and revision notes together until settlement',()=>{
+  const result=groupOrderMessages({...order,status:'revision_requested'},[event('preview','review',11),event('revision','revision_requested',12)],[message('review-message',11)]);
   expect(result.current.stage).toBe(3);expect(result.current.events).toHaveLength(2);expect(result.current.messages).toHaveLength(1);
  });
  it('supports historical records without events without losing their messages',()=>{
