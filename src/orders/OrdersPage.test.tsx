@@ -31,7 +31,7 @@ describe('Order management from dashboard links',()=>{
   expect(host.querySelector('.workspace-order-link')?.getAttribute('href')).toBe('/admin/orders');
   expect(button('لغو درخواست')).toBeDefined();
   expect(button('تأیید درخواست')).toBeDefined();
-  expect(Array.from(host.querySelectorAll('.order-progress li>span')).map(el=>el.textContent)).toEqual(['۱','۲','۳','۴','۵','۶']);
+  expect(Array.from(host.querySelectorAll('.order-progress li>span')).map(el=>el.textContent)).toEqual(['۱','۲','۳','۴','۵','۶','۷']);
   await act(async()=>button('تأیید درخواست')!.click());
   expect(api.transition).not.toHaveBeenCalled();
   await act(async()=>host.querySelector('.order-action-form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
@@ -44,7 +44,7 @@ describe('Order management from dashboard links',()=>{
   expect(host.querySelector('[data-testid="home-header"]')).not.toBeNull();
   expect(button('Confirm request')).toBeUndefined();
   expect(button('Cancel request')).toBeDefined();
-  expect(Array.from(host.querySelectorAll('.order-progress li>span')).map(el=>el.textContent)).toEqual(['1','2','3','4','5','6']);
+  expect(Array.from(host.querySelectorAll('.order-progress li>span')).map(el=>el.textContent)).toEqual(['1','2','3','4','5','6','7']);
  });
  it('retains admin navigation between detail and list and supports collapsing and mobile Escape',async()=>{
   await act(async()=>root.render(<OrdersPage admin/>));

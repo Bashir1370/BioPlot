@@ -91,13 +91,13 @@ export function UserDashboard(){
  const nav=[{id:'profile' as Tab,label:text('Profile','پروفایل'),icon:User}];
  const unreadTotal=orderInbox.reduce((sum,order)=>sum+order.unread_count,0);
  const orderStatusText=(status:OrderInboxItem['status'])=>statusLabels[status]?.[fa?0:1]??status;
- const orderNeedsUser=['quoted','review','delivered'];
+ const orderNeedsUser=['quoted','review','approved','delivered'];
  const attentionCount=orderInbox.filter(order=>orderNeedsUser.includes(order.status)).length;
  const filtered=items.filter(row=>row.title.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).sort((a,b)=>sort==='name'?a.title.localeCompare(b.title,locale):sort==='oldest'?a.updatedAt.localeCompare(b.updatedAt):b.updatedAt.localeCompare(a.updatedAt));
  const recent=items.filter(row=>Date.now()-new Date(row.updatedAt).getTime()<7*86400000).length;
  const date=(value:string)=>new Intl.DateTimeFormat(fa?'fa-IR':'en-US',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
  return <div className={`workspace ${collapsed?'is-collapsed':''} ${account.isAdmin?'is-admin':''}`} dir={fa?'rtl':'ltr'}>
-  <WorkspaceSidebar account={account} fa={fa} collapsed={collapsed} setCollapsed={setCollapsed} mobile={mobile} setMobile={setMobile} unreadTotal={unreadTotal} active={tab==='profile'?'profile':undefined} onProfile={()=>{setTab('profile');setMobile(false);setMessage('');}}/>
+  <WorkspaceSidebar account={account} fa={fa} collapsed={collapsed} setCollapsed={setCollapsed} mobile={mobile} setMobile={setMobile} unreadTotal={unreadTotal} revisionCount={orderInbox.filter(order=>order.status==='revision_requested').length} active={tab==='profile'?'profile':undefined} onProfile={()=>{setTab('profile');setMobile(false);setMessage('');}}/>
   <main className="workspace-main">
    <header>{!account.isAdmin&&<div><small>BIOPLOT WORKSPACE</small><h1>{nav.find(item=>item.id===tab)?.label}</h1><p className="workspace-subtitle">{text('A home for your scientific ideas.','خانه‌ای برای ایده‌های علمی شما.')}</p></div>}<div className="workspace-header-actions"><button onClick={()=>setLocale(fa?'en':'fa')}>{fa?'EN':'FA'}</button>{!account.isAdmin&&<button className="workspace-primary" disabled={busy||!ready} onClick={()=>void create()}><Plus size={18}/>{text('New figure','شکل جدید')}</button>}</div></header>
    {message&&<p role="status" className="workspace-notice">{message}</p>}
