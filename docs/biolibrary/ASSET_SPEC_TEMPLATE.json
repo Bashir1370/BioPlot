@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "draft-1.0",
+  "note": "Production-side template only. Not a current Supabase or studio API contract.",
+  "assetId": "lab-equipment.falcon-50ml",
+  "slug": "falcon-50ml",
+  "styleGuide": "BSSV",
+  "styleGuideVersion": "1.0.0",
+  "assetVersion": 1,
+  "names": {
+    "en": "50 mL Conical Centrifuge Tube",
+    "fa": "لوله سانتریفیوژ مخروطی ۵۰ میلی‌لیتری"
+  },
+  "category": "lab-equipment",
+  "synonyms": {
+    "en": [
+      "conical centrifuge tube",
+      "50ml tube"
+    ],
+    "fa": [
+      "فالکون ۵۰",
+      "لوله مخروطی سانتریفیوژ"
+    ]
+  },
+  "scientificDescription": "Generic illustrative 50 mL conical centrifuge tube; proportions must be scientifically checked.",
+  "camera": "near-orthographic 3/4 upright",
+  "materialRecipes": [
+    "translucent-polypropylene",
+    "ribbed-blue-plastic-cap"
+  ],
+  "source": "falcon-50ml_master.svg",
+  "web": "falcon-50ml_web.svg",
+  "preview": "falcon-50ml_preview.png",
+  "semanticRegions": [
+    {
+      "id": "bp-body",
+      "role": "shell",
+      "editable": false
+    },
+    {
+      "id": "bp-cap",
+      "role": "cap",
+      "editable": true,
+      "controls": [
+        "color"
+      ],
+      "currentSupport": "partial: literal-hex slot only"
+    },
+    {
+      "id": "bp-liquid",
+      "role": "liquid",
+      "editable": true,
+      "controls": [
+        "color"
+      ],
+      "currentSupport": "partial: literal-hex slot only"
+    },
+    {
+      "id": "bp-label",
+      "role": "label",
+      "editable": true,
+      "controls": [
+        "color",
+        "text"
+      ],
+      "currentSupport": "manual component editor"
+    },
+    {
+      "id": "bp-graduations",
+      "role": "graduations",
+      "editable": false,
+      "plannedControls": [
+        "visibility"
+      ]
+    },
+    {
+      "id": "bp-highlights",
+      "role": "lighting",
+      "editable": false
+    },
+    {
+      "id": "bp-shadows",
+      "role": "lighting",
+      "editable": false
+    },
+    {
+      "id": "bp-outline",
+      "role": "outline",
+      "editable": false
+    }
+  ],
+  "variants": [
+    "empty-closed"
+  ],
+  "plannedVariants": [
+    "half-full-closed",
+    "full-closed",
+    "empty-open"
+  ],
+  "colorSlots": [
+    {
+      "key": "cap",
+      "label": "Cap blue",
+      "defaultValue": "#457FC4",
+      "caveat": "Current literal color replacement, not entire gradient material."
+    }
+  ],
+  "status": "draft",
+  "qualityReview": {
+    "scientific": false,
+    "visual": false,
+    "editorRoundTrip": false
+  },
+  "futureRequirements": [
+    "requires-region-recolor-v2"
+  ]
+}

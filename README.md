@@ -81,3 +81,7 @@ Product areas:
 ## Migration note
 
 The legacy `app.js`, `styles.css`, `dashboard.js`, `dashboard.css` and `project-storage.js` remain in the repository temporarily as v2 reference files. The v3 HTML entry points no longer load them. They can be removed after the v3 deployment is validated.
+
+## BioLibrary vector design standard
+
+For all new editable scientific SVG assets, follow the [BioLibrary Scientific Soft-Volume visual and production guide](./docs/biolibrary/README.md). This is a documentation and asset-authoring standard; it does not alter the running editor.
