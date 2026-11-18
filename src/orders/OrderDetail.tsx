@@ -42,7 +42,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
   const phase=allPhases.filter(p=>Date.parse(p.startedAt)<=at).at(-1);
   return phase?.stage===5;
  });
- const receiptAttachments=(canUpload:boolean)=><OrderMessageAttachments fa={fa} files={paymentAttachments} busy={busy} canUpload={canUpload} onUpload={onUpload} onDownload={onDownload}/>;
+ const receiptAttachments=(canUpload:boolean)=><OrderMessageAttachments fa={fa} files={paymentAttachments} busy={busy} canUpload={canUpload} onMessage={onMessage} onUpload={onUpload} onDownload={onDownload}/>;
 
  const phaseId=admin&&!manageTabs?phases.current.id:current.id;
  useEffect(()=>{setMessage('');setAction(null);setNote('');setAgree(false);},[order.id,phaseId]);
@@ -138,7 +138,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
         <p className="order-prewrap" dir="auto">{item.body}</p>
        </article>)}</div>}
        {tab===5&&receiptAttachments(active&&writeAllowed)}
-       {active&&writeAllowed&&<form onSubmit={submitMessage}><label>{t('پیام جدید','New message')}
+       {active&&writeAllowed&&tab!==5&&<form onSubmit={submitMessage}><label>{t('پیام جدید','New message')}
         <textarea required rows={3} maxLength={6000} value={message} onChange={e=>setMessage(e.target.value)}/>
        </label><button className="order-primary" disabled={busy||!message.trim()}>{t('ارسال پیام','Send message')}</button></form>}
       </section>}
@@ -191,7 +191,6 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
        {notes.map(event=><p className="order-prewrap" dir="auto" key={event.id}>{String(event.detail.note)}</p>)}
        {tabMessages.map(item=><p className="order-prewrap" dir="auto" key={item.id}><b>{item.author_id===order.user_id?t('کاربر سایت','Customer'):t('تیم طراحی','Design team')}</b> · {item.body}</p>)}
        {tab===5&&receiptAttachments(active&&!terminal)}
-       {active&&tab===5&&<form onSubmit={submitMessage}><label>{t('اطلاعات پرداخت برای کاربر سایت','Payment information for the customer')}<textarea required maxLength={6000} value={message} onChange={event=>setMessage(event.currentTarget.value)}/></label><button disabled={busy||!message.trim()}>{t('ارسال پیام','Send message')}</button></form>}
       </section>}
      </>;
     }}
