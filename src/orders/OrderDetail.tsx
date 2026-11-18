@@ -1,5 +1,6 @@
 import {OrderWorkflowTabs,AdminPreviewForm,orderWorkflowStages,orderWorkflowLabels} from './AdminOrderTabs';
 import {useStudioCopy} from './StudioContent';
+import {OrderMessageAttachments} from './OrderMessageAttachments';
 import {OrderFilePicker} from './OrderFilePicker';
 import {OrderRequestSummary} from './OrderRequestSummary';
 import {OrderReviewStage} from './OrderReviewStage';
@@ -35,6 +36,14 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
  const workflow=groupOrderMessages(order,events,messages,orderWorkflowStages,true);
  const {current,previous}=workflow;
  const allPhases=[...previous,current];
+ const paymentAttachments=files.filter(file=>{
+  if(file.kind!=='reference')return false;
+  const at=Date.parse(file.created_at);
+  const phase=allPhases.filter(p=>Date.parse(p.startedAt)<=at).at(-1);
+  return phase?.stage===5;
+ });
+ const receiptAttachments=(canUpload:boolean)=><OrderMessageAttachments fa={fa} files={paymentAttachments} busy={busy} canUpload={canUpload} onUpload={onUpload} onDownload={onDownload}/>;
+
  const phaseId=admin&&!manageTabs?phases.current.id:current.id;
  useEffect(()=>{setMessage('');setAction(null);setNote('');setAgree(false);},[order.id,phaseId]);
  const sent=events.slice().reverse().find(event=>event.status==='review');
@@ -122,12 +131,13 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
       </section>)}
       {tab===6&&<p role="status">{t('سفارش تکمیل شد','Order completed')}</p>}
       {tab===7&&<p role="status">{t('سفارش لغو شد','Order cancelled')}</p>}
-      {(entries.length>0||active&&writeAllowed)&&<section className="order-card order-current-conversation">
+      {(entries.length>0||active&&writeAllowed||tab===5&&paymentAttachments.length>0)&&<section className="order-card order-current-conversation">
        <h2><ChatCircle/> {t('گفت‌وگوی این مرحله','Conversation for this stage')} · {t(...orderWorkflowLabels[tab])}</h2>
        {entries.length>0&&<div className="order-messages">{entries.map(item=><article className={item.author===userId?'own':''} key={item.id}>
         <header><b>{participant(item.author)}</b><small>{date(item.at)}</small></header>
         <p className="order-prewrap" dir="auto">{item.body}</p>
        </article>)}</div>}
+       {tab===5&&receiptAttachments(active&&writeAllowed)}
        {active&&writeAllowed&&<form onSubmit={submitMessage}><label>{t('پیام جدید','New message')}
         <textarea required rows={3} maxLength={6000} value={message} onChange={e=>setMessage(e.target.value)}/>
        </label><button className="order-primary" disabled={busy||!message.trim()}>{t('ارسال پیام','Send message')}</button></form>}
@@ -176,10 +186,11 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
       </>}
       {tab===6&&<p role="status">{t('سفارش تکمیل شد','Order completed')}</p>}
       {tab===7&&<p role="status">{t('سفارش لغو شد','Order cancelled')}</p>}
-      {(notes.length>0||tabMessages.length>0||active&&tab===5)&&<section className="order-card order-admin-stage-messages">
+      {(notes.length>0||tabMessages.length>0||tab===5&&(active||paymentAttachments.length>0))&&<section className="order-card order-admin-stage-messages">
        <h3>{tab===4?t('درخواست بازبینی کاربر سایت','Customer revision request'):t('پیام‌های این مرحله','Stage messages')}</h3>
        {notes.map(event=><p className="order-prewrap" dir="auto" key={event.id}>{String(event.detail.note)}</p>)}
        {tabMessages.map(item=><p className="order-prewrap" dir="auto" key={item.id}><b>{item.author_id===order.user_id?t('کاربر سایت','Customer'):t('تیم طراحی','Design team')}</b> · {item.body}</p>)}
+       {tab===5&&receiptAttachments(active&&!terminal)}
        {active&&tab===5&&<form onSubmit={submitMessage}><label>{t('اطلاعات پرداخت برای کاربر سایت','Payment information for the customer')}<textarea required maxLength={6000} value={message} onChange={event=>setMessage(event.currentTarget.value)}/></label><button disabled={busy||!message.trim()}>{t('ارسال پیام','Send message')}</button></form>}
       </section>}
      </>;

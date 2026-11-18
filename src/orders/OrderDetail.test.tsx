@@ -63,6 +63,16 @@ describe('Customer order detail',()=>{
   await act(async()=>form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
   expect(transition).toHaveBeenCalledWith('quoted','',expect.objectContaining({days:2,amount:600000}));
  });
+ for(const admin of [false,true])it(`shows payment receipt files to ${admin?'admin':'requester'} in the payment conversation`,async()=>{
+  const approved={...order,status:'approved' as const,quote_amount:600000};
+  const events:OrderEvent[]=[{id:'payment',order_id:order.id,actor_id:'customer',status:'approved',detail:{},created_at:'2026-11-18T10:00:00Z'}];
+  const receipt={...reference,id:'receipt',name:'bank-receipt.pdf',created_at:'2026-11-18T10:05:00Z'};
+  await act(async()=>root.render(<OrderDetail fa admin={admin} canManage={admin} userId={admin?'admin':'customer'} order={approved} files={[reference,receipt]} events={events} messages={[]} busy={false} onTransition={transition} onDownload={download} onUpload={async()=>true} onMessage={async()=>true} onPublishPreview={admin?async()=>true:undefined}/>));
+  const attachments=host.querySelector('.order-message-attachments')!;
+  expect(attachments.textContent).toContain('bank-receipt.pdf');
+  expect(attachments.textContent).not.toContain('reference.pdf');
+  expect(attachments.querySelector('input[type=file]')).not.toBeNull();
+ });
  it('keeps quote approval explicit and does not show a pending-review message after quoting',async()=>{
   await render({...order,status:'quoted',quote_amount:100,quote_deposit_amount:30,quote_currency:'USD',quote_scope:'Scientific illustration',quote_days:7,quote_revisions:2});
   expect(host.textContent).not.toContain('سفارش شما با موفقیت ثبت شد');
