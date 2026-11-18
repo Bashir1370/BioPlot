@@ -78,3 +78,15 @@
 .order-customer-workflow .admin-order-tab-content,
 .order-customer-workflow .order-detail-navigation{max-width:1020px;margin-inline:auto}
 .order-customer-workflow .order-current-conversation{margin-block:0 24px}
+
+/* Action forms can appear beneath a proposal, outside an order-card. */
+.order-detail-clean .order-action-form{display:grid;gap:16px;padding:22px;margin-top:20px;border:1px solid #dce9e5;border-radius:14px;background:#fff}
+.order-detail-clean .order-action-form h3{margin:0;font-size:17px}
+.order-detail-clean .order-action-form label{display:grid;gap:8px;font-size:14px;margin:0;min-width:0}
+.order-detail-clean .order-action-form :is(textarea,input:not([type=checkbox]),select){box-sizing:border-box;display:block;width:100%;min-width:0;border:1px solid #cdded8;border-radius:10px;padding:11px 13px;background:#fcfefd;color:#21484e;font:inherit}
+.order-detail-clean .order-action-form textarea{min-height:110px;resize:vertical;line-height:1.9}
+.order-detail-clean .order-action-form .order-check{display:flex;align-items:flex-start;gap:10px;line-height:1.9}
+.order-detail-clean .order-action-form .order-check input{flex:none;margin-top:5px}
+.order-action-form-buttons{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.order-detail-clean .order-action-form .order-hint{margin:0;padding:12px 14px;border-radius:9px;background:#fff6e7;color:#79561f;line-height:1.9}
+@media(max-width:600px){.order-detail-clean .order-action-form{padding:16px}.order-action-form-buttons>button{flex:1;min-height:44px}}

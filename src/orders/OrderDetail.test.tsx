@@ -48,6 +48,16 @@ describe('Customer order detail',()=>{
   const label=Array.from(host.querySelectorAll('label')).find(l=>l.textContent==='زمان طراحی (روز)')!;
   expect(label.querySelector<HTMLInputElement>('input')!.value).toBe('');
  });
+ it('explains that returning a sent proposal to review disables customer approval',async()=>{
+  await render({...order,status:'quoted',quote_amount:100,quote_days:2,quote_scope:'Scientific illustration'},[],[],true);
+  expect(Array.from(host.querySelectorAll('button')).some(b=>b.textContent==='شروع بررسی')).toBe(false);
+  const back=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='بازگرداندن پیشنهاد به بررسی')!;
+  await act(async()=>back.click());
+  const form=host.querySelector('.order-action-form')!;
+  expect(form.querySelector('[role="alert"]')?.textContent).toContain('کاربر تا ارسال مجدد پیشنهاد نمی‌تواند');
+  expect(form.querySelector('.order-action-form-buttons')?.textContent).toContain('تأیید بازگرداندن به بررسی');
+  expect(transition).not.toHaveBeenCalled();
+ });
  it('keeps quote approval explicit and does not show a pending-review message after quoting',async()=>{
   await render({...order,status:'quoted',quote_amount:100,quote_deposit_amount:30,quote_currency:'USD',quote_scope:'Scientific illustration',quote_days:7,quote_revisions:2});
   expect(host.textContent).not.toContain('سفارش شما با موفقیت ثبت شد');
