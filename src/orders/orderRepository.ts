@@ -16,7 +16,13 @@ export async function loadOrder(id:string){
 export async function createOrder(input:{id:string;title:string;kind:ServiceKind;brief:OrderBrief;requested_date:string|null}){
  const {data,error}=await supabase.rpc('create_design_order',{p_id:input.id,p_title:input.title,p_kind:input.kind,p_brief:input.brief,p_requested_date:input.requested_date});check(error);return data as DesignOrder;
 }
-export async function transitionOrder(order:DesignOrder,status:OrderStatus,note='',quote?:Quote){const {error}=await supabase.rpc('advance_design_order',{p_id:order.id,p_expected_updated_at:order.updated_at,p_status:status,p_note:note,p_quote:quote??null});check(error);}
+export async function transitionOrder(order:DesignOrder,status:OrderStatus,note='',quote?:Quote){const {error}=await supabase.rpc('advance_design_order',{p_id:order.id,p_expected_updated_at:order.updated_at,p_status:status,p_note:note,p_quote:quote??null});check(error);
+ if(status==='quoted'&&quote){
+  const {data,error:readError}=await supabase.from('design_orders').select('status,quote_amount,quote_currency,quote_scope,quote_days,quote_revisions').eq('id',order.id).single();
+  check(readError);
+  if(!data||data.status!=='quoted'||Number(data.quote_amount)!==quote.amount||data.quote_currency!==quote.currency||data.quote_scope!==quote.scope.trim()||Number(data.quote_days)!==quote.days||Number(data.quote_revisions)!==quote.revisions)throw new Error('QUOTE_SAVE_MISMATCH');
+ }
+}
 export async function sendOrderMessage(orderId:string,userId:string,body:string){const {error}=await supabase.from('design_order_messages').insert({order_id:orderId,author_id:userId,body:body.trim()});check(error);}
 export async function uploadOrderFile(orderId:string,userId:string,file:File,kind:OrderFile['kind']){
  if(!validateOrderFile(file))throw new Error('FILE_INVALID');
@@ -29,6 +35,7 @@ export async function downloadOrderFile(file:OrderFile){const {data,error}=await
 export function orderError(error:unknown,fa:boolean){
  const code=String((error as {code?:string})?.code??'');const message=String((error as {message?:string})?.message??'');
  if(['42P01','PGRST202','PGRST205'].includes(code))return fa?'سامانه سفارش هنوز فعال نشده است. لطفاً کمی بعد دوباره مراجعه کنید.':'Ordering is not available yet. Please try again later.';
+ if(message.includes('QUOTE_SAVE_MISMATCH'))return fa?'پیشنهاد ذخیره‌شده با فرم یکسان نیست. صفحه را تازه‌سازی کنید و تنظیمات پایگاه داده را بررسی کنید.':'The saved proposal does not match the form. Refresh and check the database setup.';
  if(message.includes('ORDER_CHANGED'))return fa?'این سفارش به‌روزرسانی شده است. تازه‌سازی کنید و دوباره تلاش کنید.':'This order changed. Refresh before trying again.';
  if(message.includes('FILES_REQUIRED'))return fa?'ابتدا فایل مربوط به پیش‌نمایش یا تحویل نهایی را بارگذاری کنید.':'Upload the preview or final files first.';
  if(message.includes('FILE_INVALID'))return fa?'فایل باید یکی از قالب‌های مجاز و حداکثر ۲۰ مگابایت باشد.':'Choose a supported file up to 20 MB.';

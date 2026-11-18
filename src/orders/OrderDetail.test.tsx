@@ -27,6 +27,27 @@ describe('Customer order detail',()=>{
   await act(async()=>cancel.click());expect(transition).not.toHaveBeenCalled();
   expect(card.querySelector<HTMLTextAreaElement>('.order-action-form textarea')?.required).toBe(true);
  });
+ it('updates proposal delivery days when the same order is refreshed and permits explicit rejection',async()=>{
+  const proposal={...order,status:'quoted' as const,quote_amount:600000,quote_currency:'IRT' as const,quote_scope:'Scientific illustration',quote_days:7,quote_revisions:6};
+  await render(proposal);
+  expect(host.querySelector('.quote-facts')?.textContent).toContain('۷ روز');
+  await render({...proposal,quote_days:2,updated_at:'2026-11-18T10:00:00Z'});
+  expect(host.querySelector('.quote-facts')?.textContent).toContain('۲ روز');
+  expect(host.querySelector('.quote-facts')?.textContent).not.toContain('۷ روز');
+  const reject=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='رد پیشنهاد و لغو سفارش')!;
+  await act(async()=>reject.click());
+  const input=host.querySelector<HTMLTextAreaElement>('.order-action-form textarea')!;
+  await act(async()=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!.call(input,'شرایط پیشنهاد مناسب نیست');input.dispatchEvent(new Event('input',{bubbles:true}));});
+  await act(async()=>host.querySelector('.order-action-form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+  expect(transition).toHaveBeenCalledWith('cancelled','شرایط پیشنهاد مناسب نیست',undefined);
+ });
+ it('does not prefill seven days for an unquoted order',async()=>{
+  await render({...order,status:'reviewing'},[],[],true);
+  const button=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='ارسال پیشنهاد')!;
+  await act(async()=>button.click());
+  const label=Array.from(host.querySelectorAll('label')).find(l=>l.textContent==='زمان طراحی (روز)')!;
+  expect(label.querySelector<HTMLInputElement>('input')!.value).toBe('');
+ });
  it('keeps quote approval explicit and does not show a pending-review message after quoting',async()=>{
   await render({...order,status:'quoted',quote_amount:100,quote_deposit_amount:30,quote_currency:'USD',quote_scope:'Scientific illustration',quote_days:7,quote_revisions:2});
   expect(host.textContent).not.toContain('سفارش شما با موفقیت ثبت شد');
@@ -62,14 +83,14 @@ describe('Customer order detail',()=>{
  });
 
  it('submits a proposal without requesting or sending an advance amount',async()=>{
-  await render({...order,status:'reviewing',quote_amount:100,quote_scope:'Scientific illustration',quote_currency:'USD'},[],[],true);
+  await render({...order,status:'reviewing',quote_amount:100,quote_scope:'Scientific illustration',quote_currency:'USD',quote_days:2},[],[],true);
   const send=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='ارسال پیشنهاد')!;
   await act(async()=>send.click());
   const form=host.querySelector<HTMLFormElement>('.order-action-form')!;
   expect(form.textContent).not.toContain('پیش‌پرداخت اولیه');
   expect(form.querySelector('.order-payment-terms')?.textContent).toBe('در صورت موافقت شما با این پیشنهاد، مبلغ پس از پایان طراحی و تأیید رضایت شما پرداخت می‌شود.');
   await act(async()=>form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
-  expect(transition).toHaveBeenCalledWith('quoted','',{amount:100,currency:'USD',scope:'Scientific illustration',days:7,revisions:2});
+  expect(transition).toHaveBeenCalledWith('quoted','',{amount:100,currency:'USD',scope:'Scientific illustration',days:2,revisions:2});
  });
  it('keeps delivery details in the delivery stage and archives them at completion',async()=>{
   const details='فایل نهایی آماده است. شماره حساب: SAMPLE-ACCOUNT — صاحب حساب: تیم طراحی';
