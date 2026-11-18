@@ -1,3 +1,4 @@
+import {AppErrorBoundary} from './AppErrorBoundary';
 import { isDesignPath, isOrdersPath, isAdminOrdersPath } from './routing';
 import { lazy, StrictMode, Suspense } from 'react';
 const AdminStudioContent=lazy(()=>import('./orders/AdminStudioEntry').then(module=>({default:module.AdminStudioEntry})));
@@ -45,7 +46,7 @@ function StudioComingSoon(){
   </main>;
 }
 createRoot(root).render(
-  <StrictMode><Suspense fallback={<p role="status" style={{padding:32,textAlign:'center'}}>BioPlot…</p>}>
+  <StrictMode><AppErrorBoundary><Suspense fallback={<p role="status" style={{padding:32,textAlign:'center'}}>BioPlot…</p>}>
     {location.pathname.replace(/\/+$/,'')==='/admin/studio' ? <AdminStudioContent/> : isDesignPath(location.pathname) ? <OrdersPage initialNewOrder/> : isOrdersPath(location.pathname) ? <OrdersPage/> : isAdminOrdersPath(location.pathname) ? <OrdersPage admin/> : isAdminLines ? <AdminLinesPage /> : isAdminLibrary ? <><AdminLibraryPage/><AdminLinesShortcut/></> : isAdminShowcase ? <><AdminShowcasePage/></> : isDashboard ? <UserDashboard/> : isAccount ? <><AccountPage/><AdminShowcaseAccountPortal/></> : isEditor ? <StudioComingSoon /> : <HomeRoute />}
-  </Suspense></StrictMode>
+  </Suspense></AppErrorBoundary></StrictMode>
 );
