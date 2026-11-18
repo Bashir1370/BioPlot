@@ -17,7 +17,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
  const paymentTerms=t('در صورت موافقت شما با این پیشنهاد، مبلغ پس از پایان طراحی و تأیید رضایت شما پرداخت می‌شود.','If you accept this proposal, payment is due after the design is completed and you confirm your satisfaction.');
  const terminal=['completed','cancelled'].includes(order.status);
  const manageTabs=canManage&&!!onPublishPreview;
- const actions=(canManage||userId===order.user_id?allowedTransitions(order.status,canManage):[]).filter(status=>!manageTabs||status!=='designing');
+ const actions=(canManage||userId===order.user_id?allowedTransitions(order.status,canManage):[]).filter(status=>(!manageTabs||status!=='designing')&&!(canManage&&order.status==='quoted'&&status==='reviewing'));
  const actionLabel=(status:OrderStatus)=>status==='reviewing'&&order.status==='quoted'?t('بازگرداندن پیشنهاد به بررسی','Return proposal to review'):status==='cancelled'&&!canManage&&order.status==='quoted'?t('رد پیشنهاد و لغو سفارش','Decline proposal and cancel order'):status==='reviewing'&&order.status==='submitted'?t('تأیید درخواست','Confirm request'):t(actionLabels[status]?.[0]??'',actionLabels[status]?.[1]??'');
  const date=(value:string)=>new Date(value).toLocaleString(fa?'fa-IR':'en-US',{dateStyle:'medium',timeStyle:'short'});
  const currency=(value:string|null)=>value==='IRT'?t('تومان','toman'):value==='USD'?t('دلار آمریکا','USD'):t('یورو','EUR');
@@ -94,7 +94,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
       {tab===0&&active&&order.status==='reviewing'&&order.quote_amount===null&&<p className="order-quote-pending">
        {t('پیشنهاد قیمت هنوز ارسال نشده است. پس از ثبت توسط تیم، مبلغ و شرایط در تب توافق نمایش داده می‌شود.','No price proposal has been sent yet. The price and terms will appear in Agreement.')}
       </p>}
-      {tab===1&&<>{quotePanel}{order.status==='quoted'&&<section className="order-card order-quote-decision"><h2>{t('پاسخ شما به پیشنهاد','Your response to the proposal')}</h2>{writeAllowed?actionPanel:<p role="alert">{t('این حساب، ثبت‌کننده این سفارش نیست؛ برای پذیرش یا رد پیشنهاد با حساب ثبت‌کننده وارد شوید.','This account does not own this order. Sign in with the requester account to accept or decline.')}</p>}</section>}</>}
+      {tab===1&&<>{quotePanel}{order.status==='reviewing'&&<p className="order-alert" role="status">{t('پیشنهاد قبلی برای بررسی مجدد به تیم برگشته است. پس از ارسال مجدد پیشنهاد توسط تیم، دکمه‌های پذیرش و رد در همین بخش نمایش داده می‌شوند.','The previous proposal is back with the team for review. Accept and decline will be available here once the team sends the proposal again.')}</p>}{order.status==='quoted'&&<section className="order-card order-quote-decision"><h2>{t('پاسخ شما به پیشنهاد','Your response to the proposal')}</h2>{writeAllowed?actionPanel:<p role="alert">{t('این حساب، ثبت‌کننده این سفارش نیست؛ برای پذیرش یا رد پیشنهاد با حساب ثبت‌کننده وارد شوید.','This account does not own this order. Sign in with the requester account to accept or decline.')}</p>}</section>}</>}
       {tab===2&&(active?<OrderDesignProgress fa={fa} order={order} events={events}/>:<section className="order-card"><h2>{t('طراحی انجام شد','Design completed')}</h2></section>)}
       {tab===3&&<>
        {(sent||awaitingDecision)&&<OrderReviewStage fa={fa} files={sentFiles} busy={busy} onDownload={onDownload} awaitingDecision={awaitingDecision}>
@@ -153,7 +153,7 @@ export function OrderDetail({fa,admin,canManage=admin,userId,order,files,message
      const tabMessages=allPhases.filter(phase=>phase.stage===tab).flatMap(phase=>phase.messages);
      return <>
       {tab===0&&<OrderRequestSummary showOwner={canManage} fa={fa} order={order} briefOnly files={files} busy={busy} onDownload={onDownload}>{active&&actionPanel}</OrderRequestSummary>}
-      {tab===1&&<>{quotePanel}{active&&actionPanel}</>}
+      {tab===1&&<>{quotePanel}{(active||order.status==='reviewing'||order.status==='revision_requested')&&actionPanel}</>}
       {tab===2&&active&&<AdminPreviewForm fa={fa} busy={busy} staged={order.status==='designing'?previewFiles:[]} onPublish={onPublishPreview}/>}
       {tab===3&&<section className="order-card order-review-stage">
        <h2>{t('تحویل طرح','Design delivery')}</h2>

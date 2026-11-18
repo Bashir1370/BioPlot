@@ -48,15 +48,20 @@ describe('Customer order detail',()=>{
   const label=Array.from(host.querySelectorAll('label')).find(l=>l.textContent==='زمان طراحی (روز)')!;
   expect(label.querySelector<HTMLInputElement>('input')!.value).toBe('');
  });
- it('explains that returning a sent proposal to review disables customer approval',async()=>{
+ it('does not offer returning a sent proposal to review',async()=>{
   await render({...order,status:'quoted',quote_amount:100,quote_days:2,quote_scope:'Scientific illustration'},[],[],true);
-  expect(Array.from(host.querySelectorAll('button')).some(b=>b.textContent==='شروع بررسی')).toBe(false);
-  const back=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='بازگرداندن پیشنهاد به بررسی')!;
-  await act(async()=>back.click());
-  const form=host.querySelector('.order-action-form')!;
-  expect(form.querySelector('[role="alert"]')?.textContent).toContain('کاربر تا ارسال مجدد پیشنهاد نمی‌تواند');
-  expect(form.querySelector('.order-action-form-buttons')?.textContent).toContain('تأیید بازگرداندن به بررسی');
-  expect(transition).not.toHaveBeenCalled();
+  expect(Array.from(host.querySelectorAll('button')).some(b=>b.textContent==='شروع بررسی'||b.textContent==='بازگرداندن پیشنهاد به بررسی')).toBe(false);
+ });
+ it('lets administrators resend a withdrawn proposal directly from Agreement',async()=>{
+  const current={...order,status:'reviewing' as const,quote_amount:600000,quote_days:2,quote_scope:'Scientific illustration'};
+  const events:OrderEvent[]=[{id:'sent',order_id:order.id,actor_id:'admin',status:'quoted',detail:{},created_at:order.created_at}];
+  await act(async()=>root.render(<OrderDetail fa admin canManage userId="admin" order={current} files={[]} events={events} messages={[]} busy={false} onTransition={transition} onDownload={download} onUpload={async()=>true} onMessage={async()=>true} onPublishPreview={async()=>true}/>));
+  await chooseTab('توافق');
+  const send=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='ارسال پیشنهاد')!;
+  expect(send).toBeDefined();await act(async()=>send.click());
+  const form=host.querySelector<HTMLFormElement>('.order-action-form')!;
+  await act(async()=>form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+  expect(transition).toHaveBeenCalledWith('quoted','',expect.objectContaining({days:2,amount:600000}));
  });
  it('keeps quote approval explicit and does not show a pending-review message after quoting',async()=>{
   await render({...order,status:'quoted',quote_amount:100,quote_deposit_amount:30,quote_currency:'USD',quote_scope:'Scientific illustration',quote_days:7,quote_revisions:2});
