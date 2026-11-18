@@ -16,7 +16,7 @@ export async function loadOrder(id:string){
 export async function createOrder(input:{id:string;title:string;kind:ServiceKind;brief:OrderBrief;requested_date:string|null}){
  const {data,error}=await supabase.rpc('create_design_order',{p_id:input.id,p_title:input.title,p_kind:input.kind,p_brief:input.brief,p_requested_date:input.requested_date});check(error);return data as DesignOrder;
 }
-export async function transitionOrder(order:DesignOrder,status:OrderStatus,note='',quote?:Quote){const {error}=await supabase.rpc('advance_design_order',{p_id:order.id,p_expected_updated_at:order.updated_at,p_status:status,p_note:note,p_quote:quote??null});check(error);
+export async function transitionOrder(order:DesignOrder,status:OrderStatus,note='',quote?:Quote){const {error}=status==='completed'&&order.status==='approved'?await supabase.rpc('complete_design_order',{p_id:order.id,p_expected_updated_at:order.updated_at,p_note:note}):await supabase.rpc('advance_design_order',{p_id:order.id,p_expected_updated_at:order.updated_at,p_status:status,p_note:note,p_quote:quote??null});check(error);
  if(status==='quoted'&&quote){
   const {data,error:readError}=await supabase.from('design_orders').select('status,quote_amount,quote_currency,quote_scope,quote_days,quote_revisions').eq('id',order.id).single();
   check(readError);

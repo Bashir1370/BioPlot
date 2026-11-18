@@ -10,7 +10,7 @@ export interface OrderFile {id:string;order_id:string;uploader_id:string;kind:'r
 export interface OrderMessage {id:string;order_id:string;author_id:string;body:string;created_at:string;}
 export interface OrderEvent {id:string;order_id:string;actor_id:string;status:OrderStatus;detail:Record<string,unknown>;created_at:string;}
 export interface Quote {amount:number;currency:'IRT'|'USD'|'EUR';scope:string;days:number;revisions:number;}
-export const adminTransitions:Partial<Record<OrderStatus,OrderStatus[]>>={submitted:['reviewing','cancelled'],reviewing:['quoted','cancelled'],quoted:['reviewing','cancelled'],accepted:['designing'],designing:['review'],approved:['delivered'],revision_requested:['designing','quoted'],delivered:['completed']};
+export const adminTransitions:Partial<Record<OrderStatus,OrderStatus[]>>={submitted:['reviewing','cancelled'],reviewing:['quoted','cancelled'],quoted:['reviewing','cancelled'],accepted:['designing'],designing:['review'],approved:['delivered','completed'],revision_requested:['designing','quoted'],delivered:['completed']};
 export const customerTransitions:Partial<Record<OrderStatus,OrderStatus[]>>={submitted:['cancelled'],reviewing:['cancelled'],quoted:['accepted','cancelled'],review:['approved','revision_requested'],delivered:['revision_requested','completed']};
 export function allowedTransitions(status:OrderStatus,admin:boolean){return (admin?adminTransitions:customerTransitions)[status]??[];}
 export const MAX_FILE_SIZE=20*1024*1024;

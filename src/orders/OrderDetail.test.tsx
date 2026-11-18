@@ -73,6 +73,20 @@ describe('Customer order detail',()=>{
   expect(attachments.textContent).not.toContain('reference.pdf');
   expect(attachments.querySelector('input[type=file]')).not.toBeNull();
  });
+ it('lets admins close a paid order and keeps payment history readable afterward',async()=>{
+  const payment:OrderEvent={id:'payment',order_id:order.id,actor_id:'customer',status:'approved',detail:{},created_at:'2026-11-18T10:00:00Z'};
+  const receipt={...reference,id:'receipt',name:'receipt.pdf',created_at:'2026-11-18T10:05:00Z'};
+  const props={fa:true,admin:true,canManage:true,userId:'admin',files:[receipt],messages:[{id:'message',order_id:order.id,author_id:'customer',body:'رسید ارسال شد',created_at:'2026-11-18T10:05:00Z'}],busy:false,onTransition:transition,onDownload:download,onUpload:async()=>true,onMessage:async()=>true,onPublishPreview:async()=>true};
+  await act(async()=>root.render(<OrderDetail {...props} order={{...order,status:'approved'}} events={[payment]}/>));
+  const close=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='تکمیل و بستن سفارش')!;
+  await act(async()=>close.click());
+  await act(async()=>host.querySelector('.order-action-form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+  expect(transition).toHaveBeenCalledWith('completed','',undefined);
+  const completed:OrderEvent={...payment,id:'closed',actor_id:'admin',status:'completed',created_at:'2026-11-18T11:00:00Z'};
+  await act(async()=>root.render(<OrderDetail {...props} order={{...order,status:'completed'}} events={[payment,completed]}/>));
+  await chooseTab('پرداخت مالی');expect(host.textContent).toContain('رسید ارسال شد');expect(host.textContent).toContain('receipt.pdf');
+  expect(host.querySelector('textarea,input[type=file]')).toBeNull();
+ });
  it('keeps quote approval explicit and does not show a pending-review message after quoting',async()=>{
   await render({...order,status:'quoted',quote_amount:100,quote_deposit_amount:30,quote_currency:'USD',quote_scope:'Scientific illustration',quote_days:7,quote_revisions:2});
   expect(host.textContent).not.toContain('سفارش شما با موفقیت ثبت شد');
