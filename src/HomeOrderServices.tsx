@@ -5,6 +5,7 @@ import ThreeDCardDemo from './components/3d-card-demo';
 type Locale = 'fa' | 'en';
 type Service = {
   kind: ServiceKind;
+  slug: string;
   title: Record<Locale, string>;
   description: Record<Locale, string>;
 };
@@ -12,6 +13,7 @@ type Service = {
 const SERVICES: Service[] = [
   {
     kind: 'figure',
+    slug: 'scientific-illustration',
     title: { fa: 'طراحی تصویر علمی', en: 'Scientific illustration' },
     description: {
       fa: 'مسیرهای زیستی، شماتیک آزمایش و مکانیسم‌های مولکولی',
@@ -20,6 +22,7 @@ const SERVICES: Service[] = [
   },
   {
     kind: 'graphical_abstract',
+    slug: 'graphical-abstract',
     title: { fa: 'طراحی چکیده تصویری', en: 'Graphical abstract design' },
     description: {
       fa: 'تبدیل پیام اصلی مقاله به یک Graphical Abstract',
@@ -28,6 +31,7 @@ const SERVICES: Service[] = [
   },
   {
     kind: 'poster',
+    slug: 'scientific-poster',
     title: { fa: 'طراحی پوستر علمی', en: 'Scientific poster design' },
     description: {
       fa: 'پوستر کنفرانس، کنگره و ارائه دانشگاهی',
@@ -74,7 +78,7 @@ export function HomeOrderServices({ locale }: { locale: Locale }) {
           <ThreeDCardDemo key={service.kind}
             title={service.title[locale]} description={service.description[locale]}
             visual={<ServiceIllustration kind={service.kind} locale={locale}/>}
-            href={`/design?kind=${service.kind}`} cta={fa ? 'شروع سفارش' : 'Start an order'} rtl={fa}/>
+            href={`/design?kind=${service.kind}`} learnMoreHref={`/services/${locale}/${service.slug}/`} learnMoreLabel={fa ? "آشنایی با خدمت" : "Learn more"} cta={fa ? 'شروع سفارش' : 'Start an order'} rtl={fa}/>
         ))}
       </div>
     </section>
