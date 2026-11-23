@@ -1,13 +1,11 @@
 import { createRoot } from 'react-dom/client';
-import { HomeHeader } from './HomeHeader';
-import { HomeFooter } from './HomeFooter';
 import { loadHomeContent } from './homeContent';
 import {
   SERVICE_SLUGS, mergeServicePageContent, servicePageKey,
   type ServiceLocale, type ServiceSlug, type ServicePageFields,
 } from './servicePageContent';
 
-// Match the Home page's styles, typography and shared header/footer components.
+// Load the same global and Home styles in the same cascade order as DashboardApp.
 import './tailwind.css';
 import './styles-v3.css';
 import '@fontsource-variable/inter';
@@ -16,6 +14,8 @@ import './persian-typography.css';
 import './precision-studio.css';
 import './home.css';
 import './home-top-nav.css';
+import { HomeHeader } from './HomeHeader';
+import { HomeFooter } from './HomeFooter';
 import './home-mobile.css';
 
 const match = location.pathname.match(/^\/services\/(fa|en)\/([a-z-]+)\/?$/);

@@ -4,29 +4,29 @@
 html[lang=fa]{font-family:"Vazirmatn",Tahoma,Arial,sans-serif}
 .container{width:min(1180px,calc(100% - 42px));margin-inline:auto}
 .skip{position:absolute;top:-100px;background:white;padding:10px;z-index:100}.skip:focus{top:8px}
-.site-header{background:#fff;border-bottom:1px solid #dfe9e8}.header-inner{min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:22px}.brand{display:inline-flex;align-items:center;color:#087f79;font-size:21px;font-weight:850;direction:ltr}.brand-mark{display:inline-grid;place-items:center;background:#159b92;color:white;border-radius:9px;width:34px;height:34px;margin-inline-end:2px;font-size:27px}
-.site-header nav{display:flex;gap:20px;align-items:center;flex-wrap:wrap;font-size:14px}.header-cta{border:1px solid #087f79;padding:7px 14px;border-radius:9px}
 .breadcrumb{display:flex;gap:10px;align-items:center;color:#657e83;margin-top:24px;font-size:13px}
 .hero{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:clamp(28px,5vw,74px);padding:56px 0 66px}.eyebrow{font-size:12px;color:#0b827d;letter-spacing:.07em;font-weight:800}.hero h1{font-size:clamp(30px,4vw,51px);line-height:1.42;letter-spacing:-.02em;margin:12px 0 18px}.lead{color:#506f78;font-size:clamp(16px,1.5vw,19px);line-height:2}.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}.primary,.secondary{display:inline-flex;align-items:center;justify-content:center;padding:11px 19px;border-radius:10px;font-weight:700}.primary{background:#087f79;color:white}.primary:hover{background:#056964;color:white}.secondary{border:1px solid #087f79}
 .example{margin:0;background:white;border:1px solid #e1edeb;border-radius:20px;padding:15px;box-shadow:0 16px 44px #153f4612}.example img{display:block;max-width:100%;height:auto;border-radius:12px;aspect-ratio:800/597;object-fit:contain}.example figcaption{font-size:12px;color:#6f858a;margin:12px 4px 2px;line-height:1.9}
 .details,.steps,.more{padding:35px 0;border-top:1px solid #e0eeeb}h2{font-size:clamp(22px,2.5vw,30px);line-height:1.6;margin:0 0 15px}.section-heading p{color:#55727a;max-width:930px;font-size:16px;margin:0}.feature-list{display:grid;grid-template-columns:repeat(3,1fr);gap:17px;list-style:none;padding:0;margin:28px 0 8px}.feature-list li{padding:24px;border:1px solid #d8e7e4;border-radius:15px;background:white;line-height:2}.feature-list li::before{content:"✓";color:#087f79;font-weight:900;margin-inline-end:8px}
 .steps ol{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:0;list-style:none;counter-reset:steps}.steps li{counter-increment:steps;background:#edf7f5;border-radius:15px;padding:22px;line-height:2}.steps li::before{content:counter(steps,decimal-leading-zero);display:block;color:#087f79;font-weight:800;font-size:18px;margin-bottom:8px}
 .other-links{display:flex;gap:12px;flex-wrap:wrap}.other-links a{display:inline-block;background:#fff;border:1px solid #d9e8e5;border-radius:10px;padding:11px 17px}
-.site-footer{margin-top:36px;border-top:1px solid #dce9e8;background:#fff}.site-footer .container{display:flex;justify-content:space-between;flex-wrap:wrap;align-items:center;gap:16px;min-height:94px;color:#56727b}
-@media(max-width:850px){.hero{grid-template-columns:1fr;padding:40px 0}.feature-list,.steps ol{grid-template-columns:1fr}.site-header nav{gap:10px;font-size:12px}.header-inner{flex-wrap:wrap;padding-block:12px}.hero h1{font-size:33px}}
-@media(max-width:520px){.container{width:min(100% - 26px,1180px)}.header-inner{gap:12px}.site-header nav{width:100%;justify-content:space-between}.hero{padding:26px 0 42px}.hero h1{font-size:29px}.feature-list li,.steps li{padding:16px}.hero-actions>a{flex:1}.breadcrumb{margin-top:18px}}
+@media(max-width:850px){.hero{grid-template-columns:1fr;padding:40px 0}.feature-list,.steps ol{grid-template-columns:1fr}.hero h1{font-size:33px}}
+@media(max-width:520px){.container{width:min(100% - 26px,1180px)}.hero{padding:26px 0 42px}.hero h1{font-size:29px}.feature-list li,.steps li{padding:16px}.hero-actions>a{flex:1}.breadcrumb{margin-top:18px}}
 
 /* All service pages share the real HomeHeader/HomeFooter React components.
    The static header/footer below remain as a no-JavaScript fallback. */
-.seo-service-shell{min-height:100vh;background:#f7fbfb;display:block}
-.seo-service-shell .home-header{margin:0}
-.seo-service-shell #service-footer-root{margin-top:36px}
-.seo-service-shell #service-footer-root>.home-footer{margin-top:0}
-/* The Home header/footer use precisely their Home page CSS, no special copy. */
+.seo-service-shell{min-height:100vh;background:var(--home-bg,#f4f7f8);display:block}
+/* Keep the no-JavaScript header fallback navigable on small screens. Once React
+   mounts, it replaces this static markup with the exact HomeHeader component. */
+.seo-service-shell .home-header-static .home-header-nav{display:block}
+.seo-service-shell .home-header-static .home-header-toggle{display:none}
+@media(max-width:1099px){
+  .seo-service-shell .home-header-static .home-header-inner{flex-wrap:wrap}
+  .seo-service-shell .home-header-static .home-header-nav{order:3;flex-basis:100%;border-top:1px solid var(--home-line);padding-top:8px}
+  .seo-service-shell .home-header-static .home-header-nav ul{align-items:stretch;flex-direction:column;gap:4px}
+  .seo-service-shell .home-header-static .home-header-nav a,.seo-service-shell .home-header-static .home-header-coming-soon{min-height:44px;justify-content:flex-start;white-space:normal}
+}
 html[lang="fa"] .seo-service-shell .steps li:nth-child(1)::before{content:"۰۱"}
 html[lang="fa"] .seo-service-shell .steps li:nth-child(2)::before{content:"۰۲"}
 html[lang="fa"] .seo-service-shell .steps li:nth-child(3)::before{content:"۰۳"}
 
-/* Keep the shared Home header sticky across the full service document:
-   the React mounting div would otherwise limit sticky positioning. */
-.seo-service-shell #service-header-root{position:sticky;top:0;z-index:60}
