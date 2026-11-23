@@ -26,3 +26,7 @@ html[lang=fa]{font-family:"Vazirmatn",Tahoma,Arial,sans-serif}
 html[lang="fa"] .seo-service-shell .steps li:nth-child(1)::before{content:"۰۱"}
 html[lang="fa"] .seo-service-shell .steps li:nth-child(2)::before{content:"۰۲"}
 html[lang="fa"] .seo-service-shell .steps li:nth-child(3)::before{content:"۰۳"}
+
+/* Keep the shared Home header sticky across the full service document:
+   the React mounting div would otherwise limit sticky positioning. */
+.seo-service-shell #service-header-root{position:sticky;top:0;z-index:60}
