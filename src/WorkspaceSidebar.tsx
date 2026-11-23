@@ -3,7 +3,7 @@ import {List,X,SidebarSimple,House,User,Flask,NotePencil,PlusCircle} from '@phos
 import {accountDisplayName,type AccountState} from './accountAuth';
 import './user-dashboard.css';
 
-export function WorkspaceSidebar({account,fa,collapsed,setCollapsed,mobile,setMobile,unreadTotal=0,revisionCount=0,active,onProfile}:{
+export function WorkspaceSidebar({account,fa,collapsed,setCollapsed,mobile,setMobile,unreadTotal=0,revisionCount=0,active,onProfile,adminWorkspace}:{
  account:AccountState;fa:boolean;collapsed:boolean;setCollapsed:(value:boolean)=>void;
  mobile:boolean;setMobile:(value:boolean)=>void;unreadTotal?:number;revisionCount?:number;active?:'profile'|'orders'|'revision';onProfile?:()=>void;adminWorkspace?:boolean;
 }){
