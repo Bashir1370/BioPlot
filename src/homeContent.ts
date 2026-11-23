@@ -13,7 +13,7 @@ export const HOME_FONT_STACKS: Record<HomeFontFamily,string> = {
  inter:'"Inter Variable","Vazirmatn Variable",sans-serif',
 };
 export type HomeLocaleContent = HomeText & {fontFamily:HomeFontFamily};
-export type HomeContent = Record<'en'|'fa', HomeLocaleContent> & {banner?: HomeBannerContent};
+export type HomeContent = Record<'en'|'fa', HomeLocaleContent> & {banner?: HomeBannerContent; servicePages?: Record<string, Record<string,string>>};
 
 // Empty copy is intentional: the Home page only shows text saved by an admin.
 export const HOME_TEXT_DEFAULTS: HomeContent = {
@@ -48,6 +48,14 @@ export function normalizeHomeContent(value: unknown): HomeContent {
   return [locale,{...text,fontFamily}];
  })) as Record<'en'|'fa', HomeLocaleContent>;
  if(input?.banner !== undefined) normalized.banner = normalizeHomeBanner(input.banner);
+ // Preserve service landing-page CMS copy when the existing Home banner admin saves.
+ // Without this, normalizing Home content would silently erase service edits.
+ if(input?.servicePages && typeof input.servicePages === 'object' && !Array.isArray(input.servicePages)) {
+  normalized.servicePages = Object.fromEntries(Object.entries(input.servicePages)
+   .filter(([key,value]) => /^[a-z-]+:(fa|en)$/.test(key) && value && typeof value === 'object' && !Array.isArray(value))
+   .map(([key,value]) => [key,Object.fromEntries(Object.entries(value)
+     .filter(([field,text]) => /^[a-zA-Z0-9]+$/.test(field) && typeof text === 'string' && text.length <= 4000))]));
+ }
  return normalized;
 }
 export async function loadHomeContent(): Promise<HomeContent> {
