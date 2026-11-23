@@ -1,0 +1,21 @@
+.service-cms{margin:22px 0 38px;background:#fff;border:1px solid #dbe8e6;border-radius:18px;padding:clamp(18px,3vw,30px);font-family:inherit;color:#183d45}
+.service-cms-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.service-cms-heading span{font-size:11px;color:#0a827b;font-weight:800;letter-spacing:.09em}
+.service-cms-heading h2{margin:7px 0;font-size:clamp(20px,2vw,27px)}
+.service-cms-heading p,.service-cms-note{font-size:13px;line-height:1.9;color:#627d85}
+.service-cms-heading>a{padding:9px 15px;border-radius:9px;border:1px solid #087f79;color:#087f79;white-space:nowrap;text-decoration:none;font-size:13px}
+.service-cms-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 10px}
+.service-cms-tabs button{background:#f6faf9;border:1px solid #d6e5e2;color:#234950;border-radius:9px;padding:9px 16px;cursor:pointer}
+.service-cms-tabs button[aria-pressed=true]{background:#087f79;color:#fff;border-color:#087f79;font-weight:750}
+.service-cms fieldset{border:0;padding:0;margin:0;min-width:0}
+.service-cms-group{border-top:1px solid #e1eeec;padding:22px 0 6px}
+.service-cms-group h3{font-size:16px;margin:0 0 15px}
+.service-cms-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.service-cms-fields label{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:13px;font-weight:650}
+.service-cms-fields input,.service-cms-fields textarea{width:100%;min-width:0;border:1px solid #ccdeda;background:#fcfefe;border-radius:10px;padding:11px 12px;color:#1b4650;font:inherit;font-size:14px;line-height:1.9;resize:vertical}
+.service-cms-fields input:focus,.service-cms-fields textarea:focus{outline:2px solid #72bab2;border-color:#0a827b}
+.service-cms-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:25px}
+.service-cms-actions button{background:#087f79;border:1px solid #087f79;color:#fff;border-radius:9px;padding:12px 22px;cursor:pointer}
+.service-cms-actions button.secondary{background:white;color:#087f79}
+.service-cms-message{padding:11px 16px;border-radius:10px;background:#eff8f6;color:#145f59;font-size:13px}
+@media(max-width:740px){.service-cms-fields{grid-template-columns:1fr}.service-cms-heading{flex-wrap:wrap}.service-cms-heading>a{width:100%;text-align:center}}
