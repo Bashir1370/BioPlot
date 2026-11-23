@@ -55,6 +55,8 @@ describe('localized service-page CMS', () => {
     const injector=readFileSync(resolve(process.cwd(), 'scripts','injectServiceRuntime.mjs'),'utf8');
     expect(injector).toContain('Service page Home chrome stylesheet was not emitted by Vite.');
     expect(injector).toContain("const stylesheetTags = assetTags.filter");
+    expect(injector).toContain("const stylesheets = stylesheetTags.map");
+    expect(injector).toContain("stylesheetTags.join('\\n  ')");
     expect(injector).toContain("before.replace('</head>'");
     expect(injector).toContain("html.indexOf('</head>')");
     expect(injector).toContain("Home chrome stylesheet was not inserted into <head>");
