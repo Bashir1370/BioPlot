@@ -22,7 +22,8 @@ export default defineConfig(({mode})=>{
     rollupOptions: {
       input: {
         dashboard: resolve(__dirname, 'index.html'),
-        templates: resolve(__dirname, 'templates.html')
+        templates: resolve(__dirname, 'templates.html'),
+        serviceRuntime: resolve(__dirname, 'service-runtime.html')
       }
     }
   }
