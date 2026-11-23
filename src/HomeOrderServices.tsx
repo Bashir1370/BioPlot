@@ -39,19 +39,19 @@ const SERVICES: Service[] = [
 /** Supplied scientific artwork and lightweight service illustrations. */
 function ServiceIllustration({ kind, locale }: { kind: ServiceKind; locale: Locale }) {
   if (kind === 'figure') return (
-    <img className="service-scientific-image" src="/images/services/scientific-signaling-original.jpg"
+    <img className="service-scientific-image" src="/images/services/scientific-signaling-original.jpg" srcSet="/images/services/scientific-signaling-480.webp 480w, /images/services/scientific-signaling-800.webp 800w, /images/services/scientific-signaling-1200.webp 1200w" sizes="(max-width: 640px) 92vw, (max-width: 1100px) 48vw, 588px"
       width="2048" height="1529" loading="lazy" decoding="async"
       alt={locale === 'fa' ? 'نمونه طراحی مسیر سیگنال‌دهی سلولی و اتوفاژی' : 'Scientific illustration of cellular signaling and autophagy'}/>
   );
 
   if (kind === 'graphical_abstract') return (
-    <img className="service-scientific-image" src="/images/services/graphical-abstract-original.jpg"
+    <img className="service-scientific-image" src="/images/services/graphical-abstract-original.jpg" srcSet="/images/services/graphical-abstract-480.webp 480w, /images/services/graphical-abstract-800.webp 800w, /images/services/graphical-abstract-1200.webp 1200w" sizes="(max-width: 640px) 92vw, (max-width: 1100px) 48vw, 588px"
       width="2048" height="1529" loading="lazy" decoding="async"
       alt={locale === 'fa' ? 'نمونه گرافیکال ابسترکت با نمایش اپی‌تلیوم روده و رگ خونی' : 'Graphical abstract showing intestinal epithelium and a blood vessel'}/>
   );
 
   return (
-    <img className="service-scientific-image" src="/images/services/conference-poster-original.jpg"
+    <img className="service-scientific-image" src="/images/services/conference-poster-original.jpg" srcSet="/images/services/conference-poster-480.webp 480w, /images/services/conference-poster-800.webp 800w, /images/services/conference-poster-1200.webp 1200w" sizes="(max-width: 640px) 92vw, (max-width: 1100px) 48vw, 588px"
       width="2048" height="1529" loading="lazy" decoding="async"
       alt={locale === 'fa' ? 'نمونه پوستر علمی همایش با نمودارها و نتایج پژوهش' : 'Scientific conference poster with research charts and results'}/>
   );
