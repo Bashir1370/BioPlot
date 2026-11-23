@@ -1,0 +1,96 @@
+name: BioPlot - Rollback Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_run_id:
+        description: 'ID of a SUCCESSFUL production deployment run with a saved frontend artifact'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+# Share the lock with the existing production deployment workflow.
+concurrency:
+  group: bioplot-deploy-production
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    name: Restore a known-good frontend on bioplot.ir
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout current trusted FTPS deploy script
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify the source is a successful production release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_RUN_ID: ${{ inputs.production_run_id }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_RUN_ID" =~ ^[0-9]{1,20}$ ]]; then
+            echo 'Invalid run ID: it must be numeric.' >&2
+            exit 1
+          fi
+          release_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RELEASE_RUN_ID}")"
+          if ! jq -e '.event == "workflow_dispatch" and .conclusion == "success" and .head_branch == "main" and .path == ".github/workflows/deploy-bioplot.yml"' <<< "$release_json" >/dev/null; then
+            echo 'Refusing rollback: source must be a successful manual BioPlot deployment from main.' >&2
+            exit 1
+          fi
+          expected_name="bioplot-production-frontend-${RELEASE_RUN_ID}"
+          artifact_names="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RELEASE_RUN_ID}/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false) | .name')"
+          if ! grep -Fxq "$expected_name" <<< "$artifact_names"; then
+            echo 'No non-expired PRODUCTION artifact for this run. Check the run ID and artifact retention.' >&2
+            exit 1
+          fi
+          echo "Approved production release: ${RELEASE_RUN_ID}"
+
+      - name: Download the exact frontend from the selected release
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.production_run_id }}
+          github-token: ${{ github.token }}
+          name: bioplot-production-frontend-${{ inputs.production_run_id }}
+          path: dist/
+
+      - name: Validate frontend package before changing production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s dist/index.html
+          test -s dist/templates.html
+          test -d dist/assets
+          test "$(find dist/assets -type f | wc -l)" -ge 5
+          if find dist -type f \( -name '.htaccess' -o -name '.env' -o -name '*.php' \) | grep -q .; then
+            echo 'Unexpected server-side file in artifact; aborting.' >&2
+            exit 1
+          fi
+          echo 'Saved frontend is structurally valid.'
+
+      - name: Restore frontend over verified FTPS (no remote deletions)
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_DIR: ${{ vars.FTP_REMOTE_DIR }}
+        run: python3 .github/scripts/deploy_ftps.py
+
+      - name: Record rollback in workflow summary
+        if: success()
+        env:
+          RELEASE_RUN_ID: ${{ inputs.production_run_id }}
+        shell: bash
+        run: |
+          echo "### BioPlot production frontend rollback completed" >> "$GITHUB_STEP_SUMMARY"
+          echo "Restored frontend from successful production deployment run: **${RELEASE_RUN_ID}**." >> "$GITHUB_STEP_SUMMARY"
+          echo 'PHP gateway, .htaccess, user files, and Supabase database were not changed by the deployment script.' >> "$GITHUB_STEP_SUMMARY"
