@@ -7,6 +7,7 @@ Safety guarantees:
 - Does not upload source code, API PHP gateway, or .htaccess.
 - Publishes index.html / templates.html after other files.
 - Attempts atomic HTML updates using a temporary file + FTP rename.
+- Retries transient control/data-channel failures on a fresh FTPS connection.
 """
 
 from __future__ import annotations
@@ -16,11 +17,15 @@ import os
 from pathlib import Path
 import ssl
 import sys
+import time
 
 DIST = Path("dist").resolve()
 FORBIDDEN_NAMES = {".htaccess", ".env", ".env.production", ".env.local"}
 FORBIDDEN_DIRS = {"api", "cgi-bin", ".github", "node_modules"}
 LAST_FILES = ("templates.html", "index.html")
+FTP_TIMEOUT_SECONDS = 120
+MAX_UPLOAD_ATTEMPTS = 3
+RETRY_DELAYS_SECONDS = (2, 5)
 
 
 def require_env(name: str) -> str:
@@ -47,6 +52,29 @@ def remote_cd(ftp: ftplib.FTP_TLS, path: str, create: bool = False) -> None:
             ftp.cwd(segment)
 
 
+def connect_ftp(host: str, port: int, user: str, password: str,
+                context: ssl.SSLContext) -> ftplib.FTP_TLS:
+    ftp = ftplib.FTP_TLS(context=context, timeout=FTP_TIMEOUT_SECONDS)
+    try:
+        ftp.connect(host=host, port=port, timeout=FTP_TIMEOUT_SECONDS)
+        ftp.login(user=user, passwd=password)
+        ftp.prot_p()
+        ftp.set_pasv(True)
+        return ftp
+    except Exception:
+        ftp.close()
+        raise
+
+
+def close_ftp(ftp: ftplib.FTP_TLS | None) -> None:
+    if ftp is None:
+        return
+    try:
+        ftp.close()
+    except OSError:
+        pass
+
+
 def main() -> None:
     host = require_env("FTP_HOST")
     user = require_env("FTP_USERNAME")
@@ -71,40 +99,67 @@ def main() -> None:
 
     print(f"Connecting to configured FTPS server; deploying {len(files)} frontend files")
     context = ssl.create_default_context()
-    with ftplib.FTP_TLS(context=context, timeout=45) as ftp:
-        ftp.connect(host=host, port=port)
-        ftp.login(user=user, passwd=password)  # FTP_TLS authenticates with TLS.
-        ftp.prot_p()  # Require encryption for file data connections too.
-        ftp.set_pasv(True)
-        remote_cd(ftp, target)
-        ftp.pwd()
+    ftp: ftplib.FTP_TLS | None = None
+
+    try:
         for index, file in enumerate(files, start=1):
             relative = file.relative_to(DIST)
             remote_subdir = relative.parent.as_posix()
-            remote_cd(ftp, target)
-            if remote_subdir != ".":
-                remote_cd(ftp, target.rstrip("/") + "/" + remote_subdir, create=True)
             name = file.name
             is_html_entry = relative.as_posix() in LAST_FILES
             upload_name = name + ".__uploading__" if is_html_entry else name
 
-            with file.open("rb") as source:
-                ftp.storbinary(f"STOR {upload_name}", source, blocksize=131072)
-            if is_html_entry:
+            for attempt in range(1, MAX_UPLOAD_ATTEMPTS + 1):
                 try:
-                    ftp.rename(upload_name, name)
-                except ftplib.error_perm as exc:
-                    raise RuntimeError(
-                        f"Server rejected atomic rename for {name}; old page was left intact. "
-                        "Ask hosting support whether FTP RNTO overwrites an existing file."
-                    ) from exc
-            print(f"[{index}/{len(files)}] {relative.as_posix()}")
+                    if ftp is None:
+                        ftp = connect_ftp(host, port, user, password, context)
 
-        try:
-            ftp.quit()
-        except (OSError, EOFError):
-            pass
-    print("BioPlot static deploy completed without deleting remote files.")
+                    remote_cd(ftp, target)
+                    if remote_subdir != ".":
+                        remote_cd(ftp, target.rstrip("/") + "/" + remote_subdir, create=True)
+
+                    with file.open("rb") as source:
+                        ftp.storbinary(f"STOR {upload_name}", source, blocksize=131072)
+
+                    if is_html_entry:
+                        try:
+                            ftp.rename(upload_name, name)
+                        except ftplib.error_perm as exc:
+                            raise RuntimeError(
+                                f"Server rejected atomic rename for {name}; old page was left intact. "
+                                "Ask hosting support whether FTP RNTO overwrites an existing file."
+                            ) from exc
+
+                    print(f"[{index}/{len(files)}] {relative.as_posix()}", flush=True)
+                    break
+
+                except (OSError, EOFError, ftplib.error_temp) as exc:
+                    close_ftp(ftp)
+                    ftp = None
+                    if attempt >= MAX_UPLOAD_ATTEMPTS:
+                        raise RuntimeError(
+                            f"FTPS transfer failed for {relative.as_posix()} after "
+                            f"{MAX_UPLOAD_ATTEMPTS} attempts: {type(exc).__name__}: {exc}"
+                        ) from exc
+
+                    delay = RETRY_DELAYS_SECONDS[min(attempt - 1, len(RETRY_DELAYS_SECONDS) - 1)]
+                    print(
+                        f"Transient FTPS error on {relative.as_posix()} "
+                        f"(attempt {attempt}/{MAX_UPLOAD_ATTEMPTS}): "
+                        f"{type(exc).__name__}: {exc}. Reconnecting in {delay}s.",
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    time.sleep(delay)
+
+        print("BioPlot static deploy completed without deleting remote files.")
+
+    finally:
+        if ftp is not None:
+            try:
+                ftp.quit()
+            except (OSError, EOFError, ftplib.Error):
+                close_ftp(ftp)
 
 
 if __name__ == "__main__":
