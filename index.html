@@ -3,6 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- bioplot-home-banner-early-preload: only for the home route -->
+  <script>
+    if (location.pathname === '/' || location.pathname === '/index.html') {
+      const preload = document.createElement('link');
+      preload.rel = 'preload';
+      preload.as = 'image';
+      preload.setAttribute('imagesrcset', '/images/scientific-design-banner-1280.webp 1280w, /images/scientific-design-banner-1920.webp 1920w');
+      preload.setAttribute('imagesizes', '100vw');
+      preload.setAttribute('fetchpriority', 'high');
+      document.head.appendChild(preload);
+    }
+  </script>
   <meta name="theme-color" content="#0b7a75" />
   <meta name="description" content="BioPlot is a bilingual scientific visualization workspace for figures, plots, pathways and publication-ready visuals." />
   <title>BioPlot — Scientific Visualization Platform</title>
