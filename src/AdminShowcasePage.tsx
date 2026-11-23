@@ -1,4 +1,5 @@
 import {AdminHomeBanner} from './AdminHomeBanner';
+import {AdminServicePagesEditor} from './AdminServicePagesEditor';
 import {AdminHomeText} from './AdminHomeText';
 import {AdminHomeHero} from './AdminHomeHero';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
@@ -110,6 +111,7 @@ export function AdminShowcasePage() {
 
     <main className="admin-showcase-main">
       <AdminHomeBanner/>
+      <AdminServicePagesEditor/>
       <details className="admin-home-banner-archive"><summary>تنظیمات بنر قبلی (آرشیو)</summary>
         <AdminHomeText/>
         <AdminHomeHero/>
