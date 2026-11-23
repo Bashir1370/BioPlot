@@ -53,7 +53,7 @@ describe('localized service-page CMS', () => {
     expect(runtime).toContain("import './home-header.css'");
     expect(runtime.indexOf("import { HomeHeader }")).toBeLessThan(runtime.indexOf("import './home-mobile.css'"));
     const injector=readFileSync(resolve(process.cwd(), 'scripts','injectServiceRuntime.mjs'),'utf8');
-    expect(injector).toContain('Service page Home chrome stylesheet was not emitted by Vite.');
+    expect(injector).toContain('Service page Home chrome stylesheets were not emitted by Vite.');
     expect(injector).toContain("const stylesheetTags = assetTags.filter");
     expect(injector).toContain("const stylesheets = stylesheetTags.map");
     expect(injector).toContain("stylesheetTags.join('\\n  ')");
