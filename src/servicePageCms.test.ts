@@ -47,8 +47,13 @@ describe('localized service-page CMS', () => {
       expect(html).toContain('hreflang="');
     }
     const runtime=readFileSync(resolve(process.cwd(), 'src','servicePageRuntime.tsx'),'utf8');
+    expect(runtime.indexOf("import './home-footer.css'")).toBeLessThan(runtime.indexOf("import './home.css'"));
     expect(runtime.indexOf("import './home.css'")).toBeLessThan(runtime.indexOf("import { HomeHeader }"));
+    expect(runtime).toContain("import './home-account.css'");
+    expect(runtime).toContain("import './home-header.css'");
     expect(runtime.indexOf("import { HomeHeader }")).toBeLessThan(runtime.indexOf("import './home-mobile.css'"));
+    const injector=readFileSync(resolve(process.cwd(), 'scripts','injectServiceRuntime.mjs'),'utf8');
+    expect(injector).toContain('Service page Home chrome stylesheet was not emitted by Vite.');
     expect(runtime).toContain('<HomeHeader locale={locale} currentPage={null}');
     expect(runtime).toContain('<HomeFooter locale={locale}/>');
 
