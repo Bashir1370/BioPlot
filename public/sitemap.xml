@@ -1,38 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url><loc>https://bioplot.ir/</loc></url>
   <url>
     <loc>https://bioplot.ir/services/en/scientific-illustration/</loc>
+    <image:image><image:loc>https://bioplot.ir/images/services/scientific-signaling-800.webp</image:loc></image:image>
     <xhtml:link rel="alternate" hreflang="en" href="https://bioplot.ir/services/en/scientific-illustration/"/>
     <xhtml:link rel="alternate" hreflang="fa" href="https://bioplot.ir/services/fa/scientific-illustration/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://bioplot.ir/services/en/scientific-illustration/"/>
   </url>
   <url>
     <loc>https://bioplot.ir/services/fa/scientific-illustration/</loc>
+    <image:image><image:loc>https://bioplot.ir/images/services/scientific-signaling-800.webp</image:loc></image:image>
     <xhtml:link rel="alternate" hreflang="en" href="https://bioplot.ir/services/en/scientific-illustration/"/>
     <xhtml:link rel="alternate" hreflang="fa" href="https://bioplot.ir/services/fa/scientific-illustration/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://bioplot.ir/services/en/scientific-illustration/"/>
   </url>
   <url>
     <loc>https://bioplot.ir/services/en/graphical-abstract/</loc>
+    <image:image><image:loc>https://bioplot.ir/images/services/graphical-abstract-800.webp</image:loc></image:image>
     <xhtml:link rel="alternate" hreflang="en" href="https://bioplot.ir/services/en/graphical-abstract/"/>
     <xhtml:link rel="alternate" hreflang="fa" href="https://bioplot.ir/services/fa/graphical-abstract/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://bioplot.ir/services/en/graphical-abstract/"/>
   </url>
   <url>
     <loc>https://bioplot.ir/services/fa/graphical-abstract/</loc>
+    <image:image><image:loc>https://bioplot.ir/images/services/graphical-abstract-800.webp</image:loc></image:image>
     <xhtml:link rel="alternate" hreflang="en" href="https://bioplot.ir/services/en/graphical-abstract/"/>
     <xhtml:link rel="alternate" hreflang="fa" href="https://bioplot.ir/services/fa/graphical-abstract/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://bioplot.ir/services/en/graphical-abstract/"/>
   </url>
   <url>
     <loc>https://bioplot.ir/services/en/scientific-poster/</loc>
+    <image:image><image:loc>https://bioplot.ir/images/services/conference-poster-800.webp</image:loc></image:image>
     <xhtml:link rel="alternate" hreflang="en" href="https://bioplot.ir/services/en/scientific-poster/"/>
     <xhtml:link rel="alternate" hreflang="fa" href="https://bioplot.ir/services/fa/scientific-poster/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://bioplot.ir/services/en/scientific-poster/"/>
   </url>
   <url>
     <loc>https://bioplot.ir/services/fa/scientific-poster/</loc>
+    <image:image><image:loc>https://bioplot.ir/images/services/conference-poster-800.webp</image:loc></image:image>
     <xhtml:link rel="alternate" hreflang="en" href="https://bioplot.ir/services/en/scientific-poster/"/>
     <xhtml:link rel="alternate" hreflang="fa" href="https://bioplot.ir/services/fa/scientific-poster/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://bioplot.ir/services/en/scientific-poster/"/>
