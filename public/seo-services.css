@@ -10,12 +10,12 @@ html[lang=fa]{font-family:"Vazirmatn",Tahoma,Arial,sans-serif}
 .details,.steps,.more{padding:35px 0;border-top:1px solid #e0eeeb}h2{font-size:clamp(22px,2.5vw,30px);line-height:1.6;margin:0 0 15px}.section-heading p{color:#55727a;max-width:930px;font-size:16px;margin:0}.feature-list{display:grid;grid-template-columns:repeat(3,1fr);gap:17px;list-style:none;padding:0;margin:28px 0 8px}.feature-list li{padding:24px;border:1px solid #d8e7e4;border-radius:15px;background:white;line-height:2}.feature-list li::before{content:"✓";color:#087f79;font-weight:900;margin-inline-end:8px}
 .steps ol{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:0;list-style:none;counter-reset:steps}.steps li{counter-increment:steps;background:#edf7f5;border-radius:15px;padding:22px;line-height:2}.steps li::before{content:counter(steps,decimal-leading-zero);display:block;color:#087f79;font-weight:800;font-size:18px;margin-bottom:8px}
 .other-links{display:flex;gap:12px;flex-wrap:wrap}.other-links a{display:inline-block;background:#fff;border:1px solid #d9e8e5;border-radius:10px;padding:11px 17px}
-@media(max-width:850px){.hero{grid-template-columns:1fr;padding:40px 0}.feature-list,.steps ol{grid-template-columns:1fr}.site-header nav{gap:10px;font-size:12px}.header-inner{flex-wrap:wrap;padding-block:12px}.hero h1{font-size:33px}}
-@media(max-width:520px){.container{width:min(100% - 26px,1180px)}.header-inner{gap:12px}.site-header nav{width:100%;justify-content:space-between}.hero{padding:26px 0 42px}.hero h1{font-size:29px}.feature-list li,.steps li{padding:16px}.hero-actions>a{flex:1}.breadcrumb{margin-top:18px}}
+@media(max-width:850px){.hero{grid-template-columns:1fr;padding:40px 0}.feature-list,.steps ol{grid-template-columns:1fr}.hero h1{font-size:33px}}
+@media(max-width:520px){.container{width:min(100% - 26px,1180px)}.hero{padding:26px 0 42px}.hero h1{font-size:29px}.feature-list li,.steps li{padding:16px}.hero-actions>a{flex:1}.breadcrumb{margin-top:18px}}
 
 /* All service pages share the real HomeHeader/HomeFooter React components.
    The static header/footer below remain as a no-JavaScript fallback. */
-.seo-service-shell{min-height:100vh;background:var(--home-bg);display:block}
+.seo-service-shell{min-height:100vh;background:var(--home-bg,#f4f7f8);display:block}
 /* Keep the no-JavaScript header fallback navigable on small screens. Once React
    mounts, it replaces this static markup with the exact HomeHeader component. */
 .seo-service-shell .home-header-static .home-header-nav{display:block}
