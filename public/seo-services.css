@@ -15,3 +15,14 @@ html[lang=fa]{font-family:"Vazirmatn",Tahoma,Arial,sans-serif}
 .site-footer{margin-top:36px;border-top:1px solid #dce9e8;background:#fff}.site-footer .container{display:flex;justify-content:space-between;flex-wrap:wrap;align-items:center;gap:16px;min-height:94px;color:#56727b}
 @media(max-width:850px){.hero{grid-template-columns:1fr;padding:40px 0}.feature-list,.steps ol{grid-template-columns:1fr}.site-header nav{gap:10px;font-size:12px}.header-inner{flex-wrap:wrap;padding-block:12px}.hero h1{font-size:33px}}
 @media(max-width:520px){.container{width:min(100% - 26px,1180px)}.header-inner{gap:12px}.site-header nav{width:100%;justify-content:space-between}.hero{padding:26px 0 42px}.hero h1{font-size:29px}.feature-list li,.steps li{padding:16px}.hero-actions>a{flex:1}.breadcrumb{margin-top:18px}}
+
+/* All service pages share the real HomeHeader/HomeFooter React components.
+   The static header/footer below remain as a no-JavaScript fallback. */
+.seo-service-shell{min-height:100vh;background:#f7fbfb;display:block}
+.seo-service-shell .home-header{margin:0}
+.seo-service-shell #service-footer-root{margin-top:36px}
+.seo-service-shell #service-footer-root>.home-footer{margin-top:0}
+/* The Home header/footer use precisely their Home page CSS, no special copy. */
+html[lang="fa"] .seo-service-shell .steps li:nth-child(1)::before{content:"۰۱"}
+html[lang="fa"] .seo-service-shell .steps li:nth-child(2)::before{content:"۰۲"}
+html[lang="fa"] .seo-service-shell .steps li:nth-child(3)::before{content:"۰۳"}
