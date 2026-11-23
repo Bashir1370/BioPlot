@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate FTPS deployment script
+        run: python3 -m py_compile .github/scripts/deploy_ftps.py
       - uses: actions/setup-node@v4
         with:
           node-version: 22
