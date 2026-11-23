@@ -16,8 +16,32 @@
     }
   </script>
   <meta name="theme-color" content="#0b7a75" />
-  <meta name="description" content="BioPlot is a bilingual scientific visualization workspace for figures, plots, pathways and publication-ready visuals." />
-  <title>BioPlot — Scientific Visualization Platform</title>
+  <link rel="canonical" href="https://bioplot.ir/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="BioPlot" />
+  <meta property="og:title" content="BioPlot — Scientific Figure Design and Graphical Abstracts" />
+  <meta property="og:description" content="Scientific illustrations, graphical abstracts and conference posters for researchers." />
+  <meta property="og:url" content="https://bioplot.ir/" />
+  <meta property="og:image" content="https://bioplot.ir/images/scientific-design-banner-1280.webp" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"BioPlot","url":"https://bioplot.ir/"},{"@type":"WebSite","name":"BioPlot","url":"https://bioplot.ir/","inLanguage":["en","fa"]}]}
+  </script>
+  <!-- SPA fallback serves this file at private routes too: set noindex immediately. -->
+  <script>
+    (function () {
+      var path = location.pathname.replace(/\/+$/, '') || '/';
+      if (path !== '/' && path !== '/index.html') {
+        var canonical = document.querySelector('link[rel="canonical"]');
+        if (canonical) canonical.remove();
+        var robots = document.createElement('meta');
+        robots.name = 'robots';
+        robots.content = 'noindex, nofollow';
+        document.head.appendChild(robots);
+      }
+    })();
+  </script>
+  <meta name="description" content="BioPlot designs scientific illustrations, graphical abstracts and research conference posters. Explore examples and request scientific figure design services." />
+  <title>BioPlot | Scientific Figure & Graphical Abstract Design</title>
 </head>
 <body>
   <div id="root"></div>
