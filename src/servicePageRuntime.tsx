@@ -11,9 +11,13 @@ import './styles-v3.css';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/vazirmatn';
 import './persian-typography.css';
+// Keep Home chrome styles in the runtime entry stylesheet so static fallbacks are styled too.
+import './home-footer.css';
 import './precision-studio.css';
 import './home.css';
 import './home-top-nav.css';
+import './home-account.css';
+import './home-header.css';
 import { HomeHeader } from './HomeHeader';
 import { HomeFooter } from './HomeFooter';
 import './home-mobile.css';

@@ -11,6 +11,9 @@ const assetTags = [...compiled.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="\/
 if (!assetTags.some(tag => tag.includes('<script'))) {
   throw new Error('Service page runtime JavaScript was not emitted by Vite.');
 }
+if (!assetTags.some(tag => tag.startsWith('<link') && tag.includes('.css'))) {
+  throw new Error('Service page Home chrome stylesheet was not emitted by Vite.');
+}
 for(const lang of ['fa', 'en']) {
   for(const slug of ['scientific-illustration', 'graphical-abstract', 'scientific-poster']) {
     const file = resolve(dist, 'services', lang, slug, 'index.html');
