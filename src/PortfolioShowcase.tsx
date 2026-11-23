@@ -22,6 +22,7 @@ export function PortfolioShowcasePortal() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [locale, setLocale] = useState<Locale>(localeFromDocument);
   const [slides, setSlides] = useState<ShowcaseItem[]>([]);
+  const [galleryReady, setGalleryReady] = useState(false);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [ratios, setRatios] = useState<Record<string, number>>({});
@@ -43,7 +44,27 @@ export function PortfolioShowcasePortal() {
     return () => observer.disconnect();
   }, []);
 
+  // Defer Supabase gallery fetch until its anchor approaches the viewport.
   useEffect(() => {
+    if (!target) return;
+    const anchor = target.querySelector<HTMLElement>('#portfolio');
+    if (!anchor) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setGalleryReady(true);
+      return;
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        setGalleryReady(true);
+        observer.disconnect();
+      }
+    }, {rootMargin:'450px 0px'});
+    observer.observe(anchor);
+    return () => observer.disconnect();
+  }, [target]);
+
+  useEffect(() => {
+    if (!galleryReady) return;
     let cancelled = false;
     let lastLoad=0;
     async function load() {
@@ -63,7 +84,7 @@ export function PortfolioShowcasePortal() {
     const refresh = () => void load();
     window.addEventListener('focus', refresh);
     return () => { cancelled = true; window.removeEventListener('focus', refresh); };
-  }, []);
+  }, [galleryReady]);
 
   useEffect(() => {
     if (paused || slides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;

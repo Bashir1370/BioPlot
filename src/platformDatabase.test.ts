@@ -20,7 +20,11 @@ beforeAll(async()=>{
  // Supabase ships pgcrypto; PGlite already has gen_random_uuid built in.
  await db.exec(sql('schema.sql').replace('create extension if not exists pgcrypto;',''));
  for(const path of ['home_hero_images.sql','template_hero_images.sql','portfolio_showcase.sql'])await db.exec(sql(path));
- for(const path of readdirSync('supabase/migrations').sort().filter(path=>path!=='20260910000000_platform_foundation.sql'))await db.exec(sql(`migrations/${path}`));
+ // Legacy quote/deposit migration predates the base orders table by filename.
+  // Reorder only the in-memory PGlite test bootstrap, NOT the real migrations.
+  const orderFoundation = '20261101140141_scientific_design_orders.sql';
+  await db.exec(sql(`migrations/${orderFoundation}`));
+  for(const path of readdirSync('supabase/migrations').sort().filter(path=>path!=='20260910000000_platform_foundation.sql' && path!==orderFoundation))await db.exec(sql(`migrations/${path}`));
  await db.exec(`insert into auth.users(id,email) values('${alice}','alice@example.test'),('${bob}','bob@example.test'),('${admin}','admin@example.test');insert into public.bioplot_admins values('${admin}');`);
 },30000);
 afterAll(async()=>{await db.close();});
