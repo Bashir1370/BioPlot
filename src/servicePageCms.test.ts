@@ -39,10 +39,22 @@ describe('localized service-page CMS', () => {
       expect(html).toContain('<h1>');
       expect(html).toContain('<div id="service-header-root">');
       expect(html).toContain('<div id="service-footer-root">');
+      expect(html).toContain('<header class="home-header home-header-static"');
+      expect(html).toContain('<footer id="home-footer" class="home-footer">');
+      expect(html).not.toContain('class="site-header"');
+      expect(html).not.toContain('class="site-footer"');
       expect(html).toContain('<!-- BIOPLOT_SERVICE_RUNTIME -->');
       expect(html).toContain('hreflang="');
     }
+    const runtime=readFileSync(resolve(process.cwd(), 'src','servicePageRuntime.tsx'),'utf8');
+    expect(runtime.indexOf("import './home.css'")).toBeLessThan(runtime.indexOf("import { HomeHeader }"));
+    expect(runtime.indexOf("import { HomeHeader }")).toBeLessThan(runtime.indexOf("import './home-mobile.css'"));
+    expect(runtime).toContain('<HomeHeader locale={locale} currentPage={null}');
+    expect(runtime).toContain('<HomeFooter locale={locale}/>');
+
     const css=readFileSync(resolve(process.cwd(), 'public','seo-services.css'),'utf8');
+    expect(css).not.toContain('#service-footer-root{margin-top');
+    expect(css).not.toContain('#service-header-root{position:sticky');
     expect(css).toContain('content:"۰۱"');
     expect(css).toContain('content:"۰۲"');
     expect(css).toContain('content:"۰۳"');
