@@ -24,3 +24,9 @@
 
 .home-order-services .service-scientific-image{display:block;width:100%;height:auto;aspect-ratio:2048/1529;object-fit:contain;background:#fff;border-radius:13px}
 
+
+/* Informational service pages do not replace the existing order CTA. */
+.home-order-services .service-3d-footer{gap:12px;align-items:center;flex-wrap:wrap}
+.home-order-services .service-3d-learn-more{display:inline-flex;align-items:center;min-height:42px;color:#087f79;font-size:13px;font-weight:700;text-underline-offset:4px}
+.home-order-services .service-3d-learn-more:hover{text-decoration:underline}
+@media(max-width:820px){.home-order-services .service-3d-learn-more{width:100%;justify-content:center}}
