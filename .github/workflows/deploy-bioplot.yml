@@ -1,0 +1,64 @@
+name: BioPlot - Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Choose the website to deploy'
+        required: true
+        type: choice
+        default: staging
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bioplot-deploy-${{ github.event_name == 'push' && 'staging' || inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy to ${{ github.event_name == 'push' && 'staging' || inputs.target }}
+    if: github.event_name == 'push' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: ${{ github.event_name == 'push' && 'staging' || inputs.target }}
+
+    steps:
+      - name: Checkout BioPlot
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React / Vite site
+        run: npm run build
+
+      - name: Validate deployment package
+        run: |
+          test -s dist/index.html
+          test -s dist/templates.html
+          test -d dist/assets
+          echo "Static frontend build is ready."
+
+      - name: Upload frontend using verified FTPS
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_DIR: ${{ vars.FTP_REMOTE_DIR }}
+        run: python3 .github/scripts/deploy_ftps.py
