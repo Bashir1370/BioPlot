@@ -2,8 +2,8 @@
 import type { ReactNode } from 'react';
 import { CardBody, CardContainer, CardItem } from '@/components/ui/3d-card';
 import './3d-card-demo.css';
-export default function ThreeDCardDemo({title,description,visual,href,cta,rtl}: {
-  title:string;description:string;visual:ReactNode;href:string;cta:string;rtl:boolean;
+export default function ThreeDCardDemo({title,description,visual,href,cta,rtl,learnMoreHref,learnMoreLabel}: {
+  title:string;description:string;visual:ReactNode;href:string;cta:string;rtl:boolean;learnMoreHref?:string;learnMoreLabel?:string;
 }) {
   return <CardContainer containerClassName="service-3d-container" className="service-3d-stage">
     <CardBody className="service-3d-body w-auto h-auto rounded-2xl border p-6">
@@ -11,6 +11,7 @@ export default function ThreeDCardDemo({title,description,visual,href,cta,rtl}: 
       <CardItem as="p" translateZ={45} className="service-3d-description text-sm">{description}</CardItem>
       <CardItem translateZ={70} className="service-3d-visual w-full">{visual}</CardItem>
       <div className="service-3d-footer">
+        {learnMoreHref && learnMoreLabel && <a className="service-3d-learn-more" href={learnMoreHref}>{learnMoreLabel}</a>}
         <CardItem as="a" href={href} translateZ={30} className="home-order-service-cta">
           {cta}<span className="home-order-service-arrow" aria-hidden="true">{rtl ? '←' : '→'}</span>
         </CardItem>

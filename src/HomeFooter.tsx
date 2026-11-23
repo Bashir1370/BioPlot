@@ -18,6 +18,9 @@ export function HomeFooter({locale}: {locale: 'fa' | 'en'}) {
           <a href="/design">{fa ? 'سفارش طراحی' : 'Request a design'}</a>
           <a href="/#portfolio">{fa ? 'نمونه‌کارهای ما' : 'Our work'}</a>
           <a href="/#home-order-services-title">{fa ? 'خدمات طراحی' : 'Design services'}</a>
+          <a href={`/services/${locale}/scientific-illustration/`}>{fa ? 'طراحی شکل علمی' : 'Scientific illustration'}</a>
+          <a href={`/services/${locale}/graphical-abstract/`}>{fa ? 'گرافیکال ابسترکت' : 'Graphical abstracts'}</a>
+          <a href={`/services/${locale}/scientific-poster/`}>{fa ? 'طراحی پوستر علمی' : 'Scientific posters'}</a>
         </nav>
         <div className="home-footer-contact">
           <h2>{fa ? 'با ما در ارتباط باشید' : 'Get in touch'}</h2>
