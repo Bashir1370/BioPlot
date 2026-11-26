@@ -69,6 +69,15 @@ if (locale && slug && SERVICE_SLUGS.includes(slug)) {
       setText(`.steps li:nth-child(${i})`, data[`step${i}` as keyof ServicePageFields]);
     }
     setText('#steps-title', data.stepsTitle);
+    setText('#audience-title', data.audienceTitle);
+    setText('#audience-body', data.audienceBody);
+    setText('#specs-title', data.specsTitle);
+    setText('#specs-body', data.specsBody);
+    setText('#faq-title', data.faqTitle);
+    setText('#faq1-question', data.faq1Question);
+    setText('#faq1-answer', data.faq1Answer);
+    setText('#faq2-question', data.faq2Question);
+    setText('#faq2-answer', data.faq2Answer);
     setText('#more-title', data.relatedTitle);
     const structured = document.querySelector<HTMLScriptElement>('script[type="application/ld+json"]');
     if (structured) {
