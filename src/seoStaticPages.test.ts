@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { SERVICE_DEFAULT_CONTENT, servicePageKey, SERVICE_SLUGS } from './servicePageContent';
 
 const readPublic = (relativePath: string) => readFileSync(resolve(process.cwd(), 'public', relativePath), 'utf8');
 const slugs = ['scientific-illustration', 'graphical-abstract', 'scientific-poster'] as const;
@@ -25,6 +26,31 @@ describe('BioPlot SEO service pages', () => {
         expect(html).toContain('<a class="primary" href="/design?kind=');
         expect(html).not.toContain('noindex');
       }
+    }
+  });
+
+
+  it('keeps crawlable static SEO copy aligned with editable defaults for all six pages', () => {
+    const htmlEscape = (value: string) => value
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    for (const slug of SERVICE_SLUGS) for (const lang of ['fa','en'] as const) {
+      const fields = SERVICE_DEFAULT_CONTENT[servicePageKey(slug, lang)];
+      const html = readPublic(`services/${lang}/${slug}/index.html`);
+      expect(html).toContain(`<title>${htmlEscape(fields.metaTitle)}</title>`);
+      expect(html).toContain(`name="description" content="${htmlEscape(fields.metaDescription)}"`);
+      expect(html).toContain(`<h1>${htmlEscape(fields.title)}</h1>`);
+      for (const field of [
+        'lead','detailsTitle','detailsBody','audienceTitle','audienceBody',
+        'specsTitle','specsBody','faqTitle','faq1Question','faq1Answer',
+        'faq2Question','faq2Answer',
+      ] as const) expect(html).toContain(htmlEscape(fields[field]));
+      for (const id of [
+        'audience-title','audience-body','specs-title','specs-body',
+        'faq-title','faq1-question','faq1-answer','faq2-question','faq2-answer',
+      ]) expect(html).toContain(`id="${id}"`);
+      expect((html.match(/<h1>/g) ?? [])).toHaveLength(1);
+      expect((html.match(/<dt id="faq/g) ?? [])).toHaveLength(2);
     }
   });
 
