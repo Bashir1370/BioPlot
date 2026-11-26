@@ -30,3 +30,14 @@ html[lang="fa"] .seo-service-shell .steps li:nth-child(1)::before{content:"۰۱"
 html[lang="fa"] .seo-service-shell .steps li:nth-child(2)::before{content:"۰۲"}
 html[lang="fa"] .seo-service-shell .steps li:nth-child(3)::before{content:"۰۳"}
 
+
+/* Additional editorial SEO sections follow the existing service-page type scale,
+   spacing and border treatment; no changes to shared Home chrome. */
+.service-editorial{padding:35px 0;border-top:1px solid #e0eeeb}
+.service-editorial>p{color:#55727a;font-size:16px;max-width:930px;line-height:2.05;margin:0}
+.service-faq-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;margin:20px 0 0;padding:0}
+.service-faq-list>div{min-width:0;padding:22px 24px;background:white;border:1px solid #d8e7e4;border-radius:15px}
+.service-faq-list dt{font-weight:750;color:#173642;line-height:1.9}
+.service-faq-list dd{margin:10px 0 0;color:#55727a;line-height:2}
+@media(max-width:850px){.service-faq-list{grid-template-columns:1fr}}
+@media(max-width:520px){.service-editorial{padding:26px 0}.service-faq-list>div{padding:16px}}
