@@ -32,6 +32,15 @@ const labels: Record<ServiceField,string> = {
   step2: 'مرحله ۲',
   step3: 'مرحله ۳',
   relatedTitle: 'عنوان بخش خدمات مرتبط',
+  audienceTitle: 'تیتر کاربردها و مخاطبان خدمت',
+  audienceBody: 'توضیح کاربردها و مخاطبان',
+  specsTitle: 'تیتر مشخصات لازم برای سفارش',
+  specsBody: 'توضیح مشخصات لازم',
+  faqTitle: 'تیتر پرسش‌های متداول',
+  faq1Question: 'سؤال متداول اول',
+  faq1Answer: 'پاسخ سؤال متداول اول',
+  faq2Question: 'سؤال متداول دوم',
+  faq2Answer: 'پاسخ سؤال متداول دوم',
 };
 const groups: {title:string; keys:ServiceField[]}[] = [
   {title:'متادیتا و نتایج جستجو',keys:['metaTitle','metaDescription']},
@@ -39,9 +48,11 @@ const groups: {title:string; keys:ServiceField[]}[] = [
   {title:'تصویر و توضیحات آن',keys:['imageAlt','imageCaption']},
   {title:'شرح و ویژگی‌های خدمت',keys:['detailsTitle','detailsBody','feature1','feature2','feature3']},
   {title:'مراحل و خدمات مرتبط',keys:['stepsTitle','step1','step2','step3','relatedTitle']},
+  {title:'محتوای تکمیلی برای کاربران و موتورهای جست‌وجو',keys:['audienceTitle','audienceBody','specsTitle','specsBody']},
+  {title:'پرسش‌های متداول هر خدمت',keys:['faqTitle','faq1Question','faq1Answer','faq2Question','faq2Answer']},
 ];
 const multiline = new Set<ServiceField>([
-  'lead','metaDescription','detailsBody','imageCaption','feature1','feature2','feature3','step1','step2','step3',
+  'lead','metaDescription','detailsBody','imageCaption','feature1','feature2','feature3','step1','step2','step3','audienceBody','specsBody','faq1Answer','faq2Answer',
 ]);
 
 export function AdminServicePagesEditor() {

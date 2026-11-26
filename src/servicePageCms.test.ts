@@ -46,7 +46,19 @@ describe('localized service-page CMS', () => {
       expect(html).toContain('<!-- BIOPLOT_SERVICE_RUNTIME -->');
       expect(html).toContain('hreflang="');
     }
+    const editor=readFileSync(resolve(process.cwd(), 'src','AdminServicePagesEditor.tsx'),'utf8');
+    for(const field of [
+      'audienceTitle','audienceBody','specsTitle','specsBody',
+      'faqTitle','faq1Question','faq1Answer','faq2Question','faq2Answer',
+    ] as const) {
+      expect(SERVICE_FIELD_KEYS).toContain(field);
+      expect(editor).toContain(field);
+    }
     const runtime=readFileSync(resolve(process.cwd(), 'src','servicePageRuntime.tsx'),'utf8');
+    for(const field of [
+      'audienceTitle','audienceBody','specsTitle','specsBody',
+      'faqTitle','faq1Question','faq1Answer','faq2Question','faq2Answer',
+    ] as const) expect(runtime).toContain(`data.${field}`);
     expect(runtime.indexOf("import './home-footer.css'")).toBeLessThan(runtime.indexOf("import './home.css'"));
     expect(runtime.indexOf("import './home.css'")).toBeLessThan(runtime.indexOf("import { HomeHeader }"));
     expect(runtime).toContain("import './home-account.css'");
