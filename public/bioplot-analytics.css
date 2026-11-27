@@ -1,5 +1,5 @@
 /* Small, accessible, consent-first analytics control. Independent from BioPlot layouts. */
-.bioplot-analytics-settings{position:fixed;inset-inline-start:14px;bottom:14px;z-index:9000;background:#fff;color:#126b67;border:1px solid #a9cfca;border-radius:999px;box-shadow:0 4px 16px #102d301c;font:600 12px/1.5 inherit;padding:8px 13px;cursor:pointer}
+.bioplot-analytics-settings{position:fixed;inset-inline-start:14px;bottom:14px;z-index:9000;background:#fff;color:#126b67;border:1px solid #a9cfca;border-radius:999px;box-shadow:0 4px 16px #102d301c;font-family:inherit;font-size:12px;font-weight:600;line-height:1.5;padding:8px 13px;cursor:pointer}
 .bioplot-analytics-settings:hover{background:#edf8f6}
 .bioplot-analytics-consent{position:fixed;inset-inline-start:14px;bottom:58px;width:min(420px,calc(100vw - 28px));max-height:min(65vh,520px);overflow:auto;z-index:9001;background:#fff;border:1px solid #ccdeda;border-radius:15px;box-shadow:0 12px 42px #17363c30;padding:18px;color:#173b40;font:14px/1.9 "Vazirmatn",Inter,Tahoma,Arial,sans-serif}
 .bioplot-analytics-consent strong{display:block;font-size:16px}
