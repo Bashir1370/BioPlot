@@ -37,6 +37,9 @@ export function HomeFooter({locale}: {locale: 'fa' | 'en'}) {
       </div>
       <div className="home-footer-bottom">
         <small>© {new Date().getFullYear()} BioPlot · {fa ? 'تمام حقوق محفوظ است' : 'All rights reserved'}</small>
+        <button type="button" className="home-footer-analytics-settings" data-bioplot-analytics-settings>
+          {fa ? 'تنظیمات آمار' : 'Analytics settings'}
+        </button>
         <a href="/design">{fa ? 'برای ایدهٔ بعدی‌تان آماده‌ایم' : 'Ready for your next idea'}<span aria-hidden="true">{fa ? '←' : '→'}</span></a>
       </div>
     </div>
