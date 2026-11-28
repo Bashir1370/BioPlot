@@ -77,6 +77,38 @@ describe('BioPlot consent-first GA4 integration', () => {
     } finally { dom.window.close(); }
   });
 
+
+  it('shows a footer settings link rather than a floating button on every public service page', () => {
+    const sharedFooter = readFileSync('src/HomeFooter.tsx', 'utf8');
+    expect(sharedFooter).toContain('data-bioplot-analytics-settings');
+    expect(sharedFooter).toContain('تنظیمات آمار');
+    expect(sharedFooter).toContain('Analytics settings');
+    const css = readFileSync('src/home-footer.css', 'utf8');
+    expect(css).toContain('.bioplot-analytics-enabled .home-footer-analytics-settings');
+    expect(readFileSync('public/bioplot-analytics.css', 'utf8')).not.toContain('.bioplot-analytics-settings{position:fixed');
+    for (const path of pathSet.slice(1)) {
+      const html = readFileSync(path, 'utf8');
+      expect(html).toContain('data-bioplot-analytics-settings');
+      expect(html).toContain('home-footer-analytics-settings');
+    }
+    const dom = init('https://staging.bioplot.ir/services/fa/scientific-illustration/', 'declined');
+    try {
+      expect(dom.window.document.querySelector('.bioplot-analytics-settings')).toBeNull();
+      expect(dom.window.document.documentElement.classList.contains('bioplot-analytics-enabled')).toBe(true);
+      expect(dom.window.document.getElementById('bioplot-analytics-consent')).toBeNull();
+      const footer = dom.window.document.createElement('footer');
+      footer.innerHTML = '<button type="button" data-bioplot-analytics-settings>تنظیمات آمار</button>';
+      dom.window.document.body.appendChild(footer);
+      footer.querySelector('button')?.click();
+      expect(dom.window.document.getElementById('bioplot-analytics-consent')).not.toBeNull();
+      footer.innerHTML = '<button type="button" data-bioplot-analytics-settings>تنظیمات آمار</button>';
+      dom.window.document.getElementById('bioplot-analytics-consent')?.remove();
+      footer.querySelector('button')?.click();
+      expect(dom.window.document.getElementById('bioplot-analytics-consent')).not.toBeNull();
+      expect(dom.window.document.querySelector('script[src*="googletagmanager"]')).toBeNull();
+    } finally { dom.window.close(); }
+  });
+
   it('does not load a tag on private account and admin routes', () => {
     const dom = init('https://bioplot.ir/account?next=orders', 'accepted');
     try {

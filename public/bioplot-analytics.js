@@ -155,13 +155,19 @@
     css.rel = 'stylesheet';
     css.href = '/bioplot-analytics.css';
     document.head.appendChild(css);
-    var settings = createNode('button', 'bioplot-analytics-settings', words.settings);
-    settings.type = 'button';
-    settings.setAttribute('aria-label', words.settings);
-    settings.addEventListener('click', showChoices);
-    document.body.appendChild(settings);
+    // The Footer is rendered asynchronously by React on Home and service pages.
+    // Reveal its built-in preference link without inserting a floating button.
+    // Event delegation survives replacement of the static service-page fallback.
+    document.documentElement.classList.add('bioplot-analytics-enabled');
     if (!consent) showChoices();
   }
+  document.addEventListener('click', function (event) {
+    var target = event.target;
+    if (!(target instanceof Element)) return;
+    if (!target.closest('[data-bioplot-analytics-settings]')) return;
+    event.preventDefault();
+    showChoices();
+  });
 
   // Only event names and controlled service types can be submitted: no IDs, emails,
   // free-form text, filenames, billing data or account/profile properties.
