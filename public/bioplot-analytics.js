@@ -16,26 +16,29 @@
   if (pathname !== '/' && !isService && !isOrderPage) return;
 
   function language() {
+    // Service-page URLs are explicitly localized; never let a saved Home
+    // preference override the language actually displayed on these pages.
+    var serviceLocale = pathname.match(/^\/services\/(fa|en)\//);
+    if (serviceLocale) return serviceLocale[1];
     try {
       var stored = localStorage.getItem('bioplot-lang');
       if (stored === 'fa' || stored === 'en') return stored;
     } catch (_) {}
-    return document.documentElement.lang === 'fa' ? 'fa' : 'en';
+    return document.documentElement.lang === 'en' ? 'en' : 'fa';
   }
-  var fa = language() === 'fa';
-  var words = fa ? {
+  var translations = {fa: {
     title: 'آمار بازدید BioPlot',
     body: 'با موافقت شما، از Google Analytics و کوکی‌های آماری برای شناخت بازدید صفحات و بهبود خدمات استفاده می‌کنیم. اطلاعات سفارش، پیام‌ها و مشخصات شخصی را ارسال نمی‌کنیم.',
     accept: 'موافقم', reject: 'موافق نیستم', settings: 'تنظیمات آمار',
     privacy: 'اطلاعات حریم خصوصی',
     preview: 'این نسخه آزمایشی است و داده‌ای به Google Analytics ارسال نمی‌شود.'
-  } : {
+  }, en: {
     title: 'BioPlot visitor analytics',
     body: 'With your permission, Google Analytics uses analytics cookies to help us understand page visits and improve our services. We do not send order details, messages or personal information.',
     accept: 'Accept', reject: 'Decline', settings: 'Analytics settings',
     privacy: 'Privacy information',
     preview: 'This is a staging preview. No data is sent to Google Analytics.'
-  };
+  }};
 
   function getConsent() {
     try {
@@ -126,10 +129,14 @@
   }
   function showChoices() {
     if (document.getElementById('bioplot-analytics-consent')) return;
+    var currentLocale = language();
+    var fa = currentLocale === 'fa';
+    var words = translations[currentLocale];
     var panel = createNode('section', 'bioplot-analytics-consent');
     panel.id = 'bioplot-analytics-consent';
     panel.setAttribute('role', 'region');
     panel.setAttribute('aria-label', words.title);
+    panel.setAttribute('lang', currentLocale);
     panel.setAttribute('dir', fa ? 'rtl' : 'ltr');
     panel.appendChild(createNode('strong', '', words.title));
     panel.appendChild(createNode('p', '', words.body));
@@ -150,6 +157,21 @@
     panel.appendChild(row);
     document.body.appendChild(panel);
   }
+  function refreshConsentLanguage() {
+    // Home can switch locale without navigation. Keep any open consent notice
+    // synchronized with the live UI, without resetting the stored decision.
+    var panel = document.getElementById('bioplot-analytics-consent');
+    if (!panel || panel.getAttribute('lang') === language()) return;
+    panel.remove();
+    showChoices();
+  }
+  // React changes the root lang attribute when switching Home/order language.
+  var languageObserver = new MutationObserver(refreshConsentLanguage);
+  languageObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['lang']
+  });
+
   function addControls() {
     var css = document.createElement('link');
     css.rel = 'stylesheet';
