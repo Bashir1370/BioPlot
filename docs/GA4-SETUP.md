@@ -7,7 +7,7 @@
 ## Data collection and consent
 
 - An explicit bilingual analytics consent control appears to visitors. The Google tag does **not load** until the visitor selects **Accept / موافقم**. Declining sends no GA4 traffic.
-- The choice is stored locally for that browser. A persistent "Analytics settings / تنظیمات آمار" control lets users change their choice. Withdrawal disables the GA tag, expires first-party `_ga` cookies and reloads the page.
+- The choice is stored locally for that browser. A compact **"Analytics settings / تنظیمات آمار" button inside the shared footer** lets users change their choice on public pages, including the six static service-page fallbacks. It is not a permanent floating button. The initial consent notice still opens as a dialog. Withdrawal disables the GA tag, expires first-party `_ga` cookies and reloads the page.
 - Page events use sanitized origin + pathname. No URL query string (including order IDs), email, brief, title, message, file name or other user-generated value is sent in **our custom events**.
 - Google privacy information is linked from the banner. Keep BioPlot's own privacy notice updated to disclose Google Analytics, consent, cookie purposes, retention and contact options. Privacy/legal review is advised before the production release.
 
