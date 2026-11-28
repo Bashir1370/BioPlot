@@ -13,11 +13,12 @@ const pathSet = [
   'public/services/en/scientific-poster/index.html',
 ];
 
-function init(url: string, preference: string | null = null) {
+function init(url: string, preference: string | null = null, savedLanguage: 'fa' | 'en' | null = null) {
   const dom = new JSDOM('<!doctype html><html lang="fa"><head><title>BioPlot</title></head><body></body></html>', {
     url, runScripts: 'outside-only',
   });
   if (preference) dom.window.localStorage.setItem('bioplot.analytics.consent.v1', preference);
+  if (savedLanguage) dom.window.localStorage.setItem('bioplot-lang', savedLanguage);
   dom.window.eval(source);
   dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
   return dom;
@@ -106,6 +107,67 @@ describe('BioPlot consent-first GA4 integration', () => {
       footer.querySelector('button')?.click();
       expect(dom.window.document.getElementById('bioplot-analytics-consent')).not.toBeNull();
       expect(dom.window.document.querySelector('script[src*="googletagmanager"]')).toBeNull();
+    } finally { dom.window.close(); }
+  });
+
+
+  it('defaults a fresh homepage to Persian while respecting saved English preference', () => {
+    const home = readFileSync('src/DashboardApp.tsx', 'utf8');
+    const html = readFileSync('index.html', 'utf8');
+    expect(home).toContain("localStorage.getItem('bioplot-lang') === 'en' ? 'en' : 'fa'");
+    expect(html).toContain('<html lang="fa" dir="rtl">');
+    const fresh = init('https://staging.bioplot.ir/');
+    try {
+      const panel = fresh.window.document.getElementById('bioplot-analytics-consent');
+      expect(panel?.getAttribute('lang')).toBe('fa');
+      expect(panel?.getAttribute('dir')).toBe('rtl');
+      expect(panel?.textContent).toContain('آمار بازدید BioPlot');
+      expect(panel?.textContent).not.toContain('BioPlot visitor analytics');
+    } finally { fresh.window.close(); }
+    const english = init('https://staging.bioplot.ir/', null, 'en');
+    try {
+      const panel = english.window.document.getElementById('bioplot-analytics-consent');
+      expect(panel?.getAttribute('lang')).toBe('en');
+      expect(panel?.textContent).toContain('BioPlot visitor analytics');
+    } finally { english.window.close(); }
+  });
+
+  it('uses the service URL locale instead of an unrelated saved homepage language', () => {
+    for (const [url, stored, expected] of [
+      ['https://staging.bioplot.ir/services/fa/graphical-abstract/', 'en', 'fa'],
+      ['https://staging.bioplot.ir/services/en/graphical-abstract/', 'fa', 'en'],
+    ] as const) {
+      const dom = init(url, null, stored);
+      try {
+        expect(dom.window.document.getElementById('bioplot-analytics-consent')?.getAttribute('lang')).toBe(expected);
+      } finally { dom.window.close(); }
+    }
+  });
+
+  it('updates an open consent panel on live locale changes without re-prompting after reload', async () => {
+    const dom = init('https://staging.bioplot.ir/', null, 'en');
+    try {
+      const doc = dom.window.document;
+      expect(doc.getElementById('bioplot-analytics-consent')?.textContent).toContain('BioPlot visitor analytics');
+      dom.window.localStorage.setItem('bioplot-lang', 'fa');
+      doc.documentElement.lang = 'fa';
+      await Promise.resolve();
+      let panel = doc.getElementById('bioplot-analytics-consent');
+      expect(panel?.textContent).toContain('آمار بازدید BioPlot');
+      expect(panel?.getAttribute('dir')).toBe('rtl');
+      dom.window.localStorage.setItem('bioplot-lang', 'en');
+      doc.documentElement.lang = 'en';
+      await Promise.resolve();
+      panel = doc.getElementById('bioplot-analytics-consent');
+      expect(panel?.textContent).toContain('BioPlot visitor analytics');
+      doc.querySelector<HTMLButtonElement>('.bioplot-analytics-actions button:last-child')?.click();
+      expect(dom.window.localStorage.getItem('bioplot.analytics.consent.v1')).toBe('declined');
+      expect(doc.getElementById('bioplot-analytics-consent')).toBeNull();
+      const fresh = init('https://staging.bioplot.ir/', 'declined', 'fa');
+      try {
+        expect(fresh.window.document.getElementById('bioplot-analytics-consent')).toBeNull();
+        expect(fresh.window.document.querySelector('script[src*="googletagmanager"]')).toBeNull();
+      } finally { fresh.window.close(); }
     } finally { dom.window.close(); }
   });
 
