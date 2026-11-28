@@ -12,7 +12,7 @@ import './home-mobile.css';
 
 type Locale = 'en' | 'fa';
 export function DashboardApp() {
-  const [locale, setLocale] = useState<Locale>(() => localStorage.getItem('bioplot-lang') === 'fa' ? 'fa' : 'en');
+  const [locale, setLocale] = useState<Locale>(() => localStorage.getItem('bioplot-lang') === 'en' ? 'en' : 'fa');
   const fa = locale === 'fa';
 
   useEffect(() => {
