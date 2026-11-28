@@ -1,7 +1,5 @@
 /* Small, accessible, consent-first analytics control. Independent from BioPlot layouts. */
-.bioplot-analytics-settings{position:fixed;inset-inline-start:14px;bottom:14px;z-index:9000;background:#fff;color:#126b67;border:1px solid #a9cfca;border-radius:999px;box-shadow:0 4px 16px #102d301c;font-family:inherit;font-size:12px;font-weight:600;line-height:1.5;padding:8px 13px;cursor:pointer}
-.bioplot-analytics-settings:hover{background:#edf8f6}
-.bioplot-analytics-consent{position:fixed;inset-inline-start:14px;bottom:58px;width:min(420px,calc(100vw - 28px));max-height:min(65vh,520px);overflow:auto;z-index:9001;background:#fff;border:1px solid #ccdeda;border-radius:15px;box-shadow:0 12px 42px #17363c30;padding:18px;color:#173b40;font:14px/1.9 "Vazirmatn",Inter,Tahoma,Arial,sans-serif}
+.bioplot-analytics-consent{position:fixed;inset-inline-start:14px;bottom:16px;width:min(420px,calc(100vw - 28px));max-height:min(65vh,520px);overflow:auto;z-index:9001;background:#fff;border:1px solid #ccdeda;border-radius:15px;box-shadow:0 12px 42px #17363c30;padding:18px;color:#173b40;font:14px/1.9 "Vazirmatn",Inter,Tahoma,Arial,sans-serif}
 .bioplot-analytics-consent strong{display:block;font-size:16px}
 .bioplot-analytics-consent p{margin:8px 0;color:#486a70}
 .bioplot-analytics-consent a{font-size:12px;color:#087f79;text-decoration:underline}
@@ -9,5 +7,7 @@
 .bioplot-analytics-actions{display:flex;gap:10px;margin-top:13px}
 .bioplot-analytics-actions button{flex:1;min-width:0;padding:8px 12px;border:1px solid #0b7e76;background:#fff;color:#0b7e76;border-radius:9px;cursor:pointer;font:inherit}
 .bioplot-analytics-actions .bioplot-analytics-accept{background:#0b7e76;color:#fff}
-.bioplot-analytics-consent button:focus-visible,.bioplot-analytics-settings:focus-visible{outline:3px solid #64bdb2;outline-offset:3px}
-@media(max-width:520px){.bioplot-analytics-consent{bottom:54px;padding:14px}.bioplot-analytics-settings{bottom:9px;inset-inline-start:9px}}
+
+
+.bioplot-analytics-consent button:focus-visible{outline:3px solid #64bdb2;outline-offset:3px}
+@media(max-width:520px){.bioplot-analytics-consent{bottom:12px;padding:14px}}
